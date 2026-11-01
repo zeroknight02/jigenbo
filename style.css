@@ -2269,3 +2269,46 @@ body.is-selecting .view { padding-bottom: 92px; }
 }
 .more-btn .ico { color: var(--accent); }
 .more-btn:active { transform: scale(.97); }
+
+/* ---------------- 评分分布 / 热力图 / 平均分 / 健康检查 ---------------- */
+.bars-svg { width: 100%; height: auto; display: block; margin-top: 6px; }
+.bar-num { font-size: 9px; fill: var(--muted); }
+.bar-x { font-size: 9px; fill: var(--muted); }
+
+.heat-wrap { overflow-x: auto; padding: 6px 0 4px; -webkit-overflow-scrolling: touch; }
+.heat-svg { display: block; height: 86px; width: auto; }
+.heat-svg .hm { fill: var(--line); }
+.heat-svg .hm-1 { fill: var(--accent); fill-opacity: .28; }
+.heat-svg .hm-2 { fill: var(--accent); fill-opacity: .50; }
+.heat-svg .hm-3 { fill: var(--accent); fill-opacity: .74; }
+.heat-svg .hm-4 { fill: var(--accent); fill-opacity: 1; }
+.heat-legend { display: flex; align-items: center; gap: 4px; justify-content: flex-end; margin-top: 6px; font-size: 11px; color: var(--muted); }
+.heat-legend .lg { width: 10px; height: 10px; border-radius: 2px; display: inline-block; background: var(--line); }
+.heat-legend .lg-1 { background: var(--accent); opacity: .28; }
+.heat-legend .lg-2 { background: var(--accent); opacity: .50; }
+.heat-legend .lg-3 { background: var(--accent); opacity: .74; }
+.heat-legend .lg-4 { background: var(--accent); opacity: 1; }
+
+.avg-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
+.avg-name { width: 4.2em; flex: none; font-size: 13px; color: var(--text); }
+.avg-bar { flex: 1; height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.avg-bar i { display: block; height: 100%; border-radius: 4px; }
+.avg-val { width: 4.6em; flex: none; text-align: right; font-size: 12px; color: var(--muted); }
+.avg-val em { font-style: normal; margin-left: 4px; opacity: .65; }
+
+.health-list { max-height: 52vh; overflow-y: auto; }
+.health-row { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.health-row:last-child { border-bottom: 0; }
+.health-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.health-head strong { font-size: 14px; color: var(--text); }
+.health-num { font-size: 12px; color: var(--accent); }
+.health-tip { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.health-names { font-size: 12px; color: var(--text-2, var(--muted)); margin-top: 4px; line-height: 1.5; }
+.health-ok { display: flex; align-items: center; gap: 8px; padding: 18px 4px; color: var(--muted); font-size: 14px; }
+
+/* ---------------- 自定义字段 ---------------- */
+.custom-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.custom-row .custom-k { flex: 0 0 34%; }
+.custom-row .custom-v { flex: 1 1 auto; min-width: 0; }
+.custom-row .custom-del { flex: none; opacity: .55; }
+.custom-row .custom-del:active { opacity: 1; }

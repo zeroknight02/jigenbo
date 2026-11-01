@@ -10,8 +10,8 @@
   var SCHEMA_VERSION = 1;
 
   /* 每次发布改这里和 sw.js 的 VERSION（两者一起改） */
-  var APP_VERSION = '1.17';
-  var SW_VERSION = 'v18';
+  var APP_VERSION = '1.22';
+  var SW_VERSION = 'v23';
   var DB_KEY = 'shilu.db.v1';
   var PREF_KEY = 'shilu.prefs.v1';
   var DAY = 86400000;
@@ -69,7 +69,12 @@
   var MAG_PARTS = ['A', 'B', 'C', '合刊', '增刊', '别册'];
   var MAG_FREQ = ['周刊', '旬刊', '半月刊', '月刊', '双月刊', '季刊', '不定期'];
   var META_KEYS = ['publisher', 'translator', 'platform', 'runtime', 'serialStatus', 'studio', 'country',
-    'cv', 'venue', 'albumType', 'gameType', 'source', 'cast'];
+    'cv', 'venue', 'albumType', 'gameType', 'source', 'cast',
+    'pages', 'words', 'isbn', 'volumes', 'screenwriter', 'watchPlace', 'playTime', 'completion', 'tracks',
+    'binding', 'firstPlatform', 'magazineName', 'originalWork', 'artist', 'epCount', 'colorPages',
+    'seriesComp', 'charDesign', 'season', 'channel', 'seasons', 'language', 'host', 'shows', 'seat',
+    'achievements', 'genre', 'medium', 'cinema',
+    'link', 'subtitle', 'series', 'price', 'format', 'composer', 'ageRating', 'imdb', 'discs'];
 
   /* 看剧 / 观影笔记分区 */
   var SECTION_KEYS = [
@@ -90,51 +95,119 @@
   /* 每种类型额外字段（渲染用） */
   var EXTRA_FIELDS = {
     novel: [
-      { key: 'publisher', label: '出版社', placeholder: '选填' },
+      { key: 'publisher', label: '出版社', placeholder: '重庆出版社' },
       { key: 'translator', label: '译者', placeholder: '选填' },
-      { key: 'source', label: '书籍来源', options: ['购买', '借阅', '赠书', '图书馆', '电子书', '其他'] }
+      { key: 'subtitle', label: '副标题', placeholder: '选填' },
+      { key: 'series', label: '丛书 / 系列', placeholder: '选填' },
+      { key: 'serialStatus', label: '连载状态', options: ['已完结', '连载中', '暂停'] },
+      { key: 'firstPlatform', label: '首发平台', placeholder: '起点 / 晋江 / 实体书' },
+      { key: 'pages', label: '页数', placeholder: '320', numeric: true },
+      { key: 'words', label: '字数（万）', placeholder: '45', numeric: true },
+      { key: 'binding', label: '装帧', options: ['平装', '精装', '线装', '电子版', '其他'] },
+      { key: 'format', label: '阅读格式', options: ['纸质', '电子书', '有声书', '混合'] },
+      { key: 'source', label: '书籍来源', options: ['购买', '借阅', '赠书', '图书馆', '电子书', '其他'] },
+      { key: 'price', label: '定价（元）', placeholder: '59', numeric: true },
+      { key: 'isbn', label: 'ISBN', placeholder: '选填', wide: true }
     ],
     comic: [
-      { key: 'publisher', label: '出版社 / 连载杂志', placeholder: '选填' },
-      { key: 'serialStatus', label: '连载状态', placeholder: '连载中 / 已完结', options: ['连载中', '已完结', '休载'] },
-      { key: 'source', label: '书籍来源', options: ['购买', '借阅', '赠书', '图书馆', '电子书', '其他'] }
-    ],
-    tv: [
-      { key: 'platform', label: '播出平台', placeholder: 'Netflix / 爱奇艺 …' },
-      { key: 'runtime', label: '单集时长（分钟）', placeholder: '45', numeric: true },
-      { key: 'cast', label: '主演', placeholder: '用顿号分隔' }
+      { key: 'magazineName', label: '连载杂志 / 平台', placeholder: '少年 Jump / 哔哩哔哩漫画' },
+      { key: 'originalWork', label: '原作', placeholder: '选填' },
+      { key: 'artist', label: '作画', placeholder: '选填' },
+      { key: 'series', label: '丛书 / 系列', placeholder: '选填' },
+      { key: 'serialStatus', label: '连载状态', options: ['连载中', '已完结', '休载'] },
+      { key: 'volumes', label: '总卷数', placeholder: '24', numeric: true },
+      { key: 'epCount', label: '总话数', placeholder: '260', numeric: true },
+      { key: 'colorPages', label: '彩页', options: ['全彩', '部分彩页', '黑白'] },
+      { key: 'source', label: '书籍来源', options: ['购买', '借阅', '赠书', '图书馆', '电子书', '其他'] },
+      { key: 'price', label: '定价（元）', placeholder: '25', numeric: true },
+      { key: 'isbn', label: 'ISBN', placeholder: '选填', wide: true }
     ],
     anime: [
-      { key: 'studio', label: '制作公司', placeholder: 'MADHOUSE …' },
-      { key: 'platform', label: '播出平台', placeholder: 'B 站 / Netflix …' },
-      { key: 'cast', label: '主役声优', placeholder: '用顿号分隔' }
+      { key: 'studio', label: '动画制作', placeholder: 'MADHOUSE / 京都动画' },
+      { key: 'seriesComp', label: '系列构成', placeholder: '选填' },
+      { key: 'charDesign', label: '角色设计', placeholder: '选填' },
+      { key: 'composer', label: '配乐', placeholder: '选填' },
+      { key: 'season', label: '放送季度', placeholder: '2024 春 / 2024 秋' },
+      { key: 'epCount', label: '总话数', placeholder: '12', numeric: true },
+      { key: 'runtime', label: '单集时长（分钟）', placeholder: '24', numeric: true },
+      { key: 'ageRating', label: '分级', options: ['全年龄', '12+', '15+', '17+', '18+'] },
+      { key: 'platform', label: '放送平台', placeholder: 'B 站 / Netflix …' },
+      { key: 'cast', label: '主役声优', placeholder: '用顿号分隔', wide: true }
     ],
-    variety: [
-      { key: 'platform', label: '播出平台', placeholder: '芒果 TV …' },
-      { key: 'runtime', label: '单集时长（分钟）', placeholder: '90', numeric: true }
+    tv: [
+      { key: 'channel', label: '电视台 / 出品方', placeholder: 'HBO / 正午阳光' },
+      { key: 'screenwriter', label: '编剧', placeholder: '选填' },
+      { key: 'seasons', label: '季数', placeholder: '3', numeric: true },
+      { key: 'epCount', label: '总集数', placeholder: '24', numeric: true },
+      { key: 'runtime', label: '单集时长（分钟）', placeholder: '45', numeric: true },
+      { key: 'country', label: '国家 / 地区', placeholder: '中国大陆' },
+      { key: 'language', label: '语言', placeholder: '汉语普通话' },
+      { key: 'ageRating', label: '分级', options: ['全年龄', '12+', '15+', '17+', '18+'] },
+      { key: 'platform', label: '观看平台', placeholder: '爱奇艺 / Netflix …' },
+      { key: 'cast', label: '主演', placeholder: '用顿号分隔', wide: true }
     ],
     movie: [
       { key: 'runtime', label: '片长（分钟）', placeholder: '120', numeric: true },
-      { key: 'country', label: '制片国家 / 地区', placeholder: '中国大陆 / 日本 …' },
-      { key: 'cast', label: '主演', placeholder: '用顿号分隔' }
+      { key: 'country', label: '制片国家 / 地区', placeholder: '中国大陆 / 日本' },
+      { key: 'language', label: '语言', placeholder: '汉语普通话' },
+      { key: 'screenwriter', label: '编剧', placeholder: '选填' },
+      { key: 'watchPlace', label: '观看方式', options: ['影院', '流媒体', '下载', '电视', '飞机', '其他'] },
+      { key: 'ageRating', label: '分级', options: ['全年龄', '12+', '15+', '17+', '18+'] },
+      { key: 'imdb', label: 'IMDb', placeholder: 'tt0111161' },
+      { key: 'cinema', label: '影院 / 平台', placeholder: '万达影城 / Netflix' },
+      { key: 'cast', label: '主演', placeholder: '用顿号分隔', wide: true }
+    ],
+    variety: [
+      { key: 'channel', label: '电视台 / 平台', placeholder: '湖南卫视 / 芒果 TV' },
+      { key: 'host', label: '主持人', placeholder: '何炅 …' },
+      { key: 'epCount', label: '总期数', placeholder: '12', numeric: true },
+      { key: 'runtime', label: '单期时长（分钟）', placeholder: '90', numeric: true },
+      { key: 'studio', label: '制作团队', placeholder: '选填' },
+      { key: 'cast', label: '常驻嘉宾', placeholder: '用顿号分隔', wide: true }
     ],
     drama: [
-      { key: 'platform', label: '收听平台', placeholder: '猫耳 FM / M 站 …' },
-      { key: 'cv', label: '主役声优', placeholder: '选填' }
+      { key: 'platform', label: '收听平台', placeholder: '猫耳 FM / M 站' },
+      { key: 'originalWork', label: '原作', placeholder: '选填' },
+      { key: 'studio', label: '制作组', placeholder: '选填' },
+      { key: 'composer', label: '配乐', placeholder: '选填' },
+      { key: 'epCount', label: '总集数', placeholder: '12', numeric: true },
+      { key: 'runtime', label: '单集时长（分钟）', placeholder: '30', numeric: true },
+      { key: 'cv', label: '主役声优', placeholder: '用顿号分隔', wide: true }
     ],
     stage: [
-      { key: 'venue', label: '剧场 / 城市', placeholder: '选填' },
-      { key: 'runtime', label: '时长（分钟）', placeholder: '150', numeric: true }
+      { key: 'studio', label: '剧团', placeholder: '选填' },
+      { key: 'venue', label: '剧场 / 城市', placeholder: '上海文化广场' },
+      { key: 'shows', label: '场次', placeholder: '第 3 场', numeric: true },
+      { key: 'runtime', label: '时长（分钟）', placeholder: '150', numeric: true },
+      { key: 'seat', label: '座位', placeholder: '池座 5 排 12 号' },
+      { key: 'cast', label: '主演', placeholder: '用顿号分隔', wide: true }
     ],
     game: [
-      { key: 'platform', label: '平台', placeholder: 'PC / PS5 / Switch …' },
-      { key: 'gameType', label: '类型', options: ['单机', '手游', '主机', '网页', '独立', '其他'] }
+      { key: 'platform', label: '平台', placeholder: 'PC / PS5 / Switch' },
+      { key: 'gameType', label: '类型', options: ['单机', '手游', '主机', '网页', '独立', '其他'] },
+      { key: 'studio', label: '开发商', placeholder: '选填' },
+      { key: 'publisher', label: '发行商', placeholder: '选填' },
+      { key: 'playTime', label: '通关时长（小时）', placeholder: '35', numeric: true },
+      { key: 'completion', label: '通关情况', options: ['主线通关', '全成就', '未通关', '云通关'] },
+      { key: 'ageRating', label: '分级', options: ['全年龄', '12+', '15+', '17+', '18+'] },
+      { key: 'achievements', label: '成就 / 奖杯', placeholder: '42/50', wide: true }
     ],
     music: [
-      { key: 'publisher', label: '唱片公司', placeholder: '选填' },
-      { key: 'albumType', label: '专辑类型', options: ['专辑', '单曲', 'OST', '角色歌', '同人'] }
+      { key: 'albumType', label: '类型', options: ['专辑', '单曲', 'EP', 'OST', 'Live', '合集'] },
+      { key: 'genre', label: '流派', placeholder: '流行 / 摇滚 / 电子' },
+      { key: 'tracks', label: '曲目数', placeholder: '12', numeric: true },
+      { key: 'discs', label: '唱片数', placeholder: '1', numeric: true },
+      { key: 'runtime', label: '总时长（分钟）', placeholder: '48', numeric: true },
+      { key: 'medium', label: '介质', options: ['数字', 'CD', '黑胶', '磁带'] },
+      { key: 'publisher', label: '发行厂牌', placeholder: '选填' },
+      { key: 'price', label: '定价（元）', placeholder: '128', numeric: true },
+      { key: 'platform', label: '收听平台', placeholder: '网易云 / Spotify', wide: true }
     ],
-    magazine: []
+    magazine: [
+      { key: 'publisher', label: '出版方', placeholder: '选填' },
+      { key: 'serialStatus', label: '刊期状态', options: ['在刊', '休刊', '停刊'] },
+      { key: 'price', label: '定价（元）', placeholder: '20', numeric: true }
+    ]
   };
 
   var STATUSES = { wish: '愿望单', doing: '进行中', done: '已完成', paused: '搁置' };
@@ -323,6 +396,15 @@
     return o;
   }
 
+  function normalizeCustom(list) {
+    if (!Array.isArray(list)) return [];
+    return list.filter(function (x) {
+      return x && typeof x === 'object' && String(x.k || '').trim();
+    }).slice(0, 30).map(function (x) {
+      return { k: String(x.k).trim().slice(0, 20), v: String(x.v == null ? '' : x.v).trim().slice(0, 120) };
+    });
+  }
+
   function normalizeMagazine(m, fallbackYear) {
     var o = m && typeof m === 'object' ? m : {};
     var y = String(o.year || '');
@@ -493,6 +575,7 @@
       cover: safeCover(r.cover),
       updateDay: updateDay,
       meta: normalizeMeta(r.meta),
+      custom: normalizeCustom(r.custom),
       magazine: normalizeMagazine(r.magazine, r.year),
       startedAt: startedAt,
       finishedAt: finishedAt,
@@ -947,6 +1030,10 @@
     if (state.ui.sortMode) enableDragSort();
     if (state.route.name === 'quotes' && state.ui.quoteQ) filterQuoteCards(state.ui.quoteQ);
     if (state.route.name === 'settings') { paintServerVersion(); paintStorageInfo(); }
+    if (state.route.name === 'stats') {
+      var hw = document.querySelector('.heat-wrap');
+      if (hw) hw.scrollLeft = hw.scrollWidth;
+    }
   }
 
   function updateTabbar() {
@@ -2010,6 +2097,7 @@
         status: 'wish', review: '', quotes: [], hours: 0, cover: '', updateDay: -1,
         douban: 0, recommend: '', category: '', sections: {}, notesLog: [],
         meta: {},
+        custom: [],
         magazine: normalizeMagazine({}, ''),
         startedAt: '', finishedAt: '', episodes: [],
         progress: {
@@ -2073,6 +2161,10 @@
 
       '<label class="field"><span class="field-label">' + esc(meta.creator) + '</span>' +
       '<input class="input" data-field="creator" value="' + esc(d.creator) + '" placeholder="' + esc(meta.creatorHint) + '"></label>' +
+
+      '<label class="field"><span class="field-label">条目链接</span>' +
+      '<input class="input" data-field="meta.link" value="' + esc((d.meta || {}).link || '') +
+      '" inputmode="url" placeholder="豆瓣 / Bangumi / Steam 页面地址，选填"></label>' +
 
       '<div class="row2">' +
       '<label class="field"><span class="field-label">年份</span>' +
@@ -2242,6 +2334,16 @@
     if (path === 'p.total') { d.progress.total = num(value); return; }
     if (path === 'p.percent') {
       d.progress.percent = Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+      return;
+    }
+
+    /* 自定义字段：custom.0.k / custom.0.v */
+    if (path.indexOf('custom.') === 0) {
+      var cp = path.split('.');
+      var ci = Number(cp[1]);
+      if (!Array.isArray(d.custom)) d.custom = [];
+      if (!d.custom[ci]) d.custom[ci] = { k: '', v: '' };
+      d.custom[ci][cp[2]] = value;
       return;
     }
 
@@ -2510,7 +2612,8 @@
     var list = EXTRA_FIELDS[d.type] || [];
     if (!list.length) return '';
     var m = d.meta || (d.meta = {});
-    var cells = list.map(function (f) {
+    var pairs = [], wides = [];
+    list.forEach(function (f) {
       var val = m[f.key] == null ? '' : String(m[f.key]);
       var input;
       if (f.options) {
@@ -2523,10 +2626,35 @@
         input = '<input class="input" ' + (f.numeric ? 'type="number" min="0" ' : '') +
           'data-field="meta.' + f.key + '" value="' + esc(val) + '" placeholder="' + esc(f.placeholder || '选填') + '">';
       }
-      return '<label class="field"><span class="field-label">' + esc(f.label) + '</span>' + input + '</label>';
+      var cell = '<label class="field"><span class="field-label">' + esc(f.label) + '</span>' + input + '</label>';
+      if (f.wide) wides.push(cell); else pairs.push(cell);
     });
-    return '<section class="block"><p class="block-title">' + TYPES[d.type].label + '信息</p>' +
-      '<div class="row2">' + cells.join('') + '</div></section>';
+
+    var body = '';
+    for (var i = 0; i < pairs.length; i += 2) {
+      body += '<div class="row2">' + pairs[i] + (pairs[i + 1] || '<span></span>') + '</div>';
+    }
+    body += wides.join('');
+
+    var section = '<section class="block"><p class="block-title">' + TYPES[d.type].label + '信息</p>' + body + '</section>';
+    return section + customFieldsHTML(d);
+  }
+
+  function customFieldsHTML(d) {
+    var list = Array.isArray(d.custom) ? d.custom : [];
+    var rows = list.map(function (row, i) {
+      return '<div class="custom-row">' +
+        '<input class="input custom-k" data-custom="' + i + '.k" value="' + esc(row.k || '') + '" placeholder="字段名" maxlength="20">' +
+        '<input class="input custom-v" data-custom="' + i + '.v" value="' + esc(row.v || '') + '" placeholder="内容" maxlength="120">' +
+        '<button class="icon-btn custom-del" data-action="del-custom" data-idx="' + i + '" aria-label="删除字段">' +
+        icon('close', 14) + '</button>' +
+        '</div>';
+    }).join('');
+
+    return '<section class="block"><p class="block-title">自定义字段</p>' +
+      (rows || '<p class="hint" style="margin:2px 0 8px">想记点这个类型没有的东西？自己加一行。</p>') +
+      '<button class="btn btn-ghost btn-sm" data-action="add-custom" style="margin-top:8px">＋ 添加字段</button>' +
+      '</section>';
   }
 
   function starInputHTML(rating) {
@@ -2621,6 +2749,7 @@
       cover: d.cover,
       updateDay: d.updateDay,
       meta: d.meta || {},
+      custom: d.custom || [],
       magazine: d.magazine || {},
       startedAt: startedAt,
       finishedAt: finishedAt,
@@ -3039,6 +3168,147 @@
     return o;
   }
 
+  /* ---------------- 评分分布 ---------------- */
+  function ratingBarsSVG(recs) {
+    var buckets = [];
+    for (var i = 1; i <= 10; i++) buckets.push(0);
+    var rated = recs.filter(function (r) { return r.rating > 0; });
+    rated.forEach(function (r) {
+      var b = Math.min(10, Math.max(1, Math.round(r.rating)));
+      buckets[b - 1]++;
+    });
+    var max = Math.max.apply(null, buckets.concat([1]));
+    var W = 320, H = 104, gap = 7, pad = 4;
+    var bw = (W - gap * 9 - pad * 2) / 10;
+    var out = '<svg class="bars-svg" viewBox="0 0 ' + W + ' ' + H + '">';
+    buckets.forEach(function (n, i) {
+      var h = Math.round((n / max) * (H - 30));
+      var x = pad + i * (bw + gap);
+      var y = H - 18 - h;
+      out += '<rect x="' + x.toFixed(1) + '" y="' + (n ? y : H - 18) + '" width="' + bw.toFixed(1) +
+        '" height="' + (n ? h : 1) + '" rx="3" fill="' + (n ? 'var(--accent)' : 'var(--line)') + '" opacity="' + (n ? (0.55 + 0.45 * (n / max)).toFixed(2) : 1) + '"></rect>';
+      if (n) out += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (y - 4) + '" text-anchor="middle" class="bar-num">' + n + '</text>';
+      if (i % 2 === 0) out += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - 5) + '" text-anchor="middle" class="bar-x">' + (i + 1) + '</text>';
+    });
+    out += '</svg>';
+    return out;
+  }
+
+  /* ---------------- 打卡热力图 ---------------- */
+  function heatmapSVG() {
+    var byDate = {};
+    state.checkins.forEach(function (c) {
+      if (!c || !c.date) return;
+      byDate[c.date] = (byDate[c.date] || 0) + (c.minutes || 0);
+    });
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    var start = new Date(today.getTime() - 364 * DAY);
+    var shift = (start.getDay() + 6) % 7;            /* 周一为一周起点 */
+    start = new Date(start.getTime() - shift * DAY);
+
+    var cell = 11, gap = 2, rows = 7;
+    var days = Math.floor((today.getTime() - start.getTime()) / DAY) + 1;
+    var cols = Math.ceil(days / rows);
+    var W = cols * (cell + gap), H = rows * (cell + gap);
+    var out = '<svg class="heat-svg" viewBox="0 0 ' + W + ' ' + H + '">';
+
+    for (var i = 0; i < days; i++) {
+      var d = new Date(start.getTime() + i * DAY);
+      var key = ymd(d);
+      var m = byDate[key] || 0;
+      var lv = m === 0 ? 0 : m < 30 ? 1 : m < 60 ? 2 : m < 120 ? 3 : 4;
+      var x = Math.floor(i / rows) * (cell + gap);
+      var y = (i % rows) * (cell + gap);
+      out += '<rect class="hm hm-' + lv + '" x="' + x + '" y="' + y + '" width="' + cell +
+        '" height="' + cell + '" rx="2.5"><title>' + key + (m ? ' · ' + m + ' 分钟' : ' · 未打卡') + '</title></rect>';
+    }
+    out += '</svg>';
+    return out;
+  }
+
+  /* ---------------- 各类型平均分 ---------------- */
+  function typeAvgHTML(recs) {
+    var rows = [];
+    TYPE_KEYS.forEach(function (k) {
+      var list = recs.filter(function (r) { return r.type === k && r.rating > 0; });
+      if (!list.length) return;
+      var sum = list.reduce(function (a, r) { return a + r.rating; }, 0);
+      rows.push({ key: k, avg: sum / list.length, n: list.length });
+    });
+    rows.sort(function (a, b) { return b.avg - a.avg; });
+    if (!rows.length) return '<p class="muted">还没有评分数据。</p>';
+    return rows.map(function (row) {
+      var pct = Math.round(row.avg / 10 * 100);
+      return '<div class="avg-row"><span class="avg-name">' + TYPES[row.key].label + '</span>' +
+        '<span class="avg-bar"><i style="width:' + pct + '%;background:var(--t-' + row.key + ')"></i></span>' +
+        '<span class="avg-val">' + ratingText(row.avg) + '<em>' + row.n + '</em></span></div>';
+    }).join('');
+  }
+
+  /* ---------------- 数据健康检查 ---------------- */
+  function healthIssues() {
+    var recs = state.records;
+    var issues = [];
+    function push(label, list, tip, names) {
+      if (!list.length) return;
+      issues.push({ label: label, count: list.length, tip: tip, names: names || [] });
+    }
+
+    var map = {};
+    recs.forEach(function (r) {
+      var k = r.type + '|' + String(r.title || '').trim().toLowerCase();
+      (map[k] = map[k] || []).push(r);
+    });
+    var dups = Object.keys(map).filter(function (k) { return map[k].length > 1; });
+    push('重复条目', dups, '同类型下标题完全一样，建议合并',
+      dups.slice(0, 4).map(function (k) { return map[k][0].title; }));
+
+    push('缺少封面', recs.filter(function (r) { return !r.cover; }), '列表里会显示纯色占位',
+      recs.filter(function (r) { return !r.cover; }).slice(0, 4).map(function (r) { return r.title; }));
+
+    push('已完成但没有评分', recs.filter(function (r) { return r.status === 'done' && !r.rating; }),
+      '会影响平均分统计',
+      recs.filter(function (r) { return r.status === 'done' && !r.rating; }).slice(0, 4).map(function (r) { return r.title; }));
+
+    push('缺少主创信息', recs.filter(function (r) { return !r.creator; }), '作者 / 导演 / 制作方等',
+      recs.filter(function (r) { return !r.creator; }).slice(0, 4).map(function (r) { return r.title; }));
+
+    push('缺少年份', recs.filter(function (r) { return !r.year; }), '影响归档与时间线',
+      recs.filter(function (r) { return !r.year; }).slice(0, 4).map(function (r) { return r.title; }));
+
+    var dupTags = recs.filter(function (r) {
+      var seen = {}, dup = false;
+      (r.tags || []).forEach(function (t) { if (seen[t]) dup = true; seen[t] = 1; });
+      return dup;
+    });
+    push('标签重复', dupTags, '同一条记录里出现了相同标签',
+      dupTags.slice(0, 4).map(function (r) { return r.title; }));
+
+    return issues;
+  }
+
+  function openHealth() {
+    var issues = healthIssues();
+    var body;
+    if (!issues.length) {
+      body = '<div class="health-ok">' + icon('check', 18) + '<span>没有发现问题，数据很干净。</span></div>';
+    } else {
+      body = '<div class="health-list">' + issues.map(function (it) {
+        return '<div class="health-row">' +
+          '<div class="health-head"><strong>' + esc(it.label) + '</strong><span class="health-num">' + it.count + ' 条</span></div>' +
+          '<div class="health-tip">' + esc(it.tip) + '</div>' +
+          (it.names.length ? '<div class="health-names">' + it.names.map(function (n) { return esc(n); }).join(' · ') + (it.count > it.names.length ? ' …' : '') + '</div>' : '') +
+          '</div>';
+      }).join('') + '</div>';
+    }
+    openModal({
+      title: '数据健康检查',
+      body: body,
+      actions: [{ label: '知道了', value: null, variant: 'primary' }]
+    });
+  }
+
   function statsView() {
     var recs = state.records;
     var total = recs.length;
@@ -3092,6 +3362,32 @@
         '<div><strong>' + fmtHours(ck.minutes / 60) + '</strong><span>累计小时</span></div>' +
         '</div></div>';
     }
+
+    /* 评分分布 */
+    var ratedAll = recs.filter(function (r) { return r.rating > 0; });
+    if (ratedAll.length) {
+      var topBucket = 0, topN = 0;
+      for (var bi = 1; bi <= 10; bi++) {
+        var cnt = ratedAll.filter(function (r) { return Math.round(r.rating) === bi; }).length;
+        if (cnt > topN) { topN = cnt; topBucket = bi; }
+      }
+      html += '<div class="chart-card"><div class="chart-head"><h3 class="chart-title">评分分布</h3>' +
+        '<span class="chart-note">' + ratedAll.length + ' 条已评分 · 最多 ' + topBucket + ' 分</span></div>' +
+        ratingBarsSVG(recs) + '</div>';
+    }
+
+    /* 打卡热力图 */
+    html += '<div class="chart-card"><div class="chart-head"><h3 class="chart-title">打卡热力图</h3>' +
+      '<span class="chart-note">近一年 · 共 ' + Object.keys(state.checkins.reduce(function (m, c) {
+        if (c && c.date) m[c.date] = 1; return m;
+      }, {})).length + ' 天</span></div>' +
+      '<div class="heat-wrap">' + heatmapSVG() + '</div>' +
+      '<div class="heat-legend"><span>少</span><i class="lg lg-0"></i><i class="lg lg-1"></i><i class="lg lg-2"></i><i class="lg lg-3"></i><i class="lg lg-4"></i><span>多</span></div>' +
+      '</div>';
+
+    /* 各类型平均分 */
+    html += '<div class="chart-card"><div class="chart-head"><h3 class="chart-title">各类型平均分</h3>' +
+      '<span class="chart-note">括号内为条数</span></div>' + typeAvgHTML(recs) + '</div>';
 
     /* 细分洞察 */
     html += insightHTML(recs);
@@ -3952,6 +4248,10 @@
       '<div class="set-label">从文本批量导入</div>' +
       '<div class="set-desc">粘贴豆瓣 / Bangumi 条目文本或 JSON，一次生成多条</div>' +
       '</div><button class="btn btn-ghost btn-sm" data-action="bulk-import">粘贴导入</button></div>' +
+      '<div class="set-row"><div class="set-row-main">' +
+      '<div class="set-label">数据健康检查</div>' +
+      '<div class="set-desc">检查重复条目、缺封面、缺评分等问题</div>' +
+      '</div><button class="btn btn-ghost btn-sm" data-action="health">检查</button></div>' +
       '<div class="set-row"><div class="set-row-main">' +
       '<div class="set-label">跨设备同步</div>' +
       '<div class="set-desc">导出后在另一台设备导入即可，数据不经过任何服务器</div>' +
@@ -5819,6 +6119,29 @@
         exportMarkdown();
         break;
 
+      case 'health':
+        openHealth();
+        break;
+
+      case 'add-custom':
+        if (state.draft) {
+          if (!Array.isArray(state.draft.custom)) state.draft.custom = [];
+          if (state.draft.custom.length >= 30) { toast('最多 30 个自定义字段'); break; }
+          state.draft.custom.push({ k: '', v: '' });
+          render({ keepScroll: true });
+          var lastK = document.querySelectorAll('.custom-k');
+          if (lastK.length) lastK[lastK.length - 1].focus();
+        }
+        break;
+
+      case 'del-custom':
+        if (state.draft && Array.isArray(state.draft.custom)) {
+          var di = Number(el.dataset.idx);
+          state.draft.custom.splice(di, 1);
+          render({ keepScroll: true });
+        }
+        break;
+
       case 'go':
         location.hash = '#/' + el.dataset.to;
         break;
@@ -5888,10 +6211,108 @@
     }
   }
 
+  /* 粘贴文本里的「键：值」映射到对应字段 */
+  var PASTE_KEY_MAP = {
+    '出版社': 'publisher', '出版方': 'publisher', '发行': 'publisher', '发行商': 'publisher', '厂牌': 'publisher',
+    '译者': 'translator',
+    'ISBN': 'isbn',
+    '页数': 'pages',
+    '字数': 'words',
+    '卷数': 'volumes',
+    '主演': 'cast', '主要演员': 'cast', '嘉宾': 'cast',
+    '编剧': 'screenwriter',
+    '片长': 'runtime', '时长': 'runtime', '单集时长': 'runtime', '总时长': 'runtime',
+    '平台': 'platform', '播出平台': 'platform', '收听平台': 'platform', '上线平台': 'platform',
+    '电视台': 'channel', '频道': 'channel', '出品方': 'channel',
+    '主持人': 'host', '嘉宾': 'cast',
+    '剧场': 'venue', '场馆': 'venue', '场次': 'shows', '座位': 'seat',
+    '语言': 'language',
+    '流派': 'genre', '介质': 'medium',
+    '连载杂志': 'magazineName', '原作': 'originalWork', '作画': 'artist',
+    '总话数': 'epCount', '集数': 'epCount', '总集数': 'epCount', '期数': 'epCount',
+    '季数': 'seasons', '放送季度': 'season',
+    '装帧': 'binding', '首发': 'firstPlatform',
+    '系列构成': 'seriesComp', '角色设计': 'charDesign',
+    '成就': 'achievements', '奖杯': 'achievements',
+    '定价': 'price', '价格': 'price', '丛书': 'series', '系列': 'series',
+    '副标题': 'subtitle', '副题': 'subtitle',
+    '唱片数': 'discs', '碟数': 'discs',
+    '配乐': 'composer', '音乐': 'composer',
+    '分级': 'ageRating', 'IMDb': 'imdb',
+    '链接': 'link', '条目链接': 'link', '豆瓣链接': 'link',
+    '阅读格式': 'format',
+    '制作公司': 'studio', '动画制作': 'studio', '开发商': 'studio', '制作组': 'studio', '剧团': 'studio',
+    '国家': 'country', '制片国家': 'country', '地区': 'country',
+    '曲目': 'tracks', '曲目数': 'tracks',
+    '声优': 'cv', '主役声优': 'cv',
+    '剧场': 'venue', '场馆': 'venue',
+    '平台类型': 'gameType',
+    '连载状态': 'serialStatus', '状态': 'serialStatus'
+  };
+
+  function extractRich(text) {
+    var out = { meta: {}, cover: '', review: '' };
+    var lines = String(text || '').split(/\r?\n/);
+
+    /* 封面：优先 markdown 图片，其次裸链接 */
+    var md = text.match(/!\[[^\]]*\]\((https?:\/\/[^)\s]+)\)/);
+    if (md) out.cover = md[1];
+    if (!out.cover) {
+      var m2 = text.match(/https?:\/\/[^\s"'<>]+?\.(?:jpg|jpeg|png|webp)(?:\?[^\s"'<>]*)?/i);
+      if (m2) out.cover = m2[0];
+    }
+
+    /* 键：值 */
+    lines.forEach(function (line) {
+      var m = line.match(/^\s*([^：:]{1,10})[：:]\s*(.+?)\s*$/);
+      if (!m) return;
+      var key = m[1].replace(/\s+/g, '');
+      var val = m[2].trim();
+      if (!val) return;
+      var target = PASTE_KEY_MAP[key];
+      if (!target) return;
+      if (target === 'runtime' || target === 'pages' || target === 'words' ||
+          target === 'volumes' || target === 'tracks') {
+        var num = val.match(/\d+(?:\.\d+)?/);
+        if (num) out.meta[target] = num[0];
+        return;
+      }
+      out.meta[target] = val.slice(0, 60);
+    });
+
+    /* 简介：最长的一段纯文字 */
+    var best = '';
+    lines.forEach(function (line) {
+      var t = line.trim();
+      if (t.length < 30) return;
+      if (/^[\w\s：:]+$/.test(t) && t.length < 60) return;
+      if (t.length > best.length) best = t;
+    });
+    if (best) out.review = best.slice(0, 400);
+
+    return out;
+  }
+
   function parsePaste() {
     var text = state.pasteText || '';
     if (!text.trim()) {
       toast('先粘贴一段文字');
+      return;
+    }
+
+    /* 只贴了一个链接：读不到内容，直接说清楚 */
+    var onlyUrl = text.trim().match(/^(https?:\/\/\S+)$/);
+    if (onlyUrl) {
+      var u = onlyUrl[1];
+      var isImg = /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(u);
+      var d0 = state.draft;
+      if (isImg && d0) {
+        d0.cover = u;
+        render({ keepScroll: true });
+        toast('这是图片链接，已设为封面');
+        return;
+      }
+      toast('只贴链接读不到内容：浏览器不能跨站抓取网页，请在网页上全选复制文字再粘贴');
       return;
     }
     var result = parseText(text);
@@ -5921,6 +6342,17 @@
       });
       filled.push('标签');
     }
+    /* 封面与类型专属字段 */
+    var rich = extractRich(text);
+    if (rich.cover && !d.cover) { d.cover = rich.cover; filled.push('封面'); }
+    if (!d.meta) d.meta = {};
+    var metaN = 0;
+    Object.keys(rich.meta).forEach(function (k) {
+      if (!d.meta[k]) { d.meta[k] = rich.meta[k]; metaN++; }
+    });
+    if (metaN) filled.push('专属信息 ' + metaN + ' 项');
+    if (rich.review && !d.review) { d.review = rich.review; filled.push('简介'); }
+
     if (!filled.length) {
       toast('没能识别出字段，手动填一下吧');
       return;
@@ -6047,6 +6479,11 @@
         if (el.id === 'goal-count') state.prefs.goalCount = gv;
         else state.prefs.goalHours = gv;
         savePrefs();
+        return;
+      }
+
+      if (el.dataset && el.dataset.custom && state.draft) {
+        setDraftField('custom.' + el.dataset.custom, el.value);
         return;
       }
 
