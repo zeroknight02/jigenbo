@@ -1,0 +1,41 @@
+{
+  "id": "./",
+  "name": "次元簿 · 我的文娱档案",
+  "short_name": "次元簿",
+  "description": "小说、漫画、动漫、影视、综艺、广播剧、舞台剧、游戏、音乐、期刊的个人文娱档案：记录进度、评分、金句与年度回顾。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#FAF7FF",
+  "theme_color": "#E8457A",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "categories": ["lifestyle", "entertainment", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "快速记录",
+      "short_name": "记录",
+      "url": "./index.html#/new",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "我的收藏",
+      "short_name": "收藏",
+      "url": "./index.html#/library",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "年度数据",
+      "short_name": "数据",
+      "url": "./index.html#/stats",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
