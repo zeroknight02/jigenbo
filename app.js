@@ -10,8 +10,8 @@
   var SCHEMA_VERSION = 1;
 
   /* 每次发布改这里和 sw.js 的 VERSION（两者一起改） */
-  var APP_VERSION = '1.22';
-  var SW_VERSION = 'v23';
+  var APP_VERSION = '1.31';
+  var SW_VERSION = 'v32';
   var DB_KEY = 'shilu.db.v1';
   var PREF_KEY = 'shilu.prefs.v1';
   var DAY = 86400000;
@@ -204,7 +204,6 @@
       { key: 'platform', label: '收听平台', placeholder: '网易云 / Spotify', wide: true }
     ],
     magazine: [
-      { key: 'publisher', label: '出版方', placeholder: '选填' },
       { key: 'serialStatus', label: '刊期状态', options: ['在刊', '休刊', '停刊'] },
       { key: 'price', label: '定价（元）', placeholder: '20', numeric: true }
     ]
@@ -660,12 +659,22 @@
   }
 
   function load() {
+    var raw = null;
     try {
-      var raw = localStorage.getItem(DB_KEY);
-      if (raw) currentSavedAt = applyRaw(raw);
+      raw = localStorage.getItem(DB_KEY);
     } catch (e) {
-      console.warn('读取本地缓存失败', e);
+      raw = null;
     }
+    if (raw) {
+      var okCache = true;
+      try { JSON.parse(raw); } catch (e) { okCache = false; }
+      if (!okCache) {
+        /* 缓存损坏：清掉，让 initDB 从数据库恢复，避免空数据覆盖真数据 */
+        try { localStorage.removeItem(DB_KEY); } catch (e2) { /* ignore */ }
+        raw = null;
+      }
+    }
+    if (raw) currentSavedAt = applyRaw(raw);
     try {
       var p = JSON.parse(localStorage.getItem(PREF_KEY) || '{}');
       if (p.theme) state.prefs.theme = p.theme;
@@ -1006,6 +1015,12 @@
     var y = window.scrollY;
     var r = state.route;
     document.body.classList.toggle('is-editing', r.name === 'new' || r.name === 'edit');
+    if (r.name !== 'edit' && state.readonly) {
+      /* 离开详情页就把只读状态清掉，否则会泄漏到别的页面，把保存/新建等动作静默拦掉 */
+      state.readonly = false;
+      try { sessionStorage.removeItem('shilu.ro.v1'); } catch (e) { /* ignore */ }
+    }
+    view.classList.toggle('is-readonly', !!state.readonly && r.name === 'edit');
     document.body.classList.toggle('is-selecting', !!state.ui.selectMode && r.name === 'library');
 
     var html = '';
@@ -1033,6 +1048,14 @@
     if (state.route.name === 'stats') {
       var hw = document.querySelector('.heat-wrap');
       if (hw) hw.scrollLeft = hw.scrollWidth;
+    }
+    if (state.route.name === 'library' && state.libQ) filterLibraryCards(state.libQ);
+    if (state.readonly && state.route.name === 'edit') {
+      /* 只读详情：输入框加 readonly，下拉禁用，键盘也改不了 */
+      var roInputs = view.querySelectorAll('input, textarea');
+      for (var ri2 = 0; ri2 < roInputs.length; ri2++) roInputs[ri2].readOnly = true;
+      var roSelects = view.querySelectorAll('select');
+      for (var ri3 = 0; ri3 < roSelects.length; ri3++) roSelects[ri3].disabled = true;
     }
   }
 
@@ -1414,7 +1437,25 @@
       (r.review || '').toLowerCase().indexOf(s) >= 0 ||
       (r.quotes || []).some(function (q) { return q.text.toLowerCase().indexOf(s) >= 0; }) ||
       (r.type === 'magazine' && magazineIssueText(r).toLowerCase().indexOf(s) >= 0) ||
-      (r.tags || []).some(function (t) { return t.toLowerCase().indexOf(s) >= 0; });
+      (r.tags || []).some(function (t) { return t.toLowerCase().indexOf(s) >= 0; }) ||
+      metaHit(r, s) ||
+      customHit(r, s);
+  }
+
+  function metaHit(r, s) {
+    var m = r.meta;
+    if (!m) return false;
+    for (var k in m) {
+      if (m[k] && String(m[k]).toLowerCase().indexOf(s) >= 0) return true;
+    }
+    return false;
+  }
+
+  function customHit(r, s) {
+    if (!Array.isArray(r.custom)) return false;
+    return r.custom.some(function (c) {
+      return (String(c.k || '') + ' ' + String(c.v || '')).toLowerCase().indexOf(s) >= 0;
+    });
   }
 
   function searchResultsHTML(q) {
@@ -1574,6 +1615,14 @@
       '<button class="icon-btn" data-action="settings" aria-label="设置">' + icon('gear', 20) + '</button>' +
       '</div></header>';
 
+    /* 搜索 */
+    if (state.records.length) {
+      html += '<div class="search lib-search">' + icon('search', 18) +
+        '<input id="lib-search" type="search" placeholder="搜标题、创作者、出版社、标签…" autocomplete="off" value="' + esc(state.libQ || '') + '">' +
+        '<button class="search-clear" data-action="clear-lib-search" aria-label="清空搜索">' + icon('close', 15) + '</button>' +
+        '</div>';
+    }
+
     /* 列表 chips */
     html += '<div class="list-bar">' +
       '<button class="list-chip ' + (state.ui.listId === 'all' ? 'is-on' : '') + '" data-action="pick-list" data-id="all">全部</button>' +
@@ -1661,11 +1710,14 @@
       }
     }
 
+    html += '<p class="lib-empty hidden" id="lib-empty">没有匹配的记录，换个词试试</p>';
+
     if (selecting) {
       html += '<div class="select-bar">' +
         '<span class="select-count">已选 <b>' + selCount + '</b></span>' +
         '<button class="btn btn-ghost btn-sm" data-action="select-all">全选</button>' +
         '<button class="btn btn-ghost btn-sm" data-action="bulk-status">状态</button>' +
+        '<button class="btn btn-ghost btn-sm" data-action="bulk-rating">评分</button>' +
         '<button class="btn btn-ghost btn-sm" data-action="bulk-tag">标签</button>' +
         '<button class="btn btn-ghost btn-sm danger" data-action="bulk-delete">删除</button>' +
         '<button class="btn btn-primary btn-sm" data-action="exit-select">完成</button>' +
@@ -1678,7 +1730,8 @@
     var selecting = state.ui.selectMode;
     var checked = !!state.ui.selected[r.id];
     return '<div class="wcard' + (selecting ? ' is-selecting' : '') + (checked ? ' is-checked' : '') + '" ' +
-      (selecting ? 'data-action="toggle-select"' : 'data-action="open"') + ' data-id="' + r.id + '" role="button" tabindex="0" ' +
+      (selecting ? 'data-action="toggle-select"' : 'data-action="open"') + ' data-id="' + r.id +
+      '" data-hay="' + esc(haystack(r)) + '" role="button" tabindex="0" ' +
       'style="--cc:' + coverColor(r.title) + '">' +
       coverInner(r) +
       '<span class="wcard-tip">' + esc(r.title) + '</span>' +
@@ -1697,11 +1750,63 @@
       '</div>';
   }
 
+  function metaLabel(key) {
+    for (var t in EXTRA_FIELDS) {
+      var list = EXTRA_FIELDS[t];
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].key === key) return list[i].label;
+      }
+    }
+    if (key === 'link') return '条目链接';
+    return key;
+  }
+
+  function metaSummary(r) {
+    var m = r.meta || {};
+    var parts = [];
+    META_KEYS.forEach(function (k) {
+      if (m[k]) parts.push(metaLabel(k) + '=' + m[k]);
+    });
+    return parts.join('; ');
+  }
+
+  function customSummary(r) {
+    if (!Array.isArray(r.custom)) return '';
+    return r.custom.filter(function (c) { return c && c.k; })
+      .map(function (c) { return c.k + '=' + (c.v || ''); }).join('; ');
+  }
+
+  /* 卡片上的一行摘要：优先显示最能代表这个类型的字段 */
+  function cardSub(r) {
+    var m = r.meta || {};
+    var bits = [];
+    var order = ['publisher', 'channel', 'platform', 'studio', 'magazineName', 'venue'];
+    for (var i = 0; i < order.length; i++) {
+      if (m[order[i]]) { bits.push(m[order[i]]); break; }
+    }
+    if (!bits.length && Array.isArray(r.custom) && r.custom[0] && r.custom[0].v) {
+      bits.push(r.custom[0].k + '：' + r.custom[0].v);
+    }
+    if (r.year) bits.push(r.year);
+    return bits.slice(0, 2).join(' · ');
+  }
+
+  function haystack(r) {
+    var bits = [r.title, r.originalTitle, r.creator, r.year, r.review,
+      (r.aliases || []).join(' '), (r.tags || []).join(' ')];
+    var m = r.meta || {};
+    for (var k in m) { if (m[k]) bits.push(m[k]); }
+    (r.custom || []).forEach(function (c) { bits.push(c.k, c.v); });
+    (r.quotes || []).forEach(function (q) { bits.push(q.text); });
+    return bits.filter(Boolean).join(' ').toLowerCase();
+  }
+
   function posterCard(r) {
     var selecting = state.ui.selectMode;
     var checked = !!state.ui.selected[r.id];
     return '<div class="pcard' + (selecting ? ' is-selecting' : '') + (checked ? ' is-checked' : '') + '" ' +
-      (selecting ? 'data-action="toggle-select"' : 'data-action="open"') + ' data-id="' + r.id + '" role="button" tabindex="0">' +
+      (selecting ? 'data-action="toggle-select"' : 'data-action="open"') + ' data-id="' + r.id +
+      '" data-hay="' + esc(haystack(r)) + '" role="button" tabindex="0">' +
       '<div class="pcard-cover" style="--cc:' + coverColor(r.title) + '">' +
       coverInner(r) +
       '<span class="pcard-type">' + TYPES[r.type].label + '</span>' +
@@ -1709,6 +1814,7 @@
       '</div>' +
       '<div class="pcard-body">' +
       '<h3 class="pcard-title">' + esc(r.title) + '</h3>' +
+      (cardSub(r) ? '<p class="pcard-sub">' + esc(cardSub(r)) + '</p>' : '') +
       '<div class="pcard-meta">' +
       '<span class="sdot" data-s="' + r.status + '"></span>' +
       '<span>' + STATUSES[r.status] + '</span>' +
@@ -2013,6 +2119,47 @@
     });
   }
 
+  function bulkRating() {
+    var ids = selectedIds();
+    if (!ids.length) { toast('先选几条记录'); return; }
+    var val = 0;
+    openModal({
+      title: '批量评分',
+      desc: '给选中的 ' + ids.length + ' 条记录设置评分（0 表示清除）',
+      body: '<div class="rating-field" style="margin:8px 0 4px">' +
+        '<input type="range" class="range" id="modal-rating" min="0" max="10" step="0.5" value="0" style="--pct:0%">' +
+        '<div class="rating-value"><strong id="modal-rating-num">—</strong><span>/ 10</span></div>' +
+        '</div>',
+      actions: [
+        { label: '取消', value: null, variant: 'ghost' },
+        { label: '应用', value: 'ok', variant: 'primary' }
+      ]
+    }).then(function (v) {
+      if (v !== 'ok') return;
+      var now = Date.now();
+      state.records.forEach(function (r) {
+        if (ids.indexOf(r.id) < 0) return;
+        r.rating = val;
+        r.updatedAt = now;
+      });
+      save();
+      exitSelect();
+      toast('已设置 ' + ids.length + ' 条的评分');
+      render();
+    });
+
+    var root = document.getElementById('modal-root');
+    var range = root.querySelector('#modal-rating');
+    var numEl = root.querySelector('#modal-rating-num');
+    if (range) {
+      range.addEventListener('input', function () {
+        val = parseFloat(range.value) || 0;
+        range.style.setProperty('--pct', (val * 10) + '%');
+        if (numEl) numEl.textContent = val ? val.toFixed(1) : '—';
+      });
+    }
+  }
+
   function bulkTag() {
     var ids = selectedIds();
     if (!ids.length) { toast('先选几条记录'); return; }
@@ -2090,6 +2237,10 @@
       var r = state.records.filter(function (x) { return x.id === id; })[0];
       if (!r) { location.hash = '#/library'; return; }
       state.draft = JSON.parse(JSON.stringify(r));
+      try {
+        state.readonly = sessionStorage.getItem('shilu.ro.v1') === String(id);
+      } catch (e) { state.readonly = false; }
+      tryRestoreStash(id);
     } else {
       state.draft = {
         id: '', type: 'novel', title: '', originalTitle: '', aliases: [],
@@ -2112,6 +2263,24 @@
     }
     state.pasteOpen = false;
     state.pasteText = '';
+    try { state.draftSnapshot = JSON.stringify(state.draft); } catch (e) { state.draftSnapshot = ''; }
+  }
+
+  function tryRestoreStash(id) {
+    var raw = null;
+    try { raw = localStorage.getItem('shilu.draft.v1'); } catch (e) { return; }
+    if (!raw) return;
+    var st = null;
+    try { st = JSON.parse(raw); } catch (e) { clearStash(); return; }
+    if (!st || !st.json) { clearStash(); return; }
+    if (String(st.id || '') !== String(id || '')) return;
+    if (Date.now() - (st.at || 0) > 7 * 24 * 3600 * 1000) { clearStash(); return; }
+    try {
+      var d = JSON.parse(st.json);
+      if (!d || !d.title && !d.review) { clearStash(); return; }
+      state.draft = d;
+      toast('已恢复上次没保存的内容');
+    } catch (e) { clearStash(); }
   }
 
   function editView() {
@@ -2126,7 +2295,7 @@
 
     var html = '<header class="edit-head">' +
       '<button class="icon-btn" data-action="back" aria-label="返回">' + icon('back', 19) + '</button>' +
-      '<h1 class="edit-title">' + (isNew ? '记录一条' : '编辑记录') + '</h1>' +
+      '<h1 class="edit-title">' + (isNew ? '记录一条' : (state.readonly ? '记录详情' : '编辑记录')) + '</h1>' +
       (isNew
         ? '<span class="icon-btn ghost"></span>'
         : '<button class="icon-btn" data-action="delete" aria-label="删除">' + icon('trash', 18) + '</button>') +
@@ -2163,8 +2332,11 @@
       '<input class="input" data-field="creator" value="' + esc(d.creator) + '" placeholder="' + esc(meta.creatorHint) + '"></label>' +
 
       '<label class="field"><span class="field-label">条目链接</span>' +
+      '<div class="link-row">' +
       '<input class="input" data-field="meta.link" value="' + esc((d.meta || {}).link || '') +
-      '" inputmode="url" placeholder="豆瓣 / Bangumi / Steam 页面地址，选填"></label>' +
+      '" inputmode="url" placeholder="豆瓣 / Bangumi / Steam 页面地址，选填">' +
+      '<button class="btn btn-ghost btn-sm" data-action="open-link">打开</button>' +
+      '</div></label>' +
 
       '<div class="row2">' +
       '<label class="field"><span class="field-label">年份</span>' +
@@ -2294,10 +2466,15 @@
       '<p class="hint">只支持图片链接，不会把图片存进数据里，导出更轻。</p>' +
       '</section>';
 
-    html += '<div class="edit-bar">' +
-      '<button class="btn btn-ghost" data-action="back">取消</button>' +
-      '<button class="btn btn-primary grow" data-action="save">保存</button>' +
-      '</div>';
+    html += state.readonly
+      ? '<div class="edit-bar">' +
+        '<button class="btn btn-ghost" data-action="back">返回</button>' +
+        '<button class="btn btn-primary grow" data-action="edit-mode">编辑</button>' +
+        '</div>'
+      : '<div class="edit-bar">' +
+        '<button class="btn btn-ghost" data-action="back">取消</button>' +
+        '<button class="btn btn-primary grow" data-action="save">保存</button>' +
+        '</div>';
 
     return html;
   }
@@ -2318,6 +2495,7 @@
   function setDraftField(path, value) {
     var d = state.draft;
     if (!d) return;
+    if (state.readonly) return;   /* 只读详情：不接受任何输入 */
     if (path === 'hours') { d.hours = num(value); return; }
     if (path === 'updateDay') { d.updateDay = Number(value); return; }
     if (path === 'douban') {
@@ -2602,7 +2780,7 @@
       '<label class="field"><span class="field-label">总第几期</span>' +
       '<input class="input" data-field="mag.totalNo" value="' + esc(m.totalNo) + '" placeholder="128"></label>' +
       '</div>' +
-      '<label class="field"><span class="field-label">出版方</span>' +
+      '<label class="field"><span class="field-label">本期出版方</span>' +
       '<input class="input" data-field="mag.publisher" value="' + esc(m.publisher) + '" placeholder="出版社 / 编辑部"></label>' +
       '<p class="hint">会显示成「' + esc(magazineIssueText({ type: 'magazine', magazine: m, year: d.year, status: d.status })) + '」</p>' +
       '</section>';
@@ -2770,6 +2948,8 @@
       updatedAt: now
     });
     if (!rec) return;
+    clearStash();
+    state.draftSnapshot = '';
 
     var prev = isNew ? null : state.records.filter(function (r) { return r.id === rec.id; })[0];
     var logs = Array.isArray(d.logs) ? d.logs.slice() : [];
@@ -3252,7 +3432,10 @@
     var issues = [];
     function push(label, list, tip, names) {
       if (!list.length) return;
-      issues.push({ label: label, count: list.length, tip: tip, names: names || [] });
+      issues.push({
+        label: label, count: list.length, tip: tip, names: names || [],
+        items: list.slice(0, 20).map(function (r) { return { id: r.id, title: r.title }; })
+      });
     }
 
     var map = {};
@@ -3261,8 +3444,24 @@
       (map[k] = map[k] || []).push(r);
     });
     var dups = Object.keys(map).filter(function (k) { return map[k].length > 1; });
-    push('重复条目', dups, '同类型下标题完全一样，建议合并',
-      dups.slice(0, 4).map(function (k) { return map[k][0].title; }));
+    dups.slice(0, 5).forEach(function (k) {
+      var group = map[k];
+      issues.push({
+        label: '重复条目',
+        count: group.length,
+        tip: '同类型同标题，合并会把标签、金句、笔记并到第一条',
+        names: [group[0].title],
+        ids: group.map(function (r) { return r.id; })
+      });
+    });
+    if (dups.length > 5) {
+      issues.push({
+        label: '其他重复条目',
+        count: dups.length - 5,
+        tip: '还有 ' + (dups.length - 5) + ' 组重复，合并一部分后重新检查即可',
+        names: []
+      });
+    }
 
     push('缺少封面', recs.filter(function (r) { return !r.cover; }), '列表里会显示纯色占位',
       recs.filter(function (r) { return !r.cover; }).slice(0, 4).map(function (r) { return r.title; }));
@@ -3288,6 +3487,40 @@
     return issues;
   }
 
+  function mergeDuplicates(ids) {
+    var list = state.records.filter(function (r) { return ids.indexOf(r.id) >= 0; });
+    if (list.length < 2) { toast('少于两条，不用合并'); return; }
+    var base = list[0];
+    list.slice(1).forEach(function (r) {
+      ['cover', 'creator', 'year', 'review', 'releaseDate', 'startedAt', 'finishedAt', 'category'].forEach(function (k) {
+        if (!base[k] && r[k]) base[k] = r[k];
+      });
+      if (!base.rating && r.rating) base.rating = r.rating;
+      if (!base.douban && r.douban) base.douban = r.douban;
+      if (base.status === 'wish' && r.status !== 'wish') base.status = r.status;
+      (r.tags || []).forEach(function (t) { if (base.tags.indexOf(t) < 0) base.tags.push(t); });
+      base.quotes = (base.quotes || []).concat(r.quotes || []);
+      base.notesLog = (base.notesLog || []).concat(r.notesLog || []);
+      base.rewatches = (base.rewatches || []).concat(r.rewatches || []);
+      base.episodes = (base.episodes || []).concat(r.episodes || []);
+      Object.keys(r.meta || {}).forEach(function (k) {
+        if (!base.meta[k]) base.meta[k] = r.meta[k];
+      });
+      (r.custom || []).forEach(function (c) {
+        var has = (base.custom || []).some(function (x) { return x.k === c.k; });
+        if (!has) base.custom.push(c);
+      });
+      base.hours = (base.hours || 0) + (r.hours || 0);
+    });
+    base.updatedAt = Date.now();
+    state.records = state.records.filter(function (r) {
+      return ids.indexOf(r.id) < 0 || r.id === base.id;
+    });
+    save();
+    toast('已合并为「' + base.title + '」');
+    render({ keepScroll: true });
+  }
+
   function openHealth() {
     var issues = healthIssues();
     var body;
@@ -3298,7 +3531,14 @@
         return '<div class="health-row">' +
           '<div class="health-head"><strong>' + esc(it.label) + '</strong><span class="health-num">' + it.count + ' 条</span></div>' +
           '<div class="health-tip">' + esc(it.tip) + '</div>' +
-          (it.names.length ? '<div class="health-names">' + it.names.map(function (n) { return esc(n); }).join(' · ') + (it.count > it.names.length ? ' …' : '') + '</div>' : '') +
+          (it.items && it.items.length
+            ? '<div class="health-names">' + it.items.map(function (x) {
+                return '<button class="health-link" data-action="health-open" data-id="' + x.id + '">' + esc(x.title) + '</button>';
+              }).join('') + (it.count > it.items.length ? '<span class="health-more">…还有 ' + (it.count - it.items.length) + ' 条</span>' : '') + '</div>'
+            : '') +
+          (it.ids && it.ids.length > 1
+            ? '<button class="btn btn-ghost btn-sm" style="margin-top:8px" data-action="merge-dups" data-ids="' + it.ids.join(',') + '">合并这 ' + it.ids.length + ' 条</button>'
+            : '') +
           '</div>';
       }).join('') + '</div>';
     }
@@ -3307,6 +3547,42 @@
       body: body,
       actions: [{ label: '知道了', value: null, variant: 'primary' }]
     });
+  }
+
+  function yearCompareHTML() {
+    var nowY = new Date().getFullYear();
+    function statOf(y) {
+      var list = state.records.filter(function (r) {
+        return new Date(r.createdAt || 0).getFullYear() === y;
+      });
+      var hours = list.reduce(function (a, r) { return a + (r.hours || 0); }, 0);
+      var rated = list.filter(function (r) { return r.rating > 0; });
+      var avg = rated.length ? rated.reduce(function (a, r) { return a + r.rating; }, 0) / rated.length : 0;
+      var done = list.filter(function (r) { return r.status === 'done'; }).length;
+      return { n: list.length, h: hours, avg: avg, done: done };
+    }
+    var a = statOf(nowY);
+    var b = statOf(nowY - 1);
+    if (!a.n && !b.n) return '<p class="muted">还没有跨年的数据可以对比。</p>';
+
+    function row(label, cur, prev, unit, fmt) {
+      var f = fmt || function (v) { return v; };
+      var diff = cur - prev;
+      var arrow = diff > 0 ? '↑' : diff < 0 ? '↓' : '—';
+      var cls = diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat';
+      return '<div class="cmp-row">' +
+        '<span class="cmp-label">' + label + '</span>' +
+        '<span class="cmp-prev">' + f(prev) + (unit || '') + '</span>' +
+        '<span class="cmp-cur">' + f(cur) + (unit || '') + '</span>' +
+        '<span class="cmp-diff ' + cls + '">' + arrow + (diff ? Math.abs(fmt ? Math.round(diff) : diff) : '') + '</span>' +
+        '</div>';
+    }
+
+    return '<div class="cmp-head"><span></span><span>' + (nowY - 1) + '</span><span>' + nowY + '</span><span>变化</span></div>' +
+      row('记录条数', a.n, b.n, ' 条') +
+      row('投入小时', Math.round(a.h), Math.round(b.h), ' h') +
+      row('完成数', a.done, b.done, ' 条') +
+      row('平均分', a.avg, b.avg, '', function (v) { return v ? ratingText(v) : '—'; });
   }
 
   function statsView() {
@@ -3388,6 +3664,10 @@
     /* 各类型平均分 */
     html += '<div class="chart-card"><div class="chart-head"><h3 class="chart-title">各类型平均分</h3>' +
       '<span class="chart-note">括号内为条数</span></div>' + typeAvgHTML(recs) + '</div>';
+
+    /* 今年 vs 去年 */
+    html += '<div class="chart-card"><div class="chart-head"><h3 class="chart-title">今年 vs 去年</h3>' +
+      '<span class="chart-note">按收录时间统计</span></div>' + yearCompareHTML() + '</div>';
 
     /* 细分洞察 */
     html += insightHTML(recs);
@@ -4386,6 +4666,7 @@
 
   function buildCSV() {
     var rows = [['id', '类型', '标题', '原名', '别名', '创作者', '年份', '分类', '题材', '评分', '豆瓣评分', '推荐指数', '状态', '进度', '刊期',
+      '专属信息', '自定义字段',
       '投入小时', '消费次数', '短评', '金句', '笔记数', '封面链接', '发布日期', '开始日期', '完成日期', '收录时间', '更新时间']];
     state.records.forEach(function (r) {
       rows.push([
@@ -4404,6 +4685,8 @@
         STATUSES[r.status],
         progressText(r),
         r.type === 'magazine' ? magazineIssueText(r) : '',
+        metaSummary(r),
+        customSummary(r),
         r.hours || '',
         1 + r.rewatches.length,
         r.review,
@@ -4452,6 +4735,12 @@
         if (r.aliases && r.aliases.length) facts.push('**别名**：' + mdEscape(r.aliases.join('、')));
         if (r.category) facts.push('**分类**：' + mdEscape(r.category));
         if (r.tags && r.tags.length) facts.push('**标签**：' + mdEscape(r.tags.join('、')));
+        Object.keys(r.meta || {}).forEach(function (mk) {
+          if (r.meta[mk]) facts.push('**' + metaLabel(mk) + '**：' + mdEscape(String(r.meta[mk])));
+        });
+        (r.custom || []).forEach(function (c) {
+          if (c && c.k) facts.push('**' + mdEscape(c.k) + '**：' + mdEscape(c.v || ''));
+        });
         facts.push('**状态**：' + STATUSES[r.status]);
         if (r.rating) facts.push('**我的评分**：' + ratingText(r.rating));
         if (r.douban) facts.push('**豆瓣**：' + r.douban.toFixed(1));
@@ -4857,6 +5146,21 @@
     });
   }
 
+  function metaKeyFromLabel(label, type) {
+    var list = EXTRA_FIELDS[type] || [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].label === label) return list[i].key;
+    }
+    for (var t in EXTRA_FIELDS) {
+      var l2 = EXTRA_FIELDS[t];
+      for (var j = 0; j < l2.length; j++) {
+        if (l2[j].label === label) return l2[j].key;
+      }
+    }
+    if (label === '条目链接') return 'link';
+    return '';
+  }
+
   function csvToItems(rows) {
     if (!rows || rows.length < 2) return [];
     var header = rows[0].map(function (h) { return String(h).trim().toLowerCase(); });
@@ -4872,7 +5176,7 @@
     var iTitle = find('title', 'name', '标题', '名称', 'series_title');
     var iYear = find('year', '年份');
     var iRating = find('my rating', 'rating', '评分', 'score', 'my_score');
-    var iAuthor = find('author', 'creator', 'director', '作者', '创作者', '主创');
+    var iAuthor = find('author', 'creator', 'director', 'directors', 'director(s)', '作者', '创作者', '主创');
     var iReview = find('review', 'comment', '短评', '备注');
     var iShelf = find('exclusive shelf', 'status', '状态', 'shelf');
     var iType = find('type', '类型', 'media_type');
@@ -4884,6 +5188,8 @@
     var iAliases = find('别名');
     var iQuote = find('金句');
     var iIssue = find('刊期');
+    var iMetaInfo = find('专属信息');
+    var iCustomInfo = find('自定义字段');
     if (iTitle < 0) return [];
 
     var isOur = header.indexOf('id') >= 0 && (header.indexOf('收录时间') >= 0 || header.indexOf('类型') >= 0);
@@ -4964,6 +5270,28 @@
       else if (/一般/.test(recLabel)) recKey = 'meh';
       else if (/不推荐/.test(recLabel)) recKey = 'no';
 
+      var metaObj = {};
+      if (iMetaInfo >= 0) {
+        String(row[iMetaInfo] || '').split(';').forEach(function (seg) {
+          var p = seg.indexOf('=');
+          if (p < 0) return;
+          var lb = seg.slice(0, p).trim();
+          var vv = seg.slice(p + 1).trim();
+          var mk = metaKeyFromLabel(lb, type);
+          if (mk && vv) metaObj[mk] = vv;
+        });
+      }
+      var customArr = [];
+      if (iCustomInfo >= 0) {
+        String(row[iCustomInfo] || '').split(';').forEach(function (seg) {
+          var p = seg.indexOf('=');
+          if (p < 0) return;
+          var kk = seg.slice(0, p).trim();
+          var vv2 = seg.slice(p + 1).trim();
+          if (kk) customArr.push({ k: kk, v: vv2 });
+        });
+      }
+
       items.push({
         title: title,
         originalTitle: iOriginal >= 0 ? String(row[iOriginal] || '').trim() : '',
@@ -4980,6 +5308,8 @@
         status: status,
         review: iReview >= 0 ? String(row[iReview] || '').trim() : '',
         quote: iQuote >= 0 ? String(row[iQuote] || '').trim() : '',
+        meta: Object.keys(metaObj).length ? metaObj : undefined,
+        custom: customArr.length ? customArr : undefined,
         magazine: mag || undefined
       });
     }
@@ -5134,6 +5464,7 @@
           category: it.category || '', douban: it.douban || 0, recommend: it.recommend || '',
           magazine: it.magazine || {},
           meta: it.meta || {},
+          custom: it.custom || [],
           createdAt: now - n, updatedAt: now - n,
           logs: [{ action: 'add', at: now - n }]
         });
@@ -5616,17 +5947,84 @@
 
   /* ---------------- 事件 ---------------- */
 
+  var stashTimer = null;
+  function queueStash() {
+    if (state.readonly) return;
+    if (stashTimer) clearTimeout(stashTimer);
+    stashTimer = setTimeout(function () {
+      stashTimer = null;
+      stashDraft();
+    }, 700);
+  }
+
+  function draftDirty() {
+    if (!state.draft || !state.draftSnapshot) return false;
+    try {
+      return JSON.stringify(state.draft) !== state.draftSnapshot;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function stashDraft() {
+    if (!state.draft) return;
+    try {
+      localStorage.setItem('shilu.draft.v1', JSON.stringify({
+        id: state.draft.id || '',
+        type: state.draft.type,
+        title: state.draft.title || '',
+        at: Date.now(),
+        json: JSON.stringify(state.draft)
+      }));
+    } catch (e) { /* ignore */ }
+  }
+
+  function clearStash() {
+    try { localStorage.removeItem('shilu.draft.v1'); } catch (e) { /* ignore */ }
+  }
+
   function goBack() {
+    if (draftDirty()) {
+      openModal({
+        title: '放弃这次修改？',
+        desc: '这条记录有改动还没保存，返回会丢掉。',
+        actions: [
+          { label: '继续编辑', value: null, variant: 'ghost' },
+          { label: '放弃修改', value: 'ok', variant: 'danger' }
+        ]
+      }).then(function (v) {
+        if (v !== 'ok') return;
+        clearStash();
+        state.draft = null;
+        state.readonly = false;
+        location.hash = state.returnTo || '#/library';
+      });
+      return;
+    }
+    clearStash();
     state.draft = null;
+    state.readonly = false;
     location.hash = state.returnTo || '#/library';
   }
 
+  var READONLY_BLOCKED = {
+    'set-type': 1, 'set-star': 1, 'set-unit': 1, 'plus-one': 1,
+    'add-quote': 1, 'del-quote': 1, 'add-note': 1, 'del-note': 1,
+    'add-episode': 1, 'del-episode': 1, 'add-season': 1, 'del-season': 1,
+    'add-rewatch': 1, 'del-rewatch': 1, 'add-custom': 1, 'del-custom': 1,
+    'parse-paste': 1, 'toggle-paste': 1, 'save': 1,
+    'edit-list': 1, 'new-list': 1, 'list-pick': 1
+  };
+
   function handleAction(action, el) {
+    if (state.readonly && READONLY_BLOCKED[action]) return;
     switch (action) {
       case 'new':
         if (state.route.name !== 'new' && state.route.name !== 'edit') {
           state.returnTo = '#/' + state.route.name;
         }
+        state.readonly = false;
+        try { sessionStorage.removeItem('shilu.ro.v1'); } catch (e) { /* ignore */ }
         location.hash = '#/new';
         break;
 
@@ -5634,7 +6032,15 @@
         if (state.route.name !== 'new' && state.route.name !== 'edit') {
           state.returnTo = '#/' + state.route.name;
         }
+        state.readonly = true;
+        try { sessionStorage.setItem('shilu.ro.v1', el.dataset.id); } catch (e) { /* ignore */ }
         location.hash = '#/edit/' + el.dataset.id;
+        break;
+
+      case 'edit-mode':
+        state.readonly = false;
+        try { sessionStorage.removeItem('shilu.ro.v1'); } catch (e) { /* ignore */ }
+        render({ keepScroll: true });
         break;
 
       case 'settings':
@@ -5652,6 +6058,11 @@
       case 'clear-search':
         state.search = '';
         render();
+        break;
+
+      case 'clear-lib-search':
+        state.libQ = '';
+        render({ keepScroll: true });
         break;
 
       case 'filter-status':
@@ -6018,6 +6429,8 @@
               state.records = state.records.filter(function (r) { return r.id !== rec.id; });
               save();
               state.draft = null;
+              state.readonly = false;
+              try { sessionStorage.removeItem('shilu.ro.v1'); } catch (e2) { /* ignore */ }
               toast('已删除');
               location.hash = state.returnTo || '#/library';
             });
@@ -6123,6 +6536,42 @@
         openHealth();
         break;
 
+      case 'health-open': {
+        var hid = el.dataset.id;
+        closeModal();
+        state.readonly = false;
+        try { sessionStorage.removeItem('shilu.ro.v1'); } catch (e) { /* ignore */ }
+        state.returnTo = '#/settings';
+        location.hash = '#/edit/' + hid;
+        break;
+      }
+
+      case 'merge-dups': {
+        var mIds = String(el.dataset.ids || '').split(',').filter(Boolean);
+        if (mIds.length < 2) { toast('少于两条，不用合并'); break; }
+        openModal({
+          title: '合并重复条目？',
+          desc: '把 ' + mIds.length + ' 条合并成一条：保留最早那条的标题，标签、金句、笔记、专属字段会并进来，其余的删除。',
+          actions: [{ label: '取消', value: null, variant: 'ghost' }, { label: '合并', value: 'ok', variant: 'primary' }]
+        }).then(function (v) {
+          if (v === 'ok') mergeDuplicates(mIds);
+        });
+        break;
+      }
+
+      case 'open-link': {
+        var linkEl = document.querySelector('[data-field="meta.link"]');
+        var url = linkEl ? String(linkEl.value || '').trim() : '';
+        if (!url) { toast('先填一个链接'); break; }
+        if (!/^https?:\/\//i.test(url)) { toast('链接要以 http:// 或 https:// 开头'); break; }
+        window.open(url, '_blank', 'noopener');
+        break;
+      }
+
+      case 'bulk-rating':
+        bulkRating();
+        break;
+
       case 'add-custom':
         if (state.draft) {
           if (!Array.isArray(state.draft.custom)) state.draft.custom = [];
@@ -6204,6 +6653,7 @@
           savePrefs();
           save();
           dbClear();
+          clearStash();
           toast('已清空');
           render({ keepScroll: true });
         });
@@ -6432,6 +6882,20 @@
     return out;
   }
 
+  function filterLibraryCards(raw) {
+    var q = String(raw || '').trim().toLowerCase();
+    var cards = document.querySelectorAll('.pcard, .wcard');
+    var shown = 0;
+    for (var i = 0; i < cards.length; i++) {
+      var hay = cards[i].getAttribute('data-hay') || '';
+      var ok = !q || hay.indexOf(q) >= 0;
+      cards[i].classList.toggle('is-hidden', !ok);
+      if (ok) shown++;
+    }
+    var empty = document.getElementById('lib-empty');
+    if (empty) empty.classList.toggle('hidden', !q || shown > 0);
+  }
+
   function filterQuoteCards(raw) {
     var q = String(raw || '').trim().toLowerCase();
     var cards = document.querySelectorAll('.qcard');
@@ -6464,6 +6928,11 @@
         updateSearchPanel();
         return;
       }
+      if (el.id === 'lib-search') {
+        state.libQ = el.value;
+        filterLibraryCards(el.value);
+        return;
+      }
       if (el.id === 'quote-search') {
         state.ui.quoteQ = el.value;
         filterQuoteCards(el.value);
@@ -6484,11 +6953,13 @@
 
       if (el.dataset && el.dataset.custom && state.draft) {
         setDraftField('custom.' + el.dataset.custom, el.value);
+        queueStash();
         return;
       }
 
       var f = el.dataset.field;
       if (f && state.draft) {
+        queueStash();
         if (f === 'rating') {
           state.draft.rating = parseFloat(el.value) || 0;
           var numEl = document.getElementById('rating-num');

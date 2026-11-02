@@ -20,8 +20,6 @@
   --shadow: 0 1px 2px rgba(44, 37, 69, .04), 0 16px 36px -24px rgba(96, 62, 170, .45);
   --shadow-lg: 0 2px 8px rgba(44, 37, 69, .06), 0 26px 54px -28px rgba(96, 62, 170, .55);
   --r-lg: 26px;
-  --r-md: 18px;
-  --r-sm: 12px;
   --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Songti SC", "STSong", "SimSun", Georgia, serif;
   --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   --t-novel: #E8457A;
@@ -2272,8 +2270,8 @@ body.is-selecting .view { padding-bottom: 92px; }
 
 /* ---------------- 评分分布 / 热力图 / 平均分 / 健康检查 ---------------- */
 .bars-svg { width: 100%; height: auto; display: block; margin-top: 6px; }
-.bar-num { font-size: 9px; fill: var(--muted); }
-.bar-x { font-size: 9px; fill: var(--muted); }
+.bar-num { font-size: 9px; fill: var(--ink-3); }
+.bar-x { font-size: 9px; fill: var(--ink-3); }
 
 .heat-wrap { overflow-x: auto; padding: 6px 0 4px; -webkit-overflow-scrolling: touch; }
 .heat-svg { display: block; height: 86px; width: auto; }
@@ -2282,7 +2280,7 @@ body.is-selecting .view { padding-bottom: 92px; }
 .heat-svg .hm-2 { fill: var(--accent); fill-opacity: .50; }
 .heat-svg .hm-3 { fill: var(--accent); fill-opacity: .74; }
 .heat-svg .hm-4 { fill: var(--accent); fill-opacity: 1; }
-.heat-legend { display: flex; align-items: center; gap: 4px; justify-content: flex-end; margin-top: 6px; font-size: 11px; color: var(--muted); }
+.heat-legend { display: flex; align-items: center; gap: 4px; justify-content: flex-end; margin-top: 6px; font-size: 11px; color: var(--ink-3); }
 .heat-legend .lg { width: 10px; height: 10px; border-radius: 2px; display: inline-block; background: var(--line); }
 .heat-legend .lg-1 { background: var(--accent); opacity: .28; }
 .heat-legend .lg-2 { background: var(--accent); opacity: .50; }
@@ -2290,21 +2288,21 @@ body.is-selecting .view { padding-bottom: 92px; }
 .heat-legend .lg-4 { background: var(--accent); opacity: 1; }
 
 .avg-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
-.avg-name { width: 4.2em; flex: none; font-size: 13px; color: var(--text); }
+.avg-name { width: 4.2em; flex: none; font-size: 13px; color: var(--ink); }
 .avg-bar { flex: 1; height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
 .avg-bar i { display: block; height: 100%; border-radius: 4px; }
-.avg-val { width: 4.6em; flex: none; text-align: right; font-size: 12px; color: var(--muted); }
+.avg-val { width: 4.6em; flex: none; text-align: right; font-size: 12px; color: var(--ink-3); }
 .avg-val em { font-style: normal; margin-left: 4px; opacity: .65; }
 
 .health-list { max-height: 52vh; overflow-y: auto; }
 .health-row { padding: 10px 0; border-bottom: 1px solid var(--line); }
 .health-row:last-child { border-bottom: 0; }
 .health-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.health-head strong { font-size: 14px; color: var(--text); }
+.health-head strong { font-size: 14px; color: var(--ink); }
 .health-num { font-size: 12px; color: var(--accent); }
-.health-tip { font-size: 12px; color: var(--muted); margin-top: 2px; }
-.health-names { font-size: 12px; color: var(--text-2, var(--muted)); margin-top: 4px; line-height: 1.5; }
-.health-ok { display: flex; align-items: center; gap: 8px; padding: 18px 4px; color: var(--muted); font-size: 14px; }
+.health-tip { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+.health-names { font-size: 12px; color: var(--ink-2); margin-top: 4px; line-height: 1.5; }
+.health-ok { display: flex; align-items: center; gap: 8px; padding: 18px 4px; color: var(--ink-3); font-size: 14px; }
 
 /* ---------------- 自定义字段 ---------------- */
 .custom-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
@@ -2312,3 +2310,57 @@ body.is-selecting .view { padding-bottom: 92px; }
 .custom-row .custom-v { flex: 1 1 auto; min-width: 0; }
 .custom-row .custom-del { flex: none; opacity: .55; }
 .custom-row .custom-del:active { opacity: 1; }
+
+/* ---------------- 卡片摘要 / 链接行 ---------------- */
+.pcard-sub { font-size: 11.5px; color: var(--ink-3); margin: -2px 0 4px; line-height: 1.4;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.link-row { display: flex; align-items: center; gap: 8px; }
+.link-row .input { flex: 1 1 auto; min-width: 0; }
+.link-row .btn { flex: none; }
+
+/* ---------------- 只读详情 ---------------- */
+.view.is-readonly input,
+.view.is-readonly select,
+.view.is-readonly textarea,
+.view.is-readonly .type-tile,
+.view.is-readonly .tag-chip,
+.view.is-readonly .stars-hit,
+.view.is-readonly .paste-toggle,
+.view.is-readonly .custom-del,
+.view.is-readonly [data-action="add-custom"],
+.view.is-readonly [data-action="del-custom"],
+.view.is-readonly [data-action="add-quote"],
+.view.is-readonly [data-action="add-note"],
+.view.is-readonly [data-action="add-episode"],
+.view.is-readonly [data-action="add-season"],
+.view.is-readonly [data-action="add-rewatch"],
+.view.is-readonly [data-action="delete"],
+.view.is-readonly [data-action="del-quote"],
+.view.is-readonly [data-action="del-note"],
+.view.is-readonly [data-action="del-episode"],
+.view.is-readonly [data-action="del-season"],
+.view.is-readonly [data-action="del-rewatch"] { pointer-events: none; }
+.view.is-readonly .edit-bar { display: flex; }
+.view.is-readonly input, .view.is-readonly textarea { color: var(--ink-3); }
+
+/* ---------------- 收藏页搜索 / 健康跳转 / 年度对比 ---------------- */
+.lib-search { margin: 0 0 10px; }
+.lib-empty { text-align: center; color: var(--ink-3); font-size: 13px; padding: 24px 0; }
+.lib-empty.hidden { display: none; }
+.pcard.is-hidden, .wcard.is-hidden { display: none !important; }
+
+.health-link { background: none; border: 0; padding: 0 2px; font: inherit; color: var(--accent);
+  text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.health-more { color: var(--ink-3); margin-left: 4px; }
+
+.cmp-head, .cmp-row { display: grid; grid-template-columns: 1.2fr .8fr .8fr .7fr; align-items: center; gap: 6px; }
+.cmp-head { font-size: 11px; color: var(--ink-3); padding-bottom: 6px; }
+.cmp-head span:not(:first-child) { text-align: right; }
+.cmp-row { padding: 7px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.cmp-label { color: var(--ink); }
+.cmp-prev { color: var(--ink-3); text-align: right; }
+.cmp-cur { text-align: right; font-weight: 600; color: var(--ink); }
+.cmp-diff { text-align: right; font-size: 12px; }
+.cmp-diff.up { color: var(--accent); }
+.cmp-diff.down { color: var(--ink-3); }
+.cmp-diff.flat { color: var(--ink-3); opacity: .5; }
