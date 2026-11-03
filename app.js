@@ -10,8 +10,8 @@
   var SCHEMA_VERSION = 1;
 
   /* 每次发布改这里和 sw.js 的 VERSION（两者一起改） */
-  var APP_VERSION = '1.33';
-  var SW_VERSION = 'v34';
+  var APP_VERSION = '1.40';
+  var SW_VERSION = 'v41';
   var DB_KEY = 'shilu.db.v1';
   var PREF_KEY = 'shilu.prefs.v1';
   var DAY = 86400000;
@@ -28,7 +28,7 @@
     },
     anime: {
       label: '动漫', mode: 'series', itemUnit: '话', segUnit: '季',
-      creator: '监督 / 制作', creatorHint: '监督或动画公司', color: '#45AFA0'
+      creator: '监督', creatorHint: '动画监督', color: '#45AFA0'
     },
     tv: {
       label: '电视剧', mode: 'series', itemUnit: '集', segUnit: '季',
@@ -40,11 +40,11 @@
     },
     variety: {
       label: '综艺', mode: 'series', itemUnit: '期', segUnit: '季',
-      creator: '主持 / 制作', creatorHint: '主持或制作团队', color: '#E8B33D'
+      creator: '主持人', creatorHint: '常驻主持', color: '#E8B33D'
     },
     drama: {
       label: '广播剧', mode: 'series', itemUnit: '集', segUnit: '季',
-      creator: '出品 / 制作', creatorHint: '出品方或制作组', color: '#5C8BE8'
+      creator: '出品方', creatorHint: '出品方或制作组', color: '#5C8BE8'
     },
     stage: {
       label: '舞台剧', mode: 'single',
@@ -52,7 +52,7 @@
     },
     game: {
       label: '游戏', mode: 'percent',
-      creator: '开发 / 发行', creatorHint: '开发商或发行商', color: '#5FB86B'
+      creator: '开发商', creatorHint: '开发工作室', color: '#5FB86B'
     },
     music: {
       label: '音乐', mode: 'single',
@@ -74,7 +74,35 @@
     'binding', 'firstPlatform', 'magazineName', 'originalWork', 'artist', 'epCount', 'colorPages',
     'seriesComp', 'charDesign', 'season', 'channel', 'seasons', 'language', 'host', 'shows', 'seat',
     'achievements', 'genre', 'medium', 'cinema',
-    'link', 'subtitle', 'series', 'price', 'format', 'composer', 'ageRating', 'imdb', 'discs'];
+    'link', 'subtitle', 'series', 'price', 'format', 'composer', 'ageRating', 'imdb', 'discs',
+    /* 各类型的细化字段 */
+    'imprint', 'company', 'producer', 'themeSong', 'artDirector', 'musicProd', 'airWeekday',
+    'chiefDirector', 'airTime', 'quarter', 'planner', 'postProd', 'updateCycle', 'lyricist',
+    'arranger', 'ticketPrice', 'mcScore', 'engine', 'languages', 'chineseSupport', 'franchise',
+    'buyPrice', 'buyDate', 'dlcCount', 'onlinePlayers', 'issn', 'organizer', 'bookSize',
+    'postalCode', 'subscribeFrom', 'editionNo', 'printNo', 'script', 'awards', 'boxoffice',
+    /* 第二轮细化 */
+    'editor', 'adaptation', 'boxSet', 'readingDevice', 'serialFrom', 'serialTo', 'purchaseChannel',
+    'special', 'colorDesign', 'storyboard', 'episodeDirector', 'soundDirector', 'officialSite',
+    'production', 'airPeriod', 'broadcastEnd', 'basedOn', 'location', 'budget', 'premiere', 'aspect',
+    'color', 'distributor', 'sequel', 'sponsor', 'recordPlace', 'seasonNo', 'segment', 'updateWeekday',
+    'voiceDirector', 'soundEffect', 'posterDesign', 'stageManager', 'lighting', 'costume', 'tour',
+    'achievementsTotal', 'controller', 'cloudSave', 'lastPlayed', 'releasePrice', 'historicLow',
+    'version', 'releaseCountry', 'mvDirector', 'recordingStudio', 'mastering', 'trackList',
+    'issueCount', 'columns', 'subscribeStart', 'subscribeEnd', 'gift',
+    /* 第三轮细化 */
+    'firstEdition', 'sheets', 'seriesNo', 'outOfPrint', 'firstPrint', 'limited',
+    'animationDirector', 'mechaDesign', 'photoDirector', 'editing', 'airStart', 'airEnd',
+    'themeArtist', 'shootYear', 'wrapDate', 'basedOnAuthor', 'postCredit', 'dubbing',
+    'showFormat', 'insertSong', 'intermission', 'caption', 'merch', 'completionistHours',
+    'modSupport', 'vrSupport', 'leadSingle', 'mvCount', 'copyright', 'subPrice',
+    /* 第四轮细化 */
+    'pubPlace', 'paper', 'illustrated', 'ebookPlatform', 'firstBonus', 'appendix',
+    'planning', 'productionManager', 'keyAnimation', 'backgroundArt', 'webPlatform',
+    'ratingShare', 'renewal', 'releaseRegion', 'languageVersion', 'screeningFormat',
+    'productionCompany', 'exclusive', 'coverArtist', 'licensePlatform', 'playType',
+    'presenter', 'dubLanguage', 'difficulty', 'albumLanguage', 'signed',
+    'editorInChief', 'copies'];
 
   /* 看剧 / 观影笔记分区 */
   var SECTION_KEYS = [
@@ -93,124 +121,360 @@
   ];
 
   /* 每种类型额外字段（渲染用） */
+  /* 每种类型的专属字段，按「作品 / 制作 / 我的」三组排 */
+  /* 每种类型的专属字段，按「作品 / 制作 / 我的」三组排。
+     与 creator（作者 / 导演 / 主持人…）重复的项不再单列，避免同一个信息填两遍。 */
   var EXTRA_FIELDS = {
     novel: [
-      { key: 'publisher', label: '出版社', placeholder: '重庆出版社' },
-      { key: 'translator', label: '译者', placeholder: '选填' },
-      { key: 'subtitle', label: '副标题', placeholder: '选填' },
-      { key: 'series', label: '丛书 / 系列', placeholder: '选填' },
-      { key: 'serialStatus', label: '连载状态', options: ['已完结', '连载中', '暂停'] },
-      { key: 'firstPlatform', label: '首发平台', placeholder: '起点 / 晋江 / 实体书' },
-      { key: 'pages', label: '页数', placeholder: '320', numeric: true },
-      { key: 'words', label: '字数（万）', placeholder: '45', numeric: true },
-      { key: 'binding', label: '装帧', options: ['平装', '精装', '线装', '电子版', '其他'] },
-      { key: 'format', label: '阅读格式', options: ['纸质', '电子书', '有声书', '混合'] },
-      { key: 'source', label: '书籍来源', options: ['购买', '借阅', '赠书', '图书馆', '电子书', '其他'] },
-      { key: 'price', label: '定价（元）', placeholder: '59', numeric: true },
-      { key: 'isbn', label: 'ISBN', placeholder: '选填', wide: true }
+      { key: 'publisher', label: '出版社', g: 'pub', placeholder: '重庆出版社' },
+      { key: 'imprint', label: '出品方', g: 'pub', placeholder: '选填' },
+      { key: 'subtitle', label: '副标题', g: 'pub', placeholder: '选填' },
+      { key: 'series', label: '丛书 / 系列', g: 'pub', placeholder: '选填' },
+      { key: 'editionNo', label: '版次', g: 'pub', placeholder: '第 1 版' },
+      { key: 'printNo', label: '印次', g: 'pub', placeholder: '第 3 次印刷' },
+      { key: 'pubPlace', label: '出版地', g: 'pub', placeholder: '北京' },
+      { key: 'paper', label: '用纸', g: 'pub', placeholder: '轻型纸 / 胶版纸' },
+      { key: 'illustrated', label: '插图', g: 'pub', options: ['有', '无', '少量'] },
+      { key: 'firstEdition', label: '首版年份', g: 'pub', placeholder: '2008' },
+      { key: 'sheets', label: '印张', g: 'pub', numeric: true, placeholder: '12.5' },
+      { key: 'seriesNo', label: '丛书序号', g: 'pub', placeholder: '07' },
+      { key: 'pages', label: '页数', g: 'pub', numeric: true, placeholder: '320' },
+      { key: 'words', label: '字数（万）', g: 'pub', numeric: true, placeholder: '45' },
+      { key: 'binding', label: '装帧', g: 'pub', options: ['平装', '精装', '线装', '电子版', '其他'] },
+      { key: 'bookSize', label: '开本', g: 'pub', options: ['32 开', '大 32 开', '16 开', 'A5', 'B5', '其他'] },
+      { key: 'price', label: '定价（元）', g: 'pub', numeric: true, placeholder: '59' },
+      { key: 'isbn', label: 'ISBN', g: 'pub', placeholder: '978…', wide: true },
+      { key: 'translator', label: '译者', g: 'prod', placeholder: '选填' },
+      { key: 'editor', label: '责编', g: 'prod', placeholder: '选填' },
+      { key: 'language', label: '原作语言', g: 'prod', placeholder: '汉语 / 日语' },
+      { key: 'serialStatus', label: '连载状态', g: 'mine', options: ['已完结', '连载中', '暂停'] },
+      { key: 'format', label: '阅读格式', g: 'mine', options: ['纸质', '电子书', '有声书', '混合'] },
+      { key: 'source', label: '书籍来源', g: 'mine', options: ['购买', '借阅', '赠书', '图书馆', '电子书', '其他'] },
+      { key: 'firstPlatform', label: '首发平台', g: 'mine', placeholder: '起点 / 晋江 / 实体书' },
+      { key: 'ebookPlatform', label: '电子书平台', g: 'mine', placeholder: '微信读书 / Kindle' },
+      { key: 'adaptation', label: '影视改编', g: 'mine', options: ['已改编', '改编中', '暂无'] },
+      { key: 'outOfPrint', label: '在售情况', g: 'mine', options: ['在售', '绝版', '再版'] },
+      { key: 'boxSet', label: '套装册数', g: 'mine', numeric: true, placeholder: '3' },
+      { key: 'readingDevice', label: '阅读设备', g: 'mine', placeholder: 'Kindle / iPad / 纸质' },
+      { key: 'awards', label: '获奖', g: 'mine', placeholder: '选填', wide: true }
     ],
     comic: [
-      { key: 'magazineName', label: '连载杂志 / 平台', placeholder: '少年 Jump / 哔哩哔哩漫画' },
-      { key: 'originalWork', label: '原作', placeholder: '选填' },
-      { key: 'artist', label: '作画', placeholder: '选填' },
-      { key: 'series', label: '丛书 / 系列', placeholder: '选填' },
-      { key: 'serialStatus', label: '连载状态', options: ['连载中', '已完结', '休载'] },
-      { key: 'volumes', label: '总卷数', placeholder: '24', numeric: true },
-      { key: 'epCount', label: '总话数', placeholder: '260', numeric: true },
-      { key: 'colorPages', label: '彩页', options: ['全彩', '部分彩页', '黑白'] },
-      { key: 'source', label: '书籍来源', options: ['购买', '借阅', '赠书', '图书馆', '电子书', '其他'] },
-      { key: 'price', label: '定价（元）', placeholder: '25', numeric: true },
-      { key: 'isbn', label: 'ISBN', placeholder: '选填', wide: true }
+      { key: 'magazineName', label: '连载杂志 / 平台', g: 'pub', placeholder: '少年 Jump / 哔哩哔哩漫画' },
+      { key: 'publisher', label: '出版社', g: 'pub', placeholder: '选填' },
+      { key: 'series', label: '丛书 / 系列', g: 'pub', placeholder: '选填' },
+      { key: 'binding', label: '装帧', g: 'pub', options: ['平装', '精装', '其他'] },
+      { key: 'firstPrint', label: '首刷年份', g: 'pub', placeholder: '2012' },
+      { key: 'pages', label: '页数', g: 'pub', numeric: true, placeholder: '192' },
+      { key: 'firstBonus', label: '首刷赠品', g: 'pub', placeholder: '明信片 / 书签' },
+      { key: 'volumes', label: '总卷数', g: 'pub', numeric: true, placeholder: '24' },
+      { key: 'epCount', label: '总话数', g: 'pub', numeric: true, placeholder: '260' },
+      { key: 'colorPages', label: '彩页', g: 'pub', options: ['全彩', '部分彩页', '黑白'] },
+      { key: 'bookSize', label: '开本', g: 'pub', options: ['32 开', '大 32 开', '16 开', 'A5', 'B5', '其他'] },
+      { key: 'price', label: '定价（元）', g: 'pub', numeric: true, placeholder: '25' },
+      { key: 'isbn', label: 'ISBN', g: 'pub', placeholder: '978…', wide: true },
+      { key: 'originalWork', label: '原作', g: 'prod', placeholder: '选填' },
+      { key: 'translator', label: '译者', g: 'prod', placeholder: '选填' },
+      { key: 'language', label: '原作语言', g: 'prod', placeholder: '日语 / 汉语' },
+      { key: 'serialStatus', label: '连载状态', g: 'mine', options: ['连载中', '已完结', '休载'] },
+      { key: 'limited', label: '限定版', g: 'mine', options: ['有', '无'] },
+      { key: 'appendix', label: '卷末附录', g: 'mine', placeholder: '选填' },
+      { key: 'serialFrom', label: '连载开始', g: 'mine', date: true },
+      { key: 'serialTo', label: '连载结束', g: 'mine', date: true },
+      { key: 'source', label: '书籍来源', g: 'mine', options: ['购买', '借阅', '赠书', '图书馆', '电子书', '其他'] },
+      { key: 'purchaseChannel', label: '购买渠道', g: 'mine', placeholder: '淘宝 / 漫展 / 日亚' },
+      { key: 'adaptation', label: '动画化', g: 'mine', options: ['已动画化', '动画中', '暂无'] },
+      { key: 'special', label: '特典', g: 'mine', placeholder: '选填' },
+      { key: 'awards', label: '获奖', g: 'mine', placeholder: '选填', wide: true }
     ],
     anime: [
-      { key: 'studio', label: '动画制作', placeholder: 'MADHOUSE / 京都动画' },
-      { key: 'seriesComp', label: '系列构成', placeholder: '选填' },
-      { key: 'charDesign', label: '角色设计', placeholder: '选填' },
-      { key: 'composer', label: '配乐', placeholder: '选填' },
-      { key: 'season', label: '放送季度', placeholder: '2024 春 / 2024 秋' },
-      { key: 'epCount', label: '总话数', placeholder: '12', numeric: true },
-      { key: 'runtime', label: '单集时长（分钟）', placeholder: '24', numeric: true },
-      { key: 'ageRating', label: '分级', options: ['全年龄', '12+', '15+', '17+', '18+'] },
-      { key: 'platform', label: '放送平台', placeholder: 'B 站 / Netflix …' },
-      { key: 'cast', label: '主役声优', placeholder: '用顿号分隔', wide: true }
+      { key: 'studio', label: '动画制作', g: 'prod', placeholder: 'MADHOUSE / 京都动画' },
+      { key: 'seriesComp', label: '系列构成', g: 'prod', placeholder: '选填' },
+      { key: 'script', label: '脚本', g: 'prod', placeholder: '选填' },
+      { key: 'charDesign', label: '角色设计', g: 'prod', placeholder: '选填' },
+      { key: 'artDirector', label: '美术监督', g: 'prod', placeholder: '选填' },
+      { key: 'colorDesign', label: '色彩设计', g: 'prod', placeholder: '选填' },
+      { key: 'storyboard', label: '分镜', g: 'prod', placeholder: '选填' },
+      { key: 'episodeDirector', label: '演出', g: 'prod', placeholder: '选填' },
+      { key: 'soundDirector', label: '音响监督', g: 'prod', placeholder: '选填' },
+      { key: 'animationDirector', label: '总作画监督', g: 'prod', placeholder: '选填' },
+      { key: 'mechaDesign', label: '机械设定', g: 'prod', placeholder: '选填' },
+      { key: 'photoDirector', label: '摄影监督', g: 'prod', placeholder: '选填' },
+      { key: 'editing', label: '剪辑', g: 'prod', placeholder: '选填' },
+      { key: 'planning', label: '企划', g: 'prod', placeholder: '选填' },
+      { key: 'productionManager', label: '制作管理', g: 'prod', placeholder: '选填' },
+      { key: 'keyAnimation', label: '原画', g: 'prod', placeholder: '选填' },
+      { key: 'backgroundArt', label: '背景美术', g: 'prod', placeholder: '选填' },
+      { key: 'composer', label: '配乐', g: 'prod', placeholder: '选填' },
+      { key: 'musicProd', label: '音乐制作', g: 'prod', placeholder: '选填' },
+      { key: 'originalWork', label: '原作', g: 'prod', placeholder: '选填' },
+      { key: 'season', label: '放送季度', g: 'pub', placeholder: '2024 春 / 2024 秋' },
+      { key: 'airWeekday', label: '放送星期', g: 'pub', options: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'] },
+      { key: 'airStart', label: '放送开始', g: 'pub', date: true },
+      { key: 'airEnd', label: '放送结束', g: 'pub', date: true },
+      { key: 'epCount', label: '总话数', g: 'pub', numeric: true, placeholder: '12' },
+      { key: 'runtime', label: '单集时长（分钟）', g: 'pub', numeric: true, placeholder: '24' },
+      { key: 'ageRating', label: '分级', g: 'pub', options: ['全年龄', '12+', '15+', '17+', '18+'] },
+      { key: 'officialSite', label: '官方网站', g: 'pub', placeholder: 'https://…', wide: true },
+      { key: 'themeArtist', label: '主题歌演唱', g: 'mine', placeholder: '选填' },
+      { key: 'platform', label: '放送平台', g: 'mine', placeholder: 'B 站 / Netflix …' },
+      { key: 'themeSong', label: '主题曲', g: 'mine', placeholder: '选填' },
+      { key: 'production', label: '制作协力', g: 'mine', placeholder: '选填' },
+      { key: 'cast', label: '主役声优', g: 'prod', placeholder: '用顿号分隔', wide: true }
     ],
     tv: [
-      { key: 'channel', label: '电视台 / 出品方', placeholder: 'HBO / 正午阳光' },
-      { key: 'screenwriter', label: '编剧', placeholder: '选填' },
-      { key: 'seasons', label: '季数', placeholder: '3', numeric: true },
-      { key: 'epCount', label: '总集数', placeholder: '24', numeric: true },
-      { key: 'runtime', label: '单集时长（分钟）', placeholder: '45', numeric: true },
-      { key: 'country', label: '国家 / 地区', placeholder: '中国大陆' },
-      { key: 'language', label: '语言', placeholder: '汉语普通话' },
-      { key: 'ageRating', label: '分级', options: ['全年龄', '12+', '15+', '17+', '18+'] },
-      { key: 'platform', label: '观看平台', placeholder: '爱奇艺 / Netflix …' },
-      { key: 'cast', label: '主演', placeholder: '用顿号分隔', wide: true }
+      { key: 'channel', label: '电视台 / 出品方', g: 'pub', placeholder: 'HBO / 正午阳光' },
+      { key: 'seasons', label: '季数', g: 'pub', numeric: true, placeholder: '3' },
+      { key: 'epCount', label: '总集数', g: 'pub', numeric: true, placeholder: '24' },
+      { key: 'runtime', label: '单集时长（分钟）', g: 'pub', numeric: true, placeholder: '45' },
+      { key: 'country', label: '国家 / 地区', g: 'pub', placeholder: '中国大陆' },
+      { key: 'language', label: '语言', g: 'pub', placeholder: '汉语普通话' },
+      { key: 'ageRating', label: '分级', g: 'pub', options: ['全年龄', '12+', '15+', '17+', '18+'] },
+      { key: 'airPeriod', label: '播出时段', g: 'pub', placeholder: '黄金档 / 深夜档' },
+      { key: 'broadcastEnd', label: '播毕日期', g: 'pub', date: true },
+      { key: 'shootYear', label: '拍摄年份', g: 'pub', placeholder: '2023' },
+      { key: 'wrapDate', label: '杀青日期', g: 'pub', date: true },
+      { key: 'webPlatform', label: '网络平台', g: 'pub', placeholder: '爱奇艺 / 腾讯视频' },
+      { key: 'ratingShare', label: '收视率', g: 'pub', placeholder: '2.4%' },
+      { key: 'renewal', label: '续订情况', g: 'pub', options: ['已续订', '待定', '已完结'] },
+      { key: 'company', label: '出品公司', g: 'prod', placeholder: '选填' },
+      { key: 'screenwriter', label: '编剧', g: 'prod', placeholder: '选填' },
+      { key: 'producer', label: '制片人', g: 'prod', placeholder: '选填' },
+      { key: 'composer', label: '配乐', g: 'prod', placeholder: '选填' },
+      { key: 'themeSong', label: '主题曲', g: 'prod', placeholder: '选填' },
+      { key: 'basedOn', label: '原著', g: 'prod', placeholder: '选填' },
+      { key: 'basedOnAuthor', label: '原著作者', g: 'prod', placeholder: '选填' },
+      { key: 'platform', label: '观看平台', g: 'mine', placeholder: '爱奇艺 / Netflix …' },
+      { key: 'location', label: '拍摄地', g: 'mine', placeholder: '选填' },
+      { key: 'awards', label: '获奖', g: 'mine', placeholder: '选填', wide: true },
+      { key: 'cast', label: '主演', g: 'prod', placeholder: '用顿号分隔', wide: true }
     ],
     movie: [
-      { key: 'runtime', label: '片长（分钟）', placeholder: '120', numeric: true },
-      { key: 'country', label: '制片国家 / 地区', placeholder: '中国大陆 / 日本' },
-      { key: 'language', label: '语言', placeholder: '汉语普通话' },
-      { key: 'screenwriter', label: '编剧', placeholder: '选填' },
-      { key: 'watchPlace', label: '观看方式', options: ['影院', '流媒体', '下载', '电视', '飞机', '其他'] },
-      { key: 'ageRating', label: '分级', options: ['全年龄', '12+', '15+', '17+', '18+'] },
-      { key: 'imdb', label: 'IMDb', placeholder: 'tt0111161' },
-      { key: 'cinema', label: '影院 / 平台', placeholder: '万达影城 / Netflix' },
-      { key: 'cast', label: '主演', placeholder: '用顿号分隔', wide: true }
+      { key: 'runtime', label: '片长（分钟）', g: 'pub', numeric: true, placeholder: '120' },
+      { key: 'country', label: '制片国家 / 地区', g: 'pub', placeholder: '中国大陆 / 日本' },
+      { key: 'language', label: '语言', g: 'pub', placeholder: '汉语普通话' },
+      { key: 'ageRating', label: '分级', g: 'pub', options: ['全年龄', '12+', '15+', '17+', '18+'] },
+      { key: 'imdb', label: 'IMDb', g: 'pub', placeholder: 'tt0111161' },
+      { key: 'boxoffice', label: '票房', g: 'pub', placeholder: '全球 6.7 亿美元' },
+      { key: 'budget', label: '制作成本', g: 'pub', placeholder: '1.65 亿美元' },
+      { key: 'premiere', label: '首映日期', g: 'pub', date: true },
+      { key: 'aspect', label: '画幅', g: 'pub', placeholder: '2.39:1' },
+      { key: 'color', label: '色彩', g: 'pub', options: ['彩色', '黑白', '部分黑白'] },
+      { key: 'postCredit', label: '片尾彩蛋', g: 'pub', options: ['有', '无'] },
+      { key: 'releaseRegion', label: '上映地区', g: 'pub', placeholder: '中国大陆 / 北美' },
+      { key: 'languageVersion', label: '语言版本', g: 'pub', placeholder: '原声 / 国语配音' },
+      { key: 'screeningFormat', label: '放映格式', g: 'pub', options: ['2D', '3D', 'IMAX', '杜比影院', '其他'] },
+      { key: 'screenwriter', label: '编剧', g: 'prod', placeholder: '选填' },
+      { key: 'producer', label: '制片人', g: 'prod', placeholder: '选填' },
+      { key: 'company', label: '出品公司', g: 'prod', placeholder: '选填' },
+      { key: 'composer', label: '配乐', g: 'prod', placeholder: '选填' },
+      { key: 'themeSong', label: '主题曲', g: 'prod', placeholder: '选填' },
+      { key: 'distributor', label: '发行公司', g: 'prod', placeholder: '选填' },
+      { key: 'basedOn', label: '原著', g: 'prod', placeholder: '选填' },
+      { key: 'franchise', label: '系列', g: 'prod', placeholder: '选填' },
+      { key: 'dubbing', label: '配音', g: 'prod', placeholder: '选填' },
+      { key: 'location', label: '拍摄地', g: 'prod', placeholder: '选填' },
+      { key: 'watchPlace', label: '观看方式', g: 'mine', options: ['影院', '流媒体', '下载', '电视', '飞机', '其他'] },
+      { key: 'cinema', label: '影院 / 平台', g: 'mine', placeholder: '万达影城 / Netflix' },
+      { key: 'sequel', label: '续集', g: 'mine', placeholder: '选填' },
+      { key: 'awards', label: '获奖', g: 'mine', placeholder: '选填', wide: true },
+      { key: 'cast', label: '主演', g: 'prod', placeholder: '用顿号分隔', wide: true }
     ],
     variety: [
-      { key: 'channel', label: '电视台 / 平台', placeholder: '湖南卫视 / 芒果 TV' },
-      { key: 'host', label: '主持人', placeholder: '何炅 …' },
-      { key: 'epCount', label: '总期数', placeholder: '12', numeric: true },
-      { key: 'runtime', label: '单期时长（分钟）', placeholder: '90', numeric: true },
-      { key: 'studio', label: '制作团队', placeholder: '选填' },
-      { key: 'cast', label: '常驻嘉宾', placeholder: '用顿号分隔', wide: true }
+      { key: 'channel', label: '电视台 / 平台', g: 'pub', placeholder: '湖南卫视 / 芒果 TV' },
+      { key: 'epCount', label: '总期数', g: 'pub', numeric: true, placeholder: '12' },
+      { key: 'runtime', label: '单期时长（分钟）', g: 'pub', numeric: true, placeholder: '90' },
+      { key: 'quarter', label: '季度', g: 'pub', options: ['第 1 季度', '第 2 季度', '第 3 季度', '第 4 季度'] },
+      { key: 'seasonNo', label: '第几季', g: 'pub', numeric: true, placeholder: '3' },
+      { key: 'airTime', label: '播出时间', g: 'pub', placeholder: '每周五 20:00' },
+      { key: 'showFormat', label: '节目形式', g: 'pub', placeholder: '棚内 / 户外 / 竞演' },
+      { key: 'productionCompany', label: '制作公司', g: 'prod', placeholder: '选填' },
+      { key: 'exclusive', label: '播出方式', g: 'pub', options: ['独播', '联播'] },
+      { key: 'chiefDirector', label: '总导演', g: 'prod', placeholder: '选填' },
+      { key: 'screenwriter', label: '编剧', g: 'prod', placeholder: '选填' },
+      { key: 'studio', label: '制作团队', g: 'prod', placeholder: '选填' },
+      { key: 'sponsor', label: '冠名商', g: 'mine', placeholder: '选填' },
+      { key: 'recordPlace', label: '录制地', g: 'mine', placeholder: '选填' },
+      { key: 'segment', label: '常驻环节', g: 'mine', placeholder: '选填' },
+      { key: 'awards', label: '获奖', g: 'mine', placeholder: '选填' },
+      { key: 'cast', label: '常驻嘉宾', g: 'prod', placeholder: '用顿号分隔', wide: true }
     ],
     drama: [
-      { key: 'platform', label: '收听平台', placeholder: '猫耳 FM / M 站' },
-      { key: 'originalWork', label: '原作', placeholder: '选填' },
-      { key: 'studio', label: '制作组', placeholder: '选填' },
-      { key: 'composer', label: '配乐', placeholder: '选填' },
-      { key: 'epCount', label: '总集数', placeholder: '12', numeric: true },
-      { key: 'runtime', label: '单集时长（分钟）', placeholder: '30', numeric: true },
-      { key: 'cv', label: '主役声优', placeholder: '用顿号分隔', wide: true }
+      { key: 'epCount', label: '总集数', g: 'pub', numeric: true, placeholder: '12' },
+      { key: 'runtime', label: '单集时长（分钟）', g: 'pub', numeric: true, placeholder: '30' },
+      { key: 'updateCycle', label: '更新周期', g: 'pub', options: ['每周', '双周', '不定期', '已完结'] },
+      { key: 'originalWork', label: '原作', g: 'prod', placeholder: '选填' },
+      { key: 'studio', label: '制作组', g: 'prod', placeholder: '选填' },
+      { key: 'screenwriter', label: '编剧', g: 'prod', placeholder: '选填' },
+      { key: 'planner', label: '策划', g: 'prod', placeholder: '选填' },
+      { key: 'voiceDirector', label: '配音导演', g: 'prod', placeholder: '选填' },
+      { key: 'postProd', label: '后期', g: 'prod', placeholder: '选填' },
+      { key: 'soundEffect', label: '音效', g: 'prod', placeholder: '选填' },
+      { key: 'themeSong', label: '主题曲', g: 'prod', placeholder: '选填' },
+      { key: 'insertSong', label: '插曲', g: 'prod', placeholder: '选填' },
+      { key: 'coverArtist', label: '封面绘制', g: 'prod', placeholder: '选填' },
+      { key: 'licensePlatform', label: '授权平台', g: 'mine', placeholder: '猫耳 / 漫播' },
+      { key: 'composer', label: '配乐', g: 'prod', placeholder: '选填' },
+      { key: 'platform', label: '收听平台', g: 'mine', placeholder: '猫耳 FM / M 站' },
+      { key: 'posterDesign', label: '海报设计', g: 'mine', placeholder: '选填' },
+      { key: 'awards', label: '获奖', g: 'mine', placeholder: '选填' },
+      { key: 'cv', label: '主役声优', g: 'prod', placeholder: '用顿号分隔', wide: true }
     ],
     stage: [
-      { key: 'studio', label: '剧团', placeholder: '选填' },
-      { key: 'venue', label: '剧场 / 城市', placeholder: '上海文化广场' },
-      { key: 'shows', label: '场次', placeholder: '第 3 场', numeric: true },
-      { key: 'runtime', label: '时长（分钟）', placeholder: '150', numeric: true },
-      { key: 'seat', label: '座位', placeholder: '池座 5 排 12 号' },
-      { key: 'cast', label: '主演', placeholder: '用顿号分隔', wide: true }
+      { key: 'venue', label: '剧场 / 城市', g: 'pub', placeholder: '上海文化广场' },
+      { key: 'shows', label: '场次', g: 'pub', numeric: true, placeholder: '第 3 场' },
+      { key: 'runtime', label: '时长（分钟）', g: 'pub', numeric: true, placeholder: '150' },
+      { key: 'tour', label: '巡演城市', g: 'pub', placeholder: '北京 / 上海 / 广州' },
+      { key: 'screenwriter', label: '编剧', g: 'prod', placeholder: '选填' },
+      { key: 'composer', label: '作曲', g: 'prod', placeholder: '选填' },
+      { key: 'stageManager', label: '舞台监督', g: 'prod', placeholder: '选填' },
+      { key: 'lighting', label: '灯光', g: 'prod', placeholder: '选填' },
+      { key: 'costume', label: '服装', g: 'prod', placeholder: '选填' },
+      { key: 'intermission', label: '中场休息', g: 'pub', options: ['有', '无'] },
+      { key: 'caption', label: '字幕', g: 'pub', options: ['有', '无'] },
+      { key: 'playType', label: '剧目类型', g: 'pub', options: ['话剧', '音乐剧', '舞剧', '儿童剧', '戏曲', '其他'] },
+      { key: 'presenter', label: '主办方', g: 'pub', placeholder: '选填' },
+      { key: 'merch', label: '周边', g: 'mine', placeholder: '场刊 / 立牌 / 徽章' },
+      { key: 'seat', label: '座位', g: 'mine', placeholder: '池座 5 排 12 号' },
+      { key: 'ticketPrice', label: '票价（元）', g: 'mine', numeric: true, placeholder: '380' },
+      { key: 'awards', label: '获奖', g: 'mine', placeholder: '选填' },
+      { key: 'cast', label: '主演', g: 'prod', placeholder: '用顿号分隔', wide: true }
     ],
     game: [
-      { key: 'platform', label: '平台', placeholder: 'PC / PS5 / Switch' },
-      { key: 'gameType', label: '类型', options: ['单机', '手游', '主机', '网页', '独立', '其他'] },
-      { key: 'studio', label: '开发商', placeholder: '选填' },
-      { key: 'publisher', label: '发行商', placeholder: '选填' },
-      { key: 'playTime', label: '通关时长（小时）', placeholder: '35', numeric: true },
-      { key: 'completion', label: '通关情况', options: ['主线通关', '全成就', '未通关', '云通关'] },
-      { key: 'ageRating', label: '分级', options: ['全年龄', '12+', '15+', '17+', '18+'] },
-      { key: 'achievements', label: '成就 / 奖杯', placeholder: '42/50', wide: true }
+      { key: 'platform', label: '平台', g: 'pub', placeholder: 'PC / PS5 / Switch' },
+      { key: 'gameType', label: '类型', g: 'pub', options: ['单机', '手游', '主机', '网页', '独立', '其他'] },
+      { key: 'franchise', label: '所属系列', g: 'pub', placeholder: '选填' },
+      { key: 'mcScore', label: 'MC 媒体评分', g: 'pub', numeric: true, placeholder: '92' },
+      { key: 'dlcCount', label: 'DLC 数', g: 'pub', numeric: true, placeholder: '0' },
+      { key: 'onlinePlayers', label: '联机人数', g: 'pub', numeric: true, placeholder: '1' },
+      { key: 'ageRating', label: '分级', g: 'pub', options: ['全年龄', '12+', '15+', '17+', '18+'] },
+      { key: 'chineseSupport', label: '中文支持', g: 'pub', options: ['简体中文', '繁体中文', '简繁都有', '无中文'] },
+      { key: 'publisher', label: '发行商', g: 'prod', placeholder: '选填' },
+      { key: 'engine', label: '游戏引擎', g: 'prod', placeholder: 'Unity / Unreal' },
+      { key: 'languages', label: '支持语言', g: 'pub', placeholder: '中 / 英 / 日', wide: true },
+      { key: 'playTime', label: '通关时长（小时）', g: 'mine', numeric: true, placeholder: '35' },
+      { key: 'completionistHours', label: '全成就时长（小时）', g: 'mine', numeric: true, placeholder: '80' },
+      { key: 'completion', label: '通关情况', g: 'mine', options: ['主线通关', '全成就', '未通关', '云通关'] },
+      { key: 'achievements', label: '成就 / 奖杯', g: 'mine', placeholder: '42/50' },
+      { key: 'achievementsTotal', label: '成就总数', g: 'mine', numeric: true, placeholder: '50' },
+      { key: 'controller', label: '手柄支持', g: 'mine', options: ['完整支持', '部分支持', '不支持'] },
+      { key: 'cloudSave', label: '云存档', g: 'mine', options: ['支持', '不支持'] },
+      { key: 'modSupport', label: 'Mod 支持', g: 'mine', options: ['支持', '不支持', '部分'] },
+      { key: 'vrSupport', label: 'VR 支持', g: 'mine', options: ['支持', '不支持'] },
+      { key: 'dubLanguage', label: '配音语言', g: 'mine', placeholder: '中配 / 日配' },
+      { key: 'difficulty', label: '难度', g: 'mine', options: ['休闲', '普通', '困难', '地狱'] },
+      { key: 'lastPlayed', label: '最后游玩', g: 'mine', date: true },
+      { key: 'buyPrice', label: '购入价格（元）', g: 'mine', numeric: true, placeholder: '298' },
+      { key: 'releasePrice', label: '发售价（元）', g: 'mine', numeric: true, placeholder: '298' },
+      { key: 'historicLow', label: '史低价格（元）', g: 'mine', numeric: true, placeholder: '99' },
+      { key: 'buyDate', label: '购买日期', g: 'mine', date: true }
     ],
     music: [
-      { key: 'albumType', label: '类型', options: ['专辑', '单曲', 'EP', 'OST', 'Live', '合集'] },
-      { key: 'genre', label: '流派', placeholder: '流行 / 摇滚 / 电子' },
-      { key: 'tracks', label: '曲目数', placeholder: '12', numeric: true },
-      { key: 'discs', label: '唱片数', placeholder: '1', numeric: true },
-      { key: 'runtime', label: '总时长（分钟）', placeholder: '48', numeric: true },
-      { key: 'medium', label: '介质', options: ['数字', 'CD', '黑胶', '磁带'] },
-      { key: 'publisher', label: '发行厂牌', placeholder: '选填' },
-      { key: 'price', label: '定价（元）', placeholder: '128', numeric: true },
-      { key: 'platform', label: '收听平台', placeholder: '网易云 / Spotify', wide: true }
+      { key: 'albumType', label: '类型', g: 'pub', options: ['专辑', '单曲', 'EP', 'OST', 'Live', '合集'] },
+      { key: 'genre', label: '流派', g: 'pub', placeholder: '流行 / 摇滚 / 电子' },
+      { key: 'tracks', label: '曲目数', g: 'pub', numeric: true, placeholder: '12' },
+      { key: 'discs', label: '唱片数', g: 'pub', numeric: true, placeholder: '1' },
+      { key: 'runtime', label: '总时长（分钟）', g: 'pub', numeric: true, placeholder: '48' },
+      { key: 'medium', label: '介质', g: 'pub', options: ['数字', 'CD', '黑胶', '磁带'] },
+      { key: 'publisher', label: '发行厂牌', g: 'pub', placeholder: '选填' },
+      { key: 'version', label: '版本', g: 'pub', options: ['首版', '再版', '纪念版', '引进版'] },
+      { key: 'releaseCountry', label: '发行地区', g: 'pub', placeholder: '中国 / 日本' },
+      { key: 'lyricist', label: '作词', g: 'prod', placeholder: '选填' },
+      { key: 'composer', label: '作曲', g: 'prod', placeholder: '选填' },
+      { key: 'arranger', label: '编曲', g: 'prod', placeholder: '选填' },
+      { key: 'producer', label: '制作人', g: 'prod', placeholder: '选填' },
+      { key: 'mvDirector', label: 'MV 导演', g: 'prod', placeholder: '选填' },
+      { key: 'recordingStudio', label: '录音室', g: 'prod', placeholder: '选填' },
+      { key: 'mastering', label: '母带', g: 'prod', placeholder: '选填' },
+      { key: 'leadSingle', label: '首支单曲', g: 'prod', placeholder: '选填' },
+      { key: 'albumLanguage', label: '专辑语种', g: 'pub', placeholder: '国语 / 日语 / 英语' },
+      { key: 'signed', label: '签名版', g: 'mine', options: ['有', '无'] },
+      { key: 'mvCount', label: 'MV 数', g: 'mine', numeric: true, placeholder: '3' },
+      { key: 'copyright', label: '版权方', g: 'mine', placeholder: '选填' },
+      { key: 'price', label: '定价（元）', g: 'mine', numeric: true, placeholder: '128' },
+      { key: 'platform', label: '收听平台', g: 'mine', placeholder: '网易云 / Spotify' },
+      { key: 'awards', label: '获奖', g: 'mine', placeholder: '选填' },
+      { key: 'trackList', label: '曲目列表', g: 'mine', placeholder: '每行一首，或用顿号分隔', wide: true }
     ],
     magazine: [
-      { key: 'serialStatus', label: '刊期状态', options: ['在刊', '休刊', '停刊'] },
-      { key: 'price', label: '定价（元）', placeholder: '20', numeric: true }
+      { key: 'serialStatus', label: '刊期状态', g: 'pub', options: ['在刊', '休刊', '停刊'] },
+      { key: 'issn', label: 'ISSN', g: 'pub', placeholder: '1000-0000' },
+      { key: 'organizer', label: '主办单位', g: 'pub', placeholder: '选填' },
+      { key: 'pages', label: '页数', g: 'pub', numeric: true, placeholder: '128' },
+      { key: 'bookSize', label: '开本', g: 'pub', options: ['16 开', '大 16 开', 'A4', 'A5', '其他'] },
+      { key: 'language', label: '语言', g: 'pub', placeholder: '汉语' },
+      { key: 'postalCode', label: '邮发代号', g: 'pub', placeholder: '2-123' },
+      { key: 'issueCount', label: '已收期数', g: 'pub', numeric: true, placeholder: '36' },
+      { key: 'columns', label: '常看栏目', g: 'pub', placeholder: '选填' },
+      { key: 'editorInChief', label: '主编', g: 'pub', placeholder: '选填' },
+      { key: 'copies', label: '订阅份数', g: 'mine', numeric: true, placeholder: '1' },
+      { key: 'subPrice', label: '订阅价（元/年）', g: 'mine', numeric: true, placeholder: '240' },
+      { key: 'price', label: '定价（元）', g: 'mine', numeric: true, placeholder: '20' },
+      { key: 'subscribeFrom', label: '订阅渠道', g: 'mine', options: ['邮局', '报刊亭', '官网', '电商', '电子版', '其他'] },
+      { key: 'subscribeStart', label: '订阅起始', g: 'mine', date: true },
+      { key: 'subscribeEnd', label: '订阅到期', g: 'mine', date: true },
+      { key: 'gift', label: '赠品', g: 'mine', placeholder: '选填' }
     ]
   };
 
   var STATUSES = { wish: '愿望单', doing: '进行中', done: '已完成', paused: '搁置' };
   var STATUS_KEYS = ['wish', 'doing', 'done', 'paused'];
+
+  /* 每种类型的四个状态各有各的叫法：内部仍是 wish/doing/done/paused，
+     只是换一套贴切的词，筛选、看板、卡片、导出统一走这套 */
+  var TYPE_STATUS = {
+    novel: { wish: '想读', doing: '在读', done: '读完', paused: '弃读' },
+    comic: { wish: '想读', doing: '在读', done: '读完', paused: '弃读' },
+    anime: { wish: '想看', doing: '在追', done: '看完', paused: '弃番' },
+    tv: { wish: '想看', doing: '在追', done: '看完', paused: '弃剧' },
+    movie: { wish: '想看', doing: '在看', done: '看过', paused: '弃看' },
+    variety: { wish: '想看', doing: '在追', done: '看完', paused: '弃追' },
+    drama: { wish: '想听', doing: '在听', done: '听完', paused: '弃听' },
+    stage: { wish: '想看', doing: '在看', done: '看过', paused: '弃看' },
+    game: { wish: '想玩', doing: '在玩', done: '已通关', paused: '弃坑' },
+    music: { wish: '想听', doing: '在听', done: '听过', paused: '弃听' },
+    magazine: { wish: '想订', doing: '在追', done: '已收齐', paused: '弃订' }
+  };
+
+  function statusLabel(type, key) {
+    var m = TYPE_STATUS[type];
+    if (m && m[key]) return m[key];
+    return STATUSES[key] || key;
+  }
+
+  /* 单条记录用：游戏打完且全成就时显示「全成就」，比「已通关」更准 */
+  function statusLabelFor(r) {
+    if (!r) return '';
+    if (r.type === 'game' && r.status === 'done' && r.meta && r.meta.completion === '全成就') return '全成就';
+    return statusLabel(r.type, r.status);
+  }
+
+  /* 新增 / 编辑表单的字段叫法：每种类型一套，不再共用一个模板 */
+  var TYPE_FORM = {
+    novel: { release: '出版日期', verb: '出版', score: '豆瓣评分', start: '开始读', finish: '读完', hours: '阅读时长（小时）', run: '遍', again: '重读' },
+    comic: { release: '出版日期', verb: '出版', score: '豆瓣评分', start: '开始看', finish: '看完', hours: '阅读时长（小时）', run: '遍', again: '重读' },
+    anime: { release: '首播日期', verb: '首播', score: '豆瓣评分', start: '开始看', finish: '看完', hours: '观看时长（小时）', run: '刷', again: '重看' },
+    tv: { release: '首播日期', verb: '首播', score: '豆瓣评分', start: '开始看', finish: '看完', hours: '观看时长（小时）', run: '刷', again: '重看' },
+    movie: { release: '上映日期', verb: '上映', score: '豆瓣评分', start: '', finish: '观看日期', hours: '观影时长（小时）', run: '刷', again: '重看', single: true },
+    variety: { release: '首播日期', verb: '首播', score: '豆瓣评分', start: '开始看', finish: '看完', hours: '观看时长（小时）', run: '刷', again: '重看' },
+    drama: { release: '上线日期', verb: '上线', score: '豆瓣评分', start: '开始听', finish: '听完', hours: '收听时长（小时）', run: '遍', again: '重听' },
+    stage: { release: '首演日期', verb: '首演', score: '豆瓣评分', start: '', finish: '观演日期', hours: '观演时长（小时）', run: '刷', again: '重看', single: true },
+    game: { release: '发行日期', verb: '发行', score: '媒体评分', start: '开始玩', finish: '通关日期', hours: '游玩时长（小时）', run: '周目', again: '重玩' },
+    music: { release: '发行日期', verb: '发行', score: '豆瓣评分', start: '', finish: '收听日期', hours: '收听时长（小时）', run: '遍', again: '重听', single: true },
+    magazine: { release: '出版日期', verb: '出版', score: '', start: '开始收', finish: '收齐日期', hours: '翻阅时长（小时）', run: '遍', again: '重翻' }
+  };
+
+  function formOf(type) {
+    return TYPE_FORM[type] || TYPE_FORM.novel;
+  }
+
+  var TYPE_TIMES = {
+    novel: '阅读次数', comic: '阅读次数', anime: '观看次数', tv: '观看次数',
+    movie: '观看次数', variety: '观看次数', drama: '收听次数', stage: '观看次数',
+    game: '游玩周目', music: '收听次数', magazine: '翻阅次数'
+  };
+  for (var _tk in TYPE_FORM) {
+    if (TYPE_FORM.hasOwnProperty(_tk)) TYPE_FORM[_tk].times = TYPE_TIMES[_tk] || '观看次数';
+  }
 
   var PRESET_TAGS = ['科幻', '奇幻', '悬疑', '推理', '言情', '历史', '武侠', '都市', '治愈',
     '恐怖', '青春', '纪实', '剧情', '喜剧', '动画', '犯罪', '冒险', '文艺', '家庭', '战争'];
@@ -253,6 +517,19 @@
     quote: '<path d="M9.6 6.4c-3 1.4-4.6 3.7-4.6 6.9v4.3h5.4v-5.4H7.6c0-1.9.9-3.2 2.9-4.1zM19.6 6.4c-3 1.4-4.6 3.7-4.6 6.9v4.3h5.4v-5.4h-2.8c0-1.9.9-3.2 2.9-4.1z" fill="currentColor" stroke="none"/>',
     user: '<circle cx="12" cy="8.4" r="3.6"/><path d="M4.8 20c.6-3.6 3.5-5.6 7.2-5.6s6.6 2 7.2 5.6"/>',
     archive: '<rect x="3.4" y="4.2" width="17.2" height="4.6" rx="2"/><path d="M5 8.8v9.4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.8"/><path d="M9.8 12.6h4.4"/>',
+    board: '<rect x="3" y="4" width="5" height="16" rx="2"/><rect x="9.5" y="4" width="5" height="11" rx="2"/><rect x="16" y="4" width="5" height="16" rx="2"/>',
+    trophy: '<path d="M8 4h8v3.6a4 4 0 0 1-8 0z"/><path d="M8 5.2H5.4v1.4A3 3 0 0 0 8 9.6M16 5.2h2.6v1.4A3 3 0 0 1 16 9.6"/><path d="M12 11.6v4.2M9 20h6M9.8 15.8h4.4l.6 4.2H9.2z"/>',
+    flame: '<path d="M12 3s5 4.3 5 8.7A5 5 0 0 1 7 11.7C7 7.3 12 3 12 3z"/><path d="M12 20.6a2.9 2.9 0 0 0 2.9-2.9c0-2-2.9-4.3-2.9-4.3s-2.9 2.3-2.9 4.3a2.9 2.9 0 0 0 2.9 2.9z"/>',
+    clock: '<circle cx="12" cy="12" r="8.4"/><path d="M12 7.4V12l3.2 2"/>',
+    star: '<path d="M12 3.6l2.6 5.4 5.9.8-4.3 4.1 1.1 5.9-5.3-2.9-5.3 2.9 1.1-5.9L3.5 9.8l5.9-.8z"/>',
+    layers: '<path d="M12 3.6 3.6 8l8.4 4.4L20.4 8z"/><path d="m3.6 12.6 8.4 4.4 8.4-4.4"/><path d="m3.6 16.9 8.4 4.4 8.4-4.4"/>',
+    crown: '<path d="M3.4 8.2 7 12l5-7.4 5 7.4 3.6-3.8v9.4a1.4 1.4 0 0 1-1.4 1.4H4.8a1.4 1.4 0 0 1-1.4-1.4z"/><path d="M3.4 17.4h17.2"/>',
+    diamond: '<path d="M12 3.4 20.6 9 12 20.6 3.4 9z"/><path d="M3.4 9h17.2M12 3.4 8.4 9l3.6 11.6L15.6 9z"/>',
+    medal: '<path d="M7.4 3h3.2l1.4 5M16.6 3h-3.2l-1.4 5"/><circle cx="12" cy="15.2" r="5.4"/><path d="m12 12.6.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z"/>',
+    feather: '<path d="M20 4.4c-4.4-.6-8.4.8-10.6 3S6 13 6.4 15.6l4.2-4.2"/><path d="M4 20.2c1-3.4 3-6.2 6-8"/><path d="M13.6 10.6h3.8M12.4 13.4h3"/>',
+    pen: '<path d="M4 20.2 8 19l10.6-10.6a2.2 2.2 0 0 0-3.1-3.1L4.9 16z"/><path d="m14.4 7.6 2.9 2.9"/>',
+    moon: '<path d="M20 14.4A8.4 8.4 0 0 1 9.6 4 8.6 8.6 0 1 0 20 14.4z"/>',
+    sun: '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4 17 7M7 17l-1.6 1.6"/>',
 
   };
 
@@ -344,6 +621,23 @@
     return ratingText(v);
   }
 
+  function maxRating() {
+    /* 评分统一按 10 分制存储，5 星制只在显示时换算 */
+    return 10;
+  }
+
+  /* 从第一条记录算起，今天是记录的第几天（含当天） */
+  function recordDayCount() {
+    var min = 0;
+    state.records.forEach(function (r) {
+      if (!min || r.createdAt < min) min = r.createdAt;
+    });
+    if (!min) return 0;
+    var a = new Date(min); a.setHours(0, 0, 0, 0);
+    var b = new Date(); b.setHours(0, 0, 0, 0);
+    return Math.max(1, Math.round((b.getTime() - a.getTime()) / DAY) + 1);
+  }
+
   function isReleased(r) {
     if (r.releaseDate) return r.releaseDate <= todayISO();
     var y = recordYear(r);
@@ -362,10 +656,10 @@
   var state = {
     records: [],
     lists: [],
-    prefs: { theme: 'system', lastExportAt: 0, ratingScale: '10', goalCount: 0, goalHours: 0, seenStandaloneTip: 0 },
+    prefs: { theme: 'system', lastExportAt: 0, ratingScale: '10', goalCount: 0, goalHours: 0, seenStandaloneTip: 0, vocab: {}, vocabHidden: {} },
     route: { name: 'home', id: null },
     returnTo: '#/home',
-    filters: { status: 'all', type: 'all', tag: 'all', year: 'all', release: 'all', rating: 'all', sort: 'updated' },
+    filters: { status: 'all', type: 'all', tag: 'all', year: 'all', release: 'all', rating: 'all', sort: 'updated', meta: {} },
     ui: {
       listId: 'all', selectMode: false, selected: {}, sortMode: false, view: 'grid', fold: {},
       quoteType: 'all', quoteQ: ''
@@ -390,7 +684,7 @@
     var o = {};
     if (!m || typeof m !== 'object') return o;
     META_KEYS.forEach(function (k) {
-      if (m[k] != null && String(m[k]).trim()) o[k] = String(m[k]).trim().slice(0, 60);
+      if (m[k] != null && String(m[k]).trim()) o[k] = String(m[k]).trim().slice(0, 200);
     });
     return o;
   }
@@ -680,6 +974,11 @@
       if (p.theme) state.prefs.theme = p.theme;
       if (p.lastExportAt) state.prefs.lastExportAt = Number(p.lastExportAt) || 0;
       if (p.ratingScale === '5') state.prefs.ratingScale = '5';
+      if (p.goalCount) state.prefs.goalCount = Math.max(0, Math.floor(Number(p.goalCount) || 0));
+      if (p.goalHours) state.prefs.goalHours = Math.max(0, Number(p.goalHours) || 0);
+      if (p.seenStandaloneTip) state.prefs.seenStandaloneTip = 1;
+      if (p.vocab && typeof p.vocab === 'object') state.prefs.vocab = p.vocab;
+      if (p.vocabHidden && typeof p.vocabHidden === 'object') state.prefs.vocabHidden = p.vocabHidden;
     } catch (e) { /* ignore */ }
   }
 
@@ -1002,7 +1301,7 @@
     if (!name) return { name: 'home', id: null };
     if (name === 'edit' && parts[1]) return { name: 'edit', id: parts[1] };
     if (['home', 'library', 'timeline', 'stats', 'settings', 'new',
-      'quotes', 'authors', 'archive'].indexOf(name) >= 0) {
+      'quotes', 'authors', 'archive', 'badges', 'options'].indexOf(name) >= 0) {
       return { name: name, id: null };
     }
     return { name: 'home', id: null };
@@ -1032,6 +1331,8 @@
     else if (r.name === 'quotes') html = quotesView();
     else if (r.name === 'authors') html = authorsView();
     else if (r.name === 'archive') html = archiveView();
+    else if (r.name === 'badges') html = badgesView();
+    else if (r.name === 'options') html = optionsView();
     else if (r.name === 'settings') html = settingsView();
 
     view.innerHTML = '<div class="page">' + html + '</div>';
@@ -1050,6 +1351,15 @@
       if (hw) hw.scrollLeft = hw.scrollWidth;
     }
     if (state.route.name === 'library' && state.libQ) filterLibraryCards(state.libQ);
+    if (state.route.name === 'library' && state.ui.view === 'board') {
+      /* 第一列可能是空的，直接滑到第一个有卡片的列，免得以为看板没内容 */
+      var bd = document.querySelector('.board');
+      var firstCard = bd && bd.querySelector('.bcard');
+      var col = firstCard && firstCard.parentNode && firstCard.parentNode.parentNode;
+      if (bd && col && col.classList && col.classList.contains('board-col')) {
+        bd.scrollLeft = col.offsetLeft - bd.offsetLeft;
+      }
+    }
     if (state.readonly && state.route.name === 'edit') {
       /* 只读详情：输入框加 readonly，下拉禁用，键盘也改不了 */
       var roInputs = view.querySelectorAll('input, textarea');
@@ -1082,12 +1392,16 @@
       state.ui.selected = {};
       state.ui.sortMode = false;
     }
-    if (r.name === 'timeline' && !state.timeline.y) {
-      var now = new Date();
-      state.timeline.y = now.getFullYear();
-      state.timeline.m = now.getMonth();
-      state.checkin.y = now.getFullYear();
-      state.checkin.m = now.getMonth();
+    if (r.name === 'timeline') {
+      /* 每次进时间线，打卡默认回到今天，避免沿用上次选的日期误记 */
+      state.checkin.sel = '';
+      if (!state.timeline.y) {
+        var now = new Date();
+        state.timeline.y = now.getFullYear();
+        state.timeline.m = now.getMonth();
+        state.checkin.y = now.getFullYear();
+        state.checkin.m = now.getMonth();
+      }
     }
     render();
   }
@@ -1141,7 +1455,7 @@
     if (m.part) bits.push(/刊$/.test(m.part) ? m.part : m.part + '刊');
     if (m.issueNo) bits.push('第 ' + m.issueNo + ' 期');
     if (m.totalNo) bits.push('总第 ' + m.totalNo + ' 期');
-    return bits.length ? bits.join(' · ') : STATUSES[r.status];
+    return bits.length ? bits.join(' · ') : statusLabel(r.type, r.status);
   }
 
   function progressText(r) {
@@ -1151,10 +1465,10 @@
     if (t.mode === 'percent') {
       var pc = Math.max(0, Math.min(100, p.percent || 0));
       if (r.status === 'done' || pc >= 100) return '已通关';
-      if (!pc) return STATUSES[r.status];
+      if (!pc) return statusLabel(r.type, r.status);
       return '进度 ' + pc + '%';
     }
-    if (t.mode === 'single') return STATUSES[r.status];
+    if (t.mode === 'single') return statusLabel(r.type, r.status);
 
     var st = segmentStats(r);
     if (st.list.length) {
@@ -1177,7 +1491,7 @@
     }
 
     if (!p.current) {
-      if (r.status === 'done') return t.mode === 'series' ? '已看完' : '已完成';
+      if (r.status === 'done') return '已' + segmentDoneWord(r);
       return '尚未开始';
     }
     var u = t.mode === 'book'
@@ -1291,6 +1605,12 @@
       statCell(ratingText(avg), '平均评分', '') +
       '</div></section>';
 
+    /* 记录天数 + 徽章 */
+    html += daysStripHTML();
+
+    /* 年度档案 */
+    html += yearStackHTML();
+
     /* 年度目标 */
     var goalHTML = goalCardHTML(recs);
     if (goalHTML) html += goalHTML;
@@ -1349,6 +1669,443 @@
     return '<div class="stat"><div class="stat-num">' + esc(v) + '</div><div class="stat-label">' + esc(label) + '</div></div>';
   }
 
+  /* ---------------- 记录天数 / 年度档案 / 徽章 ---------------- */
+
+  function daysStripHTML() {
+    var days = recordDayCount();
+    if (!days) return '';
+    var got = badgeList().filter(function (b) { return b.got; }).length;
+    return '<button class="days-strip" data-action="go" data-to="badges">' +
+      '<span class="days-main">' + icon('calendar', 15) +
+      '记录第 <b>' + days + '</b> 天</span>' +
+      '<span class="days-side">徽章 <b>' + got + '</b> / ' + BADGES.length + icon('chevron', 13) + '</span>' +
+      '</button>';
+  }
+
+  function yearStackHTML() {
+    var recs = state.records;
+    if (!recs.length) return '';
+
+    var map = {};
+    recs.forEach(function (r) {
+      var y = String(new Date(r.createdAt).getFullYear());
+      (map[y] = map[y] || []).push(r);
+    });
+
+    var curY = new Date().getFullYear();
+    var years = Object.keys(map).filter(function (y) {
+      return Number(y) <= curY;
+    }).sort(function (a, b) { return Number(b) - Number(a); });
+    if (years.indexOf(String(curY)) < 0) years.unshift(String(curY));
+
+    var cards = years.map(function (y) {
+      return yearCardHTML(y, map[y] || [], y === String(curY), false);
+    });
+    cards.push(yearCardHTML(String(curY + 1), [], false, true));
+
+    return '<section class="section"><div class="section-head">' +
+      '<h2 class="section-title">年度档案</h2>' +
+      '<div class="head-right"><span class="section-note">' + years.length + ' 个年度</span>' +
+      '<button class="link-btn" data-action="go" data-to="archive">全部归档</button></div></div>' +
+      '<div class="ystack">' + cards.join('') + '</div></section>';
+  }
+
+  function yearCardHTML(year, list, isCurrent, isFuture) {
+    if (isFuture || !list.length) {
+      return '<div class="ycard is-future">' +
+        '<div class="ycard-art"><span class="ycard-lock">' +
+        (isFuture ? '尚未开启' : '等待第一条') + '</span></div>' +
+        '<div class="ycard-foot"><span class="ycard-year">' + year + '</span></div>' +
+        '</div>';
+    }
+
+    var covers = list.slice().sort(function (a, b) { return b.updatedAt - a.updatedAt; }).slice(0, 3);
+    var art = '<div class="ycard-art">' + covers.map(function (r, i) {
+      /* 只有最前面那张显示首字占位，后面几张叠成色块，避免几个字叠在一起糊成一团 */
+      var inner = (i === 0 || r.cover) ? coverInner(r) : '';
+      return '<span class="ycard-cov c' + i + '" style="--cc:' + coverColor(r.title) + '">' +
+        inner + '</span>';
+    }).join('') + '</div>';
+
+    return '<div class="ycard' + (isCurrent ? ' is-current' : '') + '" data-action="open-year" data-value="' + year + '" role="button" tabindex="0">' +
+      art +
+      '<span class="ycard-seal"><b>' + list.length + '</b><i>ARCHIVED</i></span>' +
+      '<div class="ycard-foot"><span class="ycard-year">' + year + '</span>' +
+      (isCurrent ? '<em class="ycard-now">今年</em>' : '') + '</div>' +
+      '</div>';
+  }
+
+  var TYPE_BADGE_NAME = {
+    novel: ['初读', '书虫', '藏书家'],
+    comic: ['初翻', '画迷', '漫画通'],
+    anime: ['初看', '追番人', '番剧通'],
+    tv: ['初看', '剧痴', '剧评人'],
+    movie: ['初看', '影迷', '影评人'],
+    variety: ['初看', '综艺咖', '综艺通'],
+    drama: ['初听', '声控', '声优厨'],
+    stage: ['初看', '剧场常客', '剧场老饕'],
+    game: ['初玩', '玩家', '硬核玩家'],
+    music: ['初听', '乐迷', '唱片藏家'],
+    magazine: ['初订', '老订户', '期刊藏家']
+  };
+
+  var _typeCountsCache = null;
+  function countType(s, k) {
+    if (!_typeCountsCache) {
+      var m = {};
+      TYPE_KEYS.forEach(function (x) { m[x] = 0; });
+      s.records.forEach(function (r) { if (m[r.type] != null) m[r.type]++; });
+      _typeCountsCache = m;
+    }
+    return _typeCountsCache[k] || 0;
+  }
+
+  var BADGES = [
+    /* 阶段：按总收录量，铜 → 银 → 金 */
+    { key: 'n1', g: 'stage', tier: 'bronze', name: '初识', desc: '收录第 1 条', icon: 'sparkle', color: '#E8457A', goal: 1,
+      val: function (s) { return s.records.length; } },
+    { key: 'n5', g: 'stage', tier: 'bronze', name: '试水', desc: '收录 5 条', icon: 'layers', color: '#E8913D', goal: 5,
+      val: function (s) { return s.records.length; } },
+    { key: 'n10', g: 'stage', tier: 'bronze', name: '起步', desc: '收录 10 条', icon: 'layers', color: '#E8913D', goal: 10,
+      val: function (s) { return s.records.length; } },
+    { key: 'n25', g: 'stage', tier: 'silver', name: '常客', desc: '收录 25 条', icon: 'layers', color: '#3FA9E0', goal: 25,
+      val: function (s) { return s.records.length; } },
+    { key: 'n50', g: 'stage', tier: 'silver', name: '半百', desc: '收录 50 条', icon: 'medal', color: '#7C6BFF', goal: 50,
+      val: function (s) { return s.records.length; } },
+    { key: 'n100', g: 'stage', tier: 'gold', name: '百部', desc: '收录 100 条', icon: 'trophy', color: '#E8B33D', goal: 100,
+      val: function (s) { return s.records.length; } },
+    { key: 'n200', g: 'stage', tier: 'gold', name: '藏家', desc: '收录 200 条', icon: 'archive', color: '#A96BE0', goal: 200,
+      val: function (s) { return s.records.length; } },
+    { key: 'n300', g: 'stage', tier: 'gold', name: '三百', desc: '收录 300 条', icon: 'archive', color: '#D05FA8', goal: 300,
+      val: function (s) { return s.records.length; } },
+    { key: 'n500', g: 'stage', tier: 'gold', name: '大藏家', desc: '收录 500 条', icon: 'crown', color: '#D05FA8', goal: 500,
+      val: function (s) { return s.records.length; } },
+    { key: 'n800', g: 'stage', tier: 'gold', name: '八百', desc: '收录 800 条', icon: 'crown', color: '#E8B33D', goal: 800,
+      val: function (s) { return s.records.length; } },
+    { key: 'n1000', g: 'stage', tier: 'gold', name: '千卷', desc: '收录 1000 条', icon: 'diamond', color: '#5C8BE8', goal: 1000,
+      val: function (s) { return s.records.length; } },
+    { key: 'n1500', g: 'stage', tier: 'gold', name: '千五', desc: '收录 1500 条', icon: 'diamond', color: '#45AFA0', goal: 1500,
+      val: function (s) { return s.records.length; } },
+    { key: 'n2000', g: 'stage', tier: 'gold', name: '两千', desc: '收录 2000 条', icon: 'diamond', color: '#7C6BFF', goal: 2000,
+      val: function (s) { return s.records.length; } },
+    { key: 'n3000', g: 'stage', tier: 'gold', name: '三千', desc: '收录 3000 条', icon: 'crown', color: '#D05FA8', goal: 3000,
+      val: function (s) { return s.records.length; } },
+    { key: 'n5000', g: 'stage', tier: 'gold', name: '五千', desc: '收录 5000 条', icon: 'crown', color: '#E8B33D', goal: 5000,
+      val: function (s) { return s.records.length; } },
+    { key: 'n8000', g: 'stage', tier: 'gold', name: '八千', desc: '收录 8000 条', icon: 'trophy', color: '#E8457A', goal: 8000,
+      val: function (s) { return s.records.length; } },
+    { key: 'n10000', g: 'stage', tier: 'gold', name: '万卷', desc: '收录 10000 条', icon: 'diamond', color: '#5C8BE8', goal: 10000,
+      val: function (s) { return s.records.length; } }
+  ];
+
+  /* 类型徽章：每类 10 档，从 1 一直到 10000 */
+  var TYPE_UNIT = {
+    novel: '卷', comic: '卷', anime: '部', tv: '部', movie: '部', variety: '部',
+    drama: '部', stage: '部', game: '款', music: '张', magazine: '期'
+  };
+  var TYPE_BADGE_GOALS = [1, 10, 50, 100, 300, 500, 1000, 3000, 5000, 10000];
+  var TYPE_BADGE_TIER = ['bronze', 'bronze', 'silver', 'silver', 'silver',
+    'gold', 'gold', 'gold', 'gold', 'gold'];
+  TYPE_KEYS.forEach(function (k) {
+    var nm = TYPE_BADGE_NAME[k] || ['初识', '常客', '老手'];
+    var unit = TYPE_UNIT[k] || '部';
+    TYPE_BADGE_GOALS.forEach(function (goal, i) {
+      var name = i < nm.length ? nm[i] : (goal >= 10000 ? '万' + unit : goal + unit);
+      BADGES.push({
+        key: 't' + goal + '_' + k, g: 'type', type: k, tier: TYPE_BADGE_TIER[i], name: name,
+        desc: '收录 ' + goal + ' 部' + TYPES[k].label, icon: k, color: TYPES[k].color, goal: goal,
+        val: function (s) { return countType(s, k); }
+      });
+    });
+  });
+
+  /* 习惯徽章 */
+  BADGES.push(
+    { key: 'alltype', g: 'habit', tier: 'gold', name: '全景', desc: '11 种类型都留下记录', icon: 'grid', color: '#7C6BFF', goal: 11,
+      val: function (s) {
+        var seen = {};
+        s.records.forEach(function (r) { seen[r.type] = 1; });
+        return TYPE_KEYS.filter(function (k) { return seen[k]; }).length;
+      } },
+    { key: 'critic', g: 'habit', tier: 'silver', name: '评审', desc: '为 20 部作品打分', icon: 'star', color: '#D05FA8', goal: 20,
+      val: function (s) { return s.records.filter(function (r) { return r.rating > 0; }).length; } },
+    { key: 'allrated', g: 'habit', tier: 'gold', name: '全评', desc: '50 部作品都有评分', icon: 'star', color: '#E8B33D', goal: 50,
+      val: function (s) { return s.records.filter(function (r) { return r.rating > 0; }).length; } },
+    { key: 'perfect', g: 'habit', tier: 'gold', name: '满分控', desc: '10 部作品给出最高分', icon: 'star', color: '#E8457A', goal: 10,
+      val: function (s) {
+        var m = maxRating();
+        return s.records.filter(function (r) { return r.rating >= m - 0.01; }).length;
+      } },
+    { key: 'highavg', g: 'habit', tier: 'gold', name: '高分党', desc: '平均 8.5 分以上（至少 20 条）', icon: 'star', color: '#E8913D', goal: 1,
+      val: function (s) {
+        var rated = s.records.filter(function (r) { return r.rating > 0; });
+        if (rated.length < 20) return 0;
+        var avg = rated.reduce(function (a, r) { return a + r.rating; }, 0) / rated.length;
+        return avg >= 8.5 ? 1 : 0;
+      } },
+    { key: 'marathon', g: 'habit', tier: 'silver', name: '马拉松', desc: '单部作品投入 100 小时', icon: 'clock', color: '#45AFA0', goal: 100,
+      val: function (s) {
+        return s.records.reduce(function (a, r) { return Math.max(a, r.hours || 0); }, 0);
+      } },
+    { key: 'thousandhours', g: 'habit', tier: 'gold', name: '千小时', desc: '累计投入 1000 小时', icon: 'clock', color: '#3FA9E0', goal: 1000,
+      val: function (s) { return s.records.reduce(function (a, r) { return a + (r.hours || 0); }, 0); } },
+    { key: 'quoter', g: 'habit', tier: 'silver', name: '摘抄家', desc: '收集 20 条摘抄', icon: 'quote', color: '#5C8BE8', goal: 20,
+      val: function (s) {
+        return s.records.reduce(function (a, r) { return a + (r.quotes || []).length; }, 0);
+      } },
+    { key: 'noter', g: 'habit', tier: 'silver', name: '笔记党', desc: '写下 20 条笔记', icon: 'feather', color: '#5FB86B', goal: 20,
+      val: function (s) {
+        return s.records.reduce(function (a, r) { return a + (r.notesLog || []).length; }, 0);
+      } },
+    { key: 'typist', g: 'habit', tier: 'silver', name: '打字机', desc: '100 条作品写了短评', icon: 'pen', color: '#A96BE0', goal: 100,
+      val: function (s) { return s.records.filter(function (r) { return r.review; }).length; } },
+    { key: 'longreview', g: 'habit', tier: 'gold', name: '长评', desc: '单条短评超过 300 字', icon: 'feather', color: '#D96A4A', goal: 1,
+      val: function (s) {
+        return s.records.some(function (r) { return (r.review || '').length >= 300; }) ? 1 : 0;
+      } },
+    { key: 'week', g: 'habit', tier: 'bronze', name: '七日', desc: '连续打卡 7 天', icon: 'flame', color: '#E8913D', goal: 7,
+      val: function () { return checkinStats().streak; } },
+    { key: 'month', g: 'habit', tier: 'gold', name: '满月', desc: '连续打卡 30 天', icon: 'flame', color: '#D96A4A', goal: 30,
+      val: function () { return checkinStats().streak; } },
+    { key: 'checkin100', g: 'habit', tier: 'gold', name: '打卡百天', desc: '累计打卡 100 天', icon: 'calendar', color: '#45AFA0', goal: 100,
+      val: function (s) {
+        var seen = {};
+        (s.checkins || []).forEach(function (c) { if (c && c.date) seen[c.date] = 1; });
+        return Object.keys(seen).length;
+      } },
+    { key: 'rewatch', g: 'habit', tier: 'bronze', name: '重温', desc: '同一部重刷 3 次', icon: 'archive', color: '#A96BE0', goal: 3,
+      val: function (s) {
+        return s.records.reduce(function (a, r) { return Math.max(a, (r.rewatches || []).length); }, 0);
+      } },
+    { key: 'hundredday', g: 'habit', tier: 'silver', name: '百日', desc: '记录满 100 天', icon: 'calendar', color: '#3FA9E0', goal: 100,
+      val: function () { return recordDayCount(); } },
+    { key: 'span', g: 'habit', tier: 'silver', name: '跨年', desc: '记录横跨 3 个年份', icon: 'archive', color: '#7C6BFF', goal: 3,
+      val: function (s) {
+        var ys = {};
+        s.records.forEach(function (r) { ys[new Date(r.createdAt).getFullYear()] = 1; });
+        return Object.keys(ys).length;
+      } },
+    { key: 'finisher', g: 'habit', tier: 'silver', name: '完成派', desc: '50 部作品走到最后', icon: 'check', color: '#2FB59B', goal: 50,
+      val: function (s) { return s.records.filter(function (r) { return r.status === 'done'; }).length; } },
+    { key: 'nightowl', g: 'habit', tier: 'bronze', name: '夜猫子', desc: '凌晨 0–5 点记过一条', icon: 'moon', color: '#5C8BE8', goal: 1,
+      val: function (s) {
+        return s.records.some(function (r) {
+          var h = new Date(r.createdAt).getHours();
+          return h >= 0 && h < 5;
+        }) ? 1 : 0;
+      } },
+    { key: 'weekend', g: 'habit', tier: 'silver', name: '周末党', desc: '10 条在周末收录', icon: 'sun', color: '#E8B33D', goal: 10,
+      val: function (s) {
+        return s.records.filter(function (r) {
+          var d = new Date(r.createdAt).getDay();
+          return d === 0 || d === 6;
+        }).length;
+      } },
+    { key: 'collector', g: 'habit', tier: 'bronze', name: '收藏家', desc: '建 3 个自定义列表', icon: 'list', color: '#5FB86B', goal: 3,
+      val: function (s) { return (s.lists || []).length; } },
+    { key: 'clean', g: 'habit', tier: 'gold', name: '数据洁癖', desc: '30 条以上且没有数据问题', icon: 'check', color: '#45AFA0', goal: 1,
+      val: function (s) {
+        if (s.records.length < 30) return 0;
+        try { return healthIssues().length === 0 ? 1 : 0; } catch (e) { return 0; }
+      } },
+    { key: 'coverlover', g: 'habit', tier: 'silver', name: '封面党', desc: '50 条作品配了封面', icon: 'grid', color: '#E86A9A', goal: 50,
+      val: function (s) { return s.records.filter(function (r) { return !!r.cover; }).length; } },
+    { key: 'tagger', g: 'habit', tier: 'silver', name: '标签党', desc: '用过 20 个不同题材', icon: 'list', color: '#E8913D', goal: 20,
+      val: function (s) {
+        var seen = {};
+        s.records.forEach(function (r) { (r.tags || []).forEach(function (t) { seen[t] = 1; }); });
+        return Object.keys(seen).length;
+      } },
+    { key: 'quote100', g: 'habit', tier: 'gold', name: '摘抄狂', desc: '收集 100 条摘抄', icon: 'quote', color: '#5C8BE8', goal: 100,
+      val: function (s) {
+        return s.records.reduce(function (a, r) { return a + (r.quotes || []).length; }, 0);
+      } },
+    { key: 'note100', g: 'habit', tier: 'gold', name: '笔记狂', desc: '写下 100 条笔记', icon: 'feather', color: '#5FB86B', goal: 100,
+      val: function (s) {
+        return s.records.reduce(function (a, r) { return a + (r.notesLog || []).length; }, 0);
+      } },
+    { key: 'wordsmith', g: 'habit', tier: 'gold', name: '长评家', desc: '短评累计 1 万字', icon: 'pen', color: '#7C6BFF', goal: 10000,
+      val: function (s) {
+        return s.records.reduce(function (a, r) { return a + (r.review || '').length; }, 0);
+      } },
+    { key: 'noflop', g: 'habit', tier: 'gold', name: '零差评', desc: '50 部作品都在 8 分以上', icon: 'star', color: '#E8B33D', goal: 50,
+      val: function (s) {
+        var rated = s.records.filter(function (r) { return r.rating > 0; });
+        if (rated.length < 50) return 0;
+        return rated.every(function (r) { return r.rating >= 8; }) ? rated.length : 0;
+      } },
+    { key: 'rewatch10', g: 'habit', tier: 'gold', name: '重刷狂', desc: '同一部重刷 10 次', icon: 'archive', color: '#A96BE0', goal: 10,
+      val: function (s) {
+        return s.records.reduce(function (a, r) { return Math.max(a, (r.rewatches || []).length); }, 0);
+      } },
+    { key: 'hours5000', g: 'habit', tier: 'gold', name: '五千小时', desc: '累计投入 5000 小时', icon: 'clock', color: '#3FA9E0', goal: 5000,
+      val: function (s) { return s.records.reduce(function (a, r) { return a + (r.hours || 0); }, 0); } },
+    { key: 'checkin365', g: 'habit', tier: 'gold', name: '打卡一年', desc: '累计打卡 365 天', icon: 'calendar', color: '#45AFA0', goal: 365,
+      val: function (s) {
+        var seen = {};
+        (s.checkins || []).forEach(function (c) { if (c && c.date) seen[c.date] = 1; });
+        return Object.keys(seen).length;
+      } },
+    { key: 'fullyear', g: 'habit', tier: 'gold', name: '全勤年', desc: '某一年 12 个月都有记录', icon: 'calendar', color: '#D05FA8', goal: 1,
+      val: function (s) {
+        var map = {};
+        s.records.forEach(function (r) {
+          var d = new Date(r.createdAt);
+          var y = d.getFullYear();
+          (map[y] = map[y] || {})[d.getMonth()] = 1;
+        });
+        return Object.keys(map).some(function (y) { return Object.keys(map[y]).length === 12; }) ? 1 : 0;
+      } },
+    { key: 'longrun', g: 'habit', tier: 'gold', name: '长跑者', desc: '记录横跨 5 个年份', icon: 'archive', color: '#7C6BFF', goal: 5,
+      val: function (s) {
+        var ys = {};
+        s.records.forEach(function (r) { ys[new Date(r.createdAt).getFullYear()] = 1; });
+        return Object.keys(ys).length;
+      } },
+    { key: 'earlybird', g: 'habit', tier: 'bronze', name: '早起鸟', desc: '早上 6–9 点记过一条', icon: 'sun', color: '#E8B33D', goal: 1,
+      val: function (s) {
+        return s.records.some(function (r) {
+          var h = new Date(r.createdAt).getHours();
+          return h >= 6 && h < 9;
+        }) ? 1 : 0;
+      } },
+    { key: 'goalmet', g: 'habit', tier: 'gold', name: '目标达成', desc: '完成今年的收录目标', icon: 'trophy', color: '#E8457A', goal: 1,
+      val: function (s) {
+        var g = Number(s.prefs.goalCount) || 0;
+        if (!g) return 0;
+        var y = new Date().getFullYear();
+        var n = s.records.filter(function (r) { return new Date(r.createdAt).getFullYear() === y; }).length;
+        return n >= g ? 1 : 0;
+      } },
+    { key: 'list10', g: 'habit', tier: 'silver', name: '收藏达人', desc: '建 10 个自定义列表', icon: 'list', color: '#5FB86B', goal: 10,
+      val: function (s) { return (s.lists || []).length; } },
+    { key: 'done100', g: 'habit', tier: 'gold', name: '百部完成', desc: '100 部作品走到最后', icon: 'check', color: '#2FB59B', goal: 100,
+      val: function (s) { return s.records.filter(function (r) { return r.status === 'done'; }).length; } }
+  );
+
+  function badgeList() {
+    _typeCountsCache = null;   /* 164 枚徽章共用一次类型统计 */
+    return BADGES.map(function (b) {
+      var v = 0;
+      try { v = b.val(state) || 0; } catch (e) { v = 0; }
+      return {
+        b: b, v: v, got: v >= b.goal,
+        pct: Math.min(100, Math.round(v / b.goal * 100))
+      };
+    });
+  }
+
+  function badgeCard(x, dim, small) {
+    return '<div class="badge' + (dim ? ' is-locked' : '') + (small ? ' badge-sm' : '') + '">' +
+      '<span class="badge-medal tier-' + (x.b.tier || 'bronze') + '" style="--bc:' + x.b.color + '">' +
+      icon(x.b.icon, small ? 18 : 22) + '</span>' +
+      '<span class="badge-name">' + esc(x.b.name) + '</span>' +
+      (small ? '' : '<span class="badge-desc">' + esc(x.b.desc) + '</span>') +
+      '<span class="badge-state">' + (dim ? x.v + ' / ' + x.b.goal : '已获得') + '</span>' +
+      '</div>';
+  }
+
+  function badgesView() {
+    var list = badgeList();
+    var got = list.filter(function (x) { return x.got; });
+    var pct = Math.round(got.length / list.length * 100);
+    var stageList = list.filter(function (x) { return x.b.g === 'stage'; });
+    var habitList = list.filter(function (x) { return x.b.g === 'habit'; });
+
+    var html = '<header class="page-head">' +
+      '<div class="head-left"><button class="icon-btn" data-action="back" aria-label="返回">' + icon('back', 20) + '</button>' +
+      '<div><p class="eyebrow">记录会留下痕迹</p><h1 class="page-title">徽章</h1></div></div>' +
+      '<button class="icon-btn" data-action="settings" aria-label="设置">' + icon('gear', 20) + '</button>' +
+      '</header>';
+
+    html += '<div class="badge-summary">' +
+      '<div class="badge-sum-num"><b>' + got.length + '</b><span>/ ' + list.length + ' 枚</span></div>' +
+      '<div class="badge-sum-main"><p>已点亮 ' + pct + '%，还差 ' + (list.length - got.length) + ' 枚</p>' +
+      '<div class="badge-sum-bar"><i style="width:' + pct + '%"></i></div></div></div>';
+
+    /* 阶段 */
+    html += '<section class="section"><div class="section-head"><h2 class="section-title">阶段徽章</h2>' +
+      '<span class="section-note">按收录总量 · ' + stageList.filter(function (x) { return x.got; }).length + ' / ' + stageList.length + '</span></div>' +
+      '<div class="badge-grid">' + stageList.map(function (x) { return badgeCard(x, !x.got, false); }).join('') + '</div></section>';
+
+    /* 类型 */
+    html += '<section class="section"><div class="section-head"><h2 class="section-title">类型徽章</h2>' +
+      '<span class="section-note">11 类 · 每类 10 枚</span></div>' +
+      TYPE_KEYS.map(function (k) {
+        var two = list.filter(function (x) { return x.b.g === 'type' && x.b.type === k; });
+        var n = countType(state, k);
+        var gotN = two.filter(function (x) { return x.got; }).length;
+        return '<div class="btype">' +
+          '<div class="btype-head">' + icon(k, 15) +
+          '<span class="btype-name">' + TYPES[k].label + '</span>' +
+          '<span class="btype-n">' + n + ' 条 · ' + gotN + ' / ' + two.length + '</span></div>' +
+          '<div class="btype-badges">' +
+          two.map(function (x) { return badgeCard(x, !x.got, true); }).join('') +
+          '</div></div>';
+      }).join('') + '</section>';
+
+    /* 习惯 */
+    html += '<section class="section"><div class="section-head"><h2 class="section-title">习惯徽章</h2>' +
+      '<span class="section-note">打卡、评分、摘抄这些 · ' + habitList.filter(function (x) { return x.got; }).length + ' / ' + habitList.length + '</span></div>' +
+      '<div class="badge-grid">' + habitList.map(function (x) { return badgeCard(x, !x.got, false); }).join('') + '</div></section>';
+
+    html += '<p class="badge-note">徽章由本机记录自动计算，不联网、不上传。铜 / 银 / 金 代表难度。</p>';
+    return html;
+  }
+
+  /* 筛选项管理：值来自库里的记录，可删可加 */
+  function optionsView() {
+    var html = '<header class="page-head">' +
+      '<div class="head-left"><button class="icon-btn" data-action="back" aria-label="返回">' + icon('back', 20) + '</button>' +
+      '<div><p class="eyebrow">筛选项来自你的记录</p><h1 class="page-title">选项管理</h1></div></div>' +
+      '<button class="icon-btn" data-action="settings" aria-label="设置">' + icon('gear', 20) + '</button>' +
+      '</header>';
+
+    html += '<p class="opt-hint">下拉里的值都来自你库里已有的记录。点 × 可以不再显示它，也可以自己加一个；已有记录不会被改动。</p>';
+
+    var any = false;
+    TYPE_KEYS.forEach(function (k) {
+      var fields = (EXTRA_FIELDS[k] || []).filter(function (fd) {
+        if (!fd.options) return false;
+        return Object.keys(metaCountsOf(k, fd.key)).length > 0 ||
+          ((state.prefs.vocab[fd.key] || []).length > 0);
+      });
+      if (!fields.length) return;
+      any = true;
+
+      html += '<section class="section"><div class="section-head">' +
+        '<h2 class="section-title">' + TYPES[k].label + '</h2>' +
+        '<span class="section-note">' + fields.length + ' 个筛选项</span></div>' +
+        fields.map(function (fd) {
+          var counts = metaCountsOf(k, fd.key);
+          var opts = fieldOptions(fd.key, false);
+          var hidden = (state.prefs.vocabHidden && state.prefs.vocabHidden[fd.key]) || [];
+          return '<div class="opt-block"><div class="opt-head">' +
+            '<span class="opt-name">' + esc(fd.label) + '</span>' +
+            '<span class="opt-n">' + opts.length + ' 个值' + (hidden.length ? ' · 已隐藏 ' + hidden.length : '') + '</span>' +
+            '</div><div class="opt-chips">' +
+            opts.map(function (v) {
+              return '<span class="opt-chip">' + esc(v) +
+                (counts[v] ? '<i>' + counts[v] + '</i>' : '<i class="is-new">新</i>') +
+                '<button data-action="opt-del" data-key="' + fd.key + '" data-value="' + esc(v) + '" aria-label="移除">' +
+                icon('close', 11) + '</button></span>';
+            }).join('') +
+            '<button class="opt-add" data-action="opt-add" data-key="' + fd.key + '">＋ 添加</button>' +
+            (hidden.length ? '<button class="opt-reset" data-action="opt-reset" data-key="' + fd.key + '">恢复隐藏</button>' : '') +
+            '</div></div>';
+        }).join('') + '</section>';
+    });
+
+    if (!any) {
+      html += '<div class="empty"><div class="empty-mark">·</div>' +
+        '<p class="empty-title">还没有可管理的筛选项</p>' +
+        '<p class="empty-text">记录里填过平台、分级、装帧这类字段后，这里会出现对应的选项。</p></div>';
+    }
+
+    html += '<p class="badge-note">这些设置只存在本机，导出数据时不会带上。</p>';
+    return html;
+  }
+
   function watchingCard(r) {
     var pct = progressPercent(r);
     var t = TYPES[r.type];
@@ -1357,7 +2114,7 @@
       '<div class="watching-cover" style="background:' + coverColor(r.title) + '" data-action="open" data-id="' + r.id + '">' +
       coverInner(r) + '</div>' +
       '<div class="watching-body" data-action="open" data-id="' + r.id + '">' +
-      '<span class="watching-label">' + TYPES[r.type].label + ' · ' + STATUSES[r.status] + '</span>' +
+      '<span class="watching-label">' + TYPES[r.type].label + ' · ' + statusLabelFor(r) + '</span>' +
       '<div class="watching-title">' + esc(r.title) + '</div>' +
       '<div class="watching-prog">' + esc(progressText(r)) + '</div>' +
       '<div class="watching-bar"><i style="width:' + pct + '%"></i></div>' +
@@ -1473,7 +2230,7 @@
         '<div class="srow-cover" style="background:' + coverColor(r.title) + '">' + coverInner(r) + '</div>' +
         '<div class="srow-body">' +
         '<div class="srow-title">' + esc(r.title) + '</div>' +
-        '<div class="srow-meta">' + esc([TYPES[r.type].label, r.creator, STATUSES[r.status]].filter(Boolean).join(' · ')) + '</div>' +
+        '<div class="srow-meta">' + esc([TYPES[r.type].label, r.creator, statusLabelFor(r)].filter(Boolean).join(' · ')) + '</div>' +
         '</div>' +
         '<span class="pcard-rating">' + (r.rating ? ratingBadge(r.rating) : '') + '</span>' +
       (r.recommend && r.recommend !== 'meh' ? '<span class="pcard-rec" data-r="' + r.recommend + '">♥</span>' : '') +
@@ -1535,6 +2292,12 @@
     if (f.year !== 'all' && recordYear(r) !== f.year) return false;
     if (f.release === 'released' && !isReleased(r)) return false;
     if (f.release === 'unreleased' && isReleased(r)) return false;
+    if (f.meta && f.type !== 'all') {
+      for (var mk in f.meta) {
+        if (!f.meta.hasOwnProperty(mk)) continue;
+        if (f.meta[mk] && f.meta[mk] !== 'all' && (r.meta || {})[mk] !== f.meta[mk]) return false;
+      }
+    }
     if (f.rating && f.rating !== 'all') {
       var rt = r.rating || 0;
       if (f.rating === 'none' && rt > 0) return false;
@@ -1572,6 +2335,23 @@
     return state.records.filter(function (r) { return matchList(r, l); }).length;
   }
 
+  /* 当前列表（不叠加状态/题材等筛选）里的类型分布，用于类型 chip 上的计数 */
+  function typeCountMap() {
+    var map = emptyTypeCounts();
+    var list = activeList();
+    state.records.forEach(function (r) {
+      if (list && !matchList(r, list)) return;
+      if (map[r.type] != null) map[r.type]++;
+    });
+    return map;
+  }
+
+  function typeBaseCount() {
+    var list = activeList();
+    if (!list) return state.records.length;
+    return state.records.filter(function (r) { return matchList(r, list); }).length;
+  }
+
   function sortRecords(arr, mode) {
     var copy = arr.slice();
     if (mode === 'created-desc') copy.sort(function (a, b) { return b.createdAt - a.createdAt; });
@@ -1582,6 +2362,7 @@
       return x - y || b.createdAt - a.createdAt;
     });
     else if (mode === 'rating') copy.sort(function (a, b) { return (b.rating - a.rating) || (b.createdAt - a.createdAt); });
+    else if (mode === 'hours') copy.sort(function (a, b) { return ((b.hours || 0) - (a.hours || 0)) || (b.createdAt - a.createdAt); });
     else copy.sort(function (a, b) { return b.updatedAt - a.updatedAt; });
     return copy;
   }
@@ -1606,14 +2387,16 @@
     var years = yearOptions();
     var selecting = state.ui.selectMode;
     var selCount = Object.keys(state.ui.selected).filter(function (k) { return state.ui.selected[k]; }).length;
+    var nextView = state.ui.view === 'grid' ? 'wall' : (state.ui.view === 'wall' ? 'board' : 'grid');
+    var viewLabel = { grid: '封面网格', wall: '封面墙', board: '状态看板' };
 
     var html = '<header class="page-head">' +
       '<div><p class="eyebrow">共 ' + state.records.length + ' 条' +
       (list ? ' · ' + esc(list.name) : '') + '</p><h1 class="page-title">收藏</h1></div>' +
       '<div class="head-actions">' +
       (state.records.length
-        ? '<button class="icon-btn" data-action="toggle-view" aria-label="切换视图">' +
-        icon(state.ui.view === 'wall' ? 'grid' : 'wall', 19) + '</button>' : '') +
+        ? '<button class="icon-btn" data-action="toggle-view" aria-label="切换到' + viewLabel[nextView] + '">' +
+        icon(nextView === 'grid' ? 'grid' : (nextView === 'wall' ? 'wall' : 'board'), 19) + '</button>' : '') +
       (state.records.length && !selecting
         ? '<button class="icon-btn" data-action="select-mode" aria-label="批量选择">' + icon('check-square', 19) + '</button>' : '') +
       '<button class="icon-btn" data-action="settings" aria-label="设置">' + icon('gear', 20) + '</button>' +
@@ -1639,19 +2422,37 @@
       (list ? '<button class="list-chip icon" data-action="edit-list" data-id="' + list.id + '" aria-label="编辑列表">' + icon('gear', 12) + '</button>' : '') +
       '</div>';
 
-    html += '<div class="seg">' +
-      ['all'].concat(STATUS_KEYS).map(function (k) {
-        var label = k === 'all' ? '全部' : STATUSES[k];
-        return '<button data-action="filter-status" data-value="' + k + '" class="' + (f.status === k ? 'is-active' : '') + '">' + label + '</button>';
+    /* 类型 tab：11 种类型分开展示 */
+    var tc = typeCountMap();
+    var baseN = typeBaseCount();
+    var isAll = f.type === 'all';
+    html += '<div class="type-tabs">' +
+      ['all'].concat(TYPE_KEYS).map(function (k) {
+        var n = k === 'all' ? baseN : (tc[k] || 0);
+        return '<button class="type-tab ' + (f.type === k ? 'is-active' : '') + (n ? '' : ' is-empty') +
+          '" data-action="filter-type" data-value="' + k + '">' +
+          (k === 'all' ? '' : icon(k, 13)) +
+          '<span>' + (k === 'all' ? '全部' : TYPES[k].label) + '</span><i>' + n + '</i></button>';
       }).join('') + '</div>';
 
-    html += '<div class="seg seg-type">' +
-      ['all'].concat(TYPE_KEYS).map(function (k) {
-        var label = k === 'all' ? '全部' : TYPES[k].label;
-        return '<button data-action="filter-type" data-value="' + k + '" class="' + (f.type === k ? 'is-active' : '') + '">' + label + '</button>';
-      }).join('') + '</div>';
+    /* 选中某个类型才出状态筛选 */
+    if (!isAll) {
+      html += '<div class="seg">' +
+        ['all'].concat(STATUS_KEYS).map(function (k) {
+          var label = k === 'all' ? '全部' : statusLabel(f.type, k);
+          return '<button data-action="filter-status" data-value="' + k + '" class="' + (f.status === k ? 'is-active' : '') + '">' + label + '</button>';
+        }).join('') + '</div>';
+    }
+
+    var hasMeta = false;
+    if (f.meta) {
+      for (var mk in f.meta) {
+        if (f.meta.hasOwnProperty(mk) && f.meta[mk] && f.meta[mk] !== 'all') hasMeta = true;
+      }
+    }
 
     html += '<div class="filters">' +
+      (isAll ? '' : typeMetaFilters(f.type, f)) +
       '<select class="select" data-filter="tag" aria-label="按题材筛选">' +
       '<option value="all">题材：全部</option>' +
       tags.map(function (t) {
@@ -1662,11 +2463,14 @@
       years.map(function (y) {
         return '<option value="' + esc(y) + '"' + (f.year === y ? ' selected' : '') + '>' + esc(y) + ' 年</option>';
       }).join('') + '</select>' +
-      '<select class="select" data-filter="release" aria-label="按上映状态筛选">' +
-      '<option value="all"' + (f.release === 'all' ? ' selected' : '') + '>上映：全部</option>' +
-      '<option value="released"' + (f.release === 'released' ? ' selected' : '') + '>已上映</option>' +
-      '<option value="unreleased"' + (f.release === 'unreleased' ? ' selected' : '') + '>未上映</option>' +
-      '</select>' +
+      (isAll ? '' : '<select class="select" data-filter="release" aria-label="按发布状态筛选">' +
+        (function () {
+          var v = formOf(f.type).verb;
+          return '<option value="all"' + (f.release === 'all' ? ' selected' : '') + '>' + v + '：全部</option>' +
+            '<option value="released"' + (f.release === 'released' ? ' selected' : '') + '>已' + v + '</option>' +
+            '<option value="unreleased"' + (f.release === 'unreleased' ? ' selected' : '') + '>未' + v + '</option>';
+        })() +
+        '</select>') +
       '<select class="select" data-filter="rating" aria-label="按评分筛选">' +
       [['all', '评分：全部'], ['high', '9 分以上'], ['8', '8 – 8.9'], ['7', '7 – 7.9'],
       ['6', '6 – 6.9'], ['low', '6 分以下'], ['none', '未评分']].map(function (o) {
@@ -1676,11 +2480,12 @@
       (!list || list.kind !== 'manual'
         ? '<select class="select" data-filter="sort" aria-label="排序">' +
         [['updated', '最近更新'], ['created-desc', '最近添加'], ['created-asc', '最早添加'],
-        ['release-desc', '发布：新→旧'], ['release-asc', '发布：旧→新'], ['rating', '评分最高']].map(function (o) {
+        ['release-desc', '发布：新→旧'], ['release-asc', '发布：旧→新'],
+        ['rating', '评分最高'], ['hours', '投入最多']].map(function (o) {
           return '<option value="' + o[0] + '"' + (f.sort === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
         }).join('') + '</select>' : '') +
       '<button class="btn btn-ghost btn-sm" data-action="save-view">存为视图</button>' +
-      ((f.tag !== 'all' || f.year !== 'all' || f.status !== 'all' || f.type !== 'all' || f.release !== 'all' || f.rating !== 'all')
+      ((f.tag !== 'all' || f.year !== 'all' || f.status !== 'all' || f.type !== 'all' || f.release !== 'all' || f.rating !== 'all' || hasMeta)
         ? '<button class="btn btn-ghost btn-sm" data-action="clear-filters">清除</button>' : '') +
       '</div>';
 
@@ -1701,8 +2506,12 @@
           '<p class="empty-text">换个筛选，或者补一条新的。</p>' +
           '<button class="btn btn-ghost btn-sm" data-action="clear-filters">清除筛选</button></div>';
       }
+    } else if (isAll) {
+      html += typeSectionsHTML(rows);
     } else if (state.ui.view === 'wall') {
       html += '<div class="wall-cards">' + rows.map(wallCard).join('') + '</div>';
+    } else if (state.ui.view === 'board') {
+      html += boardHTML(rows);
     } else {
       html += '<div class="grid-cards' + (state.ui.sortMode ? ' is-sorting' : '') + '">' +
         rows.map(posterCard).join('') + '</div>';
@@ -1730,6 +2539,128 @@
     return html;
   }
 
+  /* 全部视图：按类型分区，每类一排封面 */
+  function typeSectionsHTML(rows) {
+    var groups = {};
+    TYPE_KEYS.forEach(function (k) { groups[k] = []; });
+    rows.forEach(function (r) { (groups[r.type] || groups.novel).push(r); });
+
+    var out = '';
+    TYPE_KEYS.forEach(function (k) {
+      var list = groups[k];
+      if (!list.length) return;
+      out += '<section class="section"><div class="section-head">' +
+        '<h2 class="section-title">' + TYPES[k].label + '</h2>' +
+        '<div class="head-right"><span class="section-note">' + list.length + ' 条</span>' +
+        '<button class="link-btn" data-action="filter-type" data-value="' + k + '">查看全部</button></div></div>' +
+        '<div class="type-rail">' + list.slice(0, 8).map(posterCard).join('') + '</div></section>';
+    });
+    return out;
+  }
+
+  /* 各类型自己的筛选项（取自专属字段里的选项型字段） */
+  var TYPE_FILTERS = {
+    novel: [{ key: 'serialStatus', label: '连载' }, { key: 'binding', label: '装帧' }],
+    comic: [{ key: 'serialStatus', label: '连载' }, { key: 'colorPages', label: '彩页' }],
+    anime: [{ key: 'airWeekday', label: '放送日' }, { key: 'ageRating', label: '分级' }],
+    tv: [{ key: 'ageRating', label: '分级' }, { key: 'airPeriod', label: '时段' }],
+    movie: [{ key: 'watchPlace', label: '观看' }, { key: 'color', label: '色彩' }],
+    variety: [{ key: 'quarter', label: '季度' }],
+    drama: [{ key: 'updateCycle', label: '更新' }],
+    stage: [],
+    game: [{ key: 'gameType', label: '类型' }, { key: 'chineseSupport', label: '中文' }],
+    music: [{ key: 'albumType', label: '类型' }, { key: 'medium', label: '介质' }],
+    magazine: [{ key: 'serialStatus', label: '刊期' }, { key: 'subscribeFrom', label: '订阅' }]
+  };
+
+  /* ---------------- 筛选项：以库里的实际值为准，可自行增删 ---------------- */
+
+  function metaCounts(key) {
+    var map = {};
+    state.records.forEach(function (r) {
+      var v = r.meta && r.meta[key];
+      if (v) map[v] = (map[v] || 0) + 1;
+    });
+    return map;
+  }
+
+  function metaCountsOf(type, key) {
+    var map = {};
+    state.records.forEach(function (r) {
+      if (r.type !== type) return;
+      var v = r.meta && r.meta[key];
+      if (v) map[v] = (map[v] || 0) + 1;
+    });
+    return map;
+  }
+
+  function fieldDef(key) {
+    for (var t in EXTRA_FIELDS) {
+      if (!EXTRA_FIELDS.hasOwnProperty(t)) continue;
+      var list = EXTRA_FIELDS[t];
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].key === key) return list[i];
+      }
+    }
+    return null;
+  }
+
+  function isOptHidden(key, v) {
+    var h = state.prefs.vocabHidden && state.prefs.vocabHidden[key];
+    return !!(h && h.indexOf(v) >= 0);
+  }
+
+  /* withStatic=true 时把字段自带的默认选项也并进来（新增记录时用） */
+  function fieldOptions(key, withStatic) {
+    var out = [], seen = {};
+    var counts = metaCounts(key);
+    Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; }).forEach(function (v) {
+      if (isOptHidden(key, v) || seen[v]) return;
+      seen[v] = 1;
+      out.push(v);
+    });
+    ((state.prefs.vocab && state.prefs.vocab[key]) || []).forEach(function (v) {
+      if (isOptHidden(key, v) || seen[v]) return;
+      seen[v] = 1;
+      out.push(v);
+    });
+    if (withStatic) {
+      var fd = fieldDef(key);
+      ((fd && fd.options) || []).forEach(function (v) {
+        if (isOptHidden(key, v) || seen[v]) return;
+        seen[v] = 1;
+        out.push(v);
+      });
+    }
+    return out;
+  }
+
+  /* 库里出现过的值 + 自己添加的值（都不含已隐藏的）→ 用于筛选下拉 */
+  function usedOptions(key) {
+    return fieldOptions(key, false);
+  }
+
+  function typeMetaFilters(type, f) {
+    var defs = TYPE_FILTERS[type] || [];
+    var fields = EXTRA_FIELDS[type] || [];
+    return defs.map(function (d) {
+      var fd = null;
+      for (var i = 0; i < fields.length; i++) {
+        if (fields[i].key === d.key) { fd = fields[i]; break; }
+      }
+      if (!fd || !fd.options) return '';
+      var opts = usedOptions(d.key);
+      if (!opts.length) return '';
+      var cur = (f.meta && f.meta[d.key]) || 'all';
+      if (cur !== 'all' && opts.indexOf(cur) < 0) opts.push(cur);
+      return '<select class="select" data-filter="meta" data-key="' + d.key + '" aria-label="按' + esc(fd.label) + '筛选">' +
+        '<option value="all">' + esc(d.label) + '：全部</option>' +
+        opts.map(function (o) {
+          return '<option value="' + esc(o) + '"' + (cur === o ? ' selected' : '') + '>' + esc(o) + '</option>';
+        }).join('') + '</select>';
+    }).join('');
+  }
+
   function wallCard(r) {
     var selecting = state.ui.selectMode;
     var checked = !!state.ui.selected[r.id];
@@ -1741,6 +2672,42 @@
       '<span class="wcard-tip">' + esc(r.title) + '</span>' +
       (r.rating ? '<span class="wcard-rate">' + ratingBadge(r.rating) + '</span>' : '') +
       (selecting ? '<span class="pcard-check">' + (checked ? icon('check', 13) : '') + '</span>' : '') +
+      '</div>';
+  }
+
+  /* ---------------- 看板视图（按状态分列） ---------------- */
+
+  function boardHTML(rows) {
+    var groups = {};
+    STATUS_KEYS.forEach(function (k) { groups[k] = []; });
+    rows.forEach(function (r) {
+      (groups[r.status] || groups.wish).push(r);
+    });
+
+    var bt = state.filters.type !== 'all' ? state.filters.type : '';
+    return '<div class="board">' + STATUS_KEYS.map(function (k) {
+      var list = groups[k];
+      return '<section class="board-col" data-s="' + k + '">' +
+        '<header class="board-head"><span class="sdot" data-s="' + k + '"></span>' +
+        '<span class="board-name">' + statusLabel(bt, k) + '</span>' +
+        '<i class="board-n">' + list.length + '</i></header>' +
+        '<div class="board-cards">' +
+        (list.length ? list.map(boardCard).join('') : '<p class="board-empty">还没有</p>') +
+        '</div></section>';
+    }).join('') + '</div>';
+  }
+
+  function boardCard(r) {
+    var selecting = state.ui.selectMode;
+    var checked = !!state.ui.selected[r.id];
+    return '<div class="bcard' + (checked ? ' is-checked' : '') + '" data-action="' +
+      (selecting ? 'toggle-select' : 'open') + '" data-id="' + r.id + '" data-hay="' + esc(haystack(r)) + '" role="button" tabindex="0">' +
+      '<span class="bcard-cover" style="--cc:' + coverColor(r.title) + '">' + coverInner(r) + '</span>' +
+      '<span class="bcard-main">' +
+      '<span class="bcard-title">' + esc(r.title) + '</span>' +
+      '<span class="bcard-sub">' + esc(progressText(r)) + '</span>' +
+      '</span>' +
+      (r.rating ? '<span class="bcard-rate">' + ratingBadge(r.rating) + '</span>' : '') +
       '</div>';
   }
 
@@ -1821,7 +2788,7 @@
       (cardSub(r) ? '<p class="pcard-sub">' + esc(cardSub(r)) + '</p>' : '') +
       '<div class="pcard-meta">' +
       '<span class="sdot" data-s="' + r.status + '"></span>' +
-      '<span>' + STATUSES[r.status] + '</span>' +
+      '<span>' + statusLabelFor(r) + '</span>' +
       '<span class="pcard-rating">' + (r.rating ? ratingBadge(r.rating) : '') + '</span>' +
       '</div></div></div>';
   }
@@ -1833,7 +2800,8 @@
       return '<option value="' + k + '"' + (draft.rules.type === k ? ' selected' : '') + '>' + TYPES[k].label + '</option>';
     }).join('');
     var statusOpts = '<option value="all">全部状态</option>' + STATUS_KEYS.map(function (k) {
-      return '<option value="' + k + '"' + (draft.rules.status === k ? ' selected' : '') + '>' + STATUSES[k] + '</option>';
+      return '<option value="' + k + '"' + (draft.rules.status === k ? ' selected' : '') + '>' +
+        statusLabel(draft.rules.type === 'all' ? '' : draft.rules.type, k) + '</option>';
     }).join('');
 
     return '<label class="field"><span class="field-label">最低评分：<b id="rule-score">' +
@@ -1974,7 +2942,7 @@
     var name = '视图 ' + (state.lists.length + 1);
     openModal({
       title: '存为视图',
-      desc: '把当前的状态、类型、题材、年份、上映条件保存成一个命名视图。',
+      desc: '把当前的状态、类型、题材、年份、发布条件保存成一个命名视图。',
       body: '<input class="input" id="modal-input" value="' + esc(name) + '" maxlength="30">',
       actions: [{ label: '取消', value: null, variant: 'ghost' }, { label: '保存', collect: true, variant: 'primary' }]
     }).then(function (val) {
@@ -2016,7 +2984,7 @@
         return '<label class="bulk-item" data-title="' + esc(r.title.toLowerCase()) + '">' +
           '<input type="checkbox" data-pick="' + r.id + '"' + (picked[r.id] ? ' checked' : '') + '>' +
           '<span class="bulk-main"><strong>' + esc(r.title) + '</strong>' +
-          '<em>' + TYPES[r.type].label + ' · ' + STATUSES[r.status] + (r.creator ? ' · ' + esc(r.creator) : '') + '</em></span>' +
+          '<em>' + TYPES[r.type].label + ' · ' + statusLabelFor(r) + (r.creator ? ' · ' + esc(r.creator) : '') + '</em></span>' +
           '</label>';
       }).join('') + '</div>' +
       '<div class="modal-actions"><button class="btn btn-ghost" data-l="cancel">取消</button>' +
@@ -2091,11 +3059,14 @@
   function bulkStatus() {
     var ids = selectedIds();
     if (!ids.length) { toast('先选几条记录'); return; }
+    var seen = {};
+    state.records.forEach(function (r) { if (ids.indexOf(r.id) >= 0) seen[r.type] = 1; });
+    var only = Object.keys(seen).length === 1 ? Object.keys(seen)[0] : '';
     openModal({
       title: '批量修改状态',
       desc: '把选中的 ' + ids.length + ' 条记录改为：',
       body: '<div class="modal-choice">' + STATUS_KEYS.map(function (k) {
-        return '<button class="choice" data-bs="' + k + '"><strong>' + STATUSES[k] + '</strong></button>';
+        return '<button class="choice" data-bs="' + k + '"><strong>' + statusLabel(only, k) + '</strong></button>';
       }).join('') + '</div>',
       actions: [{ label: '取消', value: null, variant: 'ghost' }]
     });
@@ -2294,8 +3265,7 @@
     var type = d.type;
     var meta = TYPES[type];
     var mode = meta.mode;
-    var isBook = mode === 'book';
-    var isReadWord = isBook || mode === 'issue';
+    var f = formOf(type);
 
     var html = '<header class="edit-head">' +
       '<button class="icon-btn" data-action="back" aria-label="返回">' + icon('back', 19) + '</button>' +
@@ -2342,31 +3312,37 @@
       '<button class="btn btn-ghost btn-sm" data-action="open-link">打开</button>' +
       '</div></label>' +
 
-      '<div class="row2">' +
-      '<label class="field"><span class="field-label">年份</span>' +
+      '<label class="field"><span class="field-label">出版年</span>' +
       '<input class="input" data-field="year" value="' + esc(d.year) + '" inputmode="numeric" placeholder="2024"></label>' +
-      '<label class="field"><span class="field-label">状态</span>' +
-      '<select class="input" data-field="status">' +
-      STATUS_KEYS.map(function (k) {
-        return '<option value="' + k + '"' + (d.status === k ? ' selected' : '') + '>' + STATUSES[k] + '</option>';
-      }).join('') + '</select></label>' +
-      '</div>' +
 
-      '<label class="field"><span class="field-label">' + (isBook || mode === 'issue' ? '出版日期' : '上映 / 播出日期') + '</span>' +
+      '<div class="field"><span class="field-label">状态' +
+      '<em class="field-tip">' + TYPES[d.type].label + '</em></span>' +
+      '<div class="seg status-seg">' +
+      STATUS_KEYS.map(function (k) {
+        return '<button type="button" data-action="set-status" data-value="' + k + '" class="' +
+          (d.status === k ? 'is-active' : '') + '">' + statusLabel(d.type, k) + '</button>';
+      }).join('') +
+      '</div></div>' +
+
+      '<label class="field"><span class="field-label">' + f.release + '</span>' +
       '<input class="input" type="date" data-field="releaseDate" value="' + esc(d.releaseDate) + '">' +
       '<span class="hint" style="display:block;margin-top:6px">' +
       (d.releaseDate
-        ? (isReleased(d) ? (isBook || mode === 'issue' ? '已出版' : '已上映') : (isBook || mode === 'issue' ? '未出版（还没到日期）' : '未上映（还没到日期）'))
+        ? (isReleased(d) ? '已' + f.verb : '未' + f.verb + '（还没到日期）')
         : '留空时按年份判断；保存时会按年份自动补全') +
       '</span></label>' +
 
-      '<div class="row2">' +
-      '<label class="field"><span class="field-label">开始日期</span>' +
-      '<input class="input" type="date" data-field="startedAt" value="' + esc(d.startedAt || '') + '"></label>' +
-      '<label class="field"><span class="field-label">完成日期</span>' +
-      '<input class="input" type="date" data-field="finishedAt" value="' + esc(d.finishedAt || '') + '">' +
-      '<span class="hint" id="date-hint" style="display:block;margin-top:6px">' + dateSpanHint(d) + '</span></label>' +
-      '</div>';
+      (f.single
+        ? '<label class="field"><span class="field-label">' + f.finish + '</span>' +
+        '<input class="input" type="date" data-field="finishedAt" value="' + esc(d.finishedAt || '') + '">' +
+        '<span class="hint" style="display:block;margin-top:6px">不填就按今天算</span></label>'
+        : '<div class="row2">' +
+        '<label class="field"><span class="field-label">' + f.start + '</span>' +
+        '<input class="input" type="date" data-field="startedAt" value="' + esc(d.startedAt || '') + '"></label>' +
+        '<label class="field"><span class="field-label">' + f.finish + '</span>' +
+        '<input class="input" type="date" data-field="finishedAt" value="' + esc(d.finishedAt || '') + '">' +
+        '<span class="hint" id="date-hint" style="display:block;margin-top:6px">' + dateSpanHint(d) + '</span></label>' +
+        '</div>');
 
     /* 评分 */
     if (ratingScale() === 5) {
@@ -2384,18 +3360,25 @@
         '</div></div>';
     }
 
-    /* 豆瓣评分 / 推荐指数 / 分类 */
-    html += '<div class="row2">' +
-      '<label class="field"><span class="field-label">豆瓣评分</span>' +
-      '<input class="input" type="number" min="0" max="10" step="0.1" data-field="douban" value="' + (d.douban || '') + '" placeholder="8.9"></label>' +
-      '<label class="field"><span class="field-label">推荐指数</span>' +
+    /* 外部评分 / 推荐指数 / 分类 */
+    var scoreField = (f.score || d.douban)
+      ? '<label class="field"><span class="field-label">' + (f.score || '外部评分') + '</span>' +
+      '<input class="input" type="number" min="0" max="10" step="0.1" data-field="douban" value="' + (d.douban || '') +
+      '" placeholder="' + (type === 'game' ? '9.2' : '8.9') + '">' +
+      (type === 'game' ? '<span class="hint" style="display:block;margin-top:6px">按 10 分制填；MC 92 就写 9.2</span>' : '') +
+      '</label>'
+      : '';
+    var recField = '<label class="field"><span class="field-label">推荐指数</span>' +
       '<select class="input" data-field="recommend">' +
       '<option value="">不标记</option>' +
       RECOMMEND_LEVELS.map(function (r) {
         return '<option value="' + r.key + '"' + (d.recommend === r.key ? ' selected' : '') + '>' + r.mark + ' ' + r.label + '</option>';
-      }).join('') + '</select></label>' +
-      '</div>' +
-      '<label class="field"><span class="field-label">分类</span>' +
+      }).join('') + '</select></label>';
+
+    html += scoreField
+      ? '<div class="row2">' + scoreField + recField + '</div>'
+      : recField;
+    html += '<label class="field"><span class="field-label">分类</span>' +
       '<select class="input" data-field="category">' +
       '<option value="">不分类</option>' +
       (function () {
@@ -2440,10 +3423,11 @@
       '<textarea class="input" rows="3" data-field="review" placeholder="一句话记下此刻的感受…">' + esc(d.review) + '</textarea></label>' +
       quotesHTML(d) +
       '<div class="row2">' +
-      '<label class="field"><span class="field-label">投入时长（小时）</span>' +
+      '<label class="field"><span class="field-label">' + f.hours + '</span>' +
       '<input class="input" type="number" min="0" step="0.5" data-field="hours" value="' + (d.hours || '') + '" placeholder="选填"></label>' +
-      '<label class="field"><span class="field-label">消费次数</span>' +
-      '<input class="input" value="共 ' + (1 + d.rewatches.length) + ' 次' + (d.rewatches.length ? '（' + cnNum(1 + d.rewatches.length) + '刷）' : '') + '" disabled></label>' +
+      '<label class="field"><span class="field-label">' + f.times + '</span>' +
+      '<input class="input" value="共 ' + (1 + d.rewatches.length) + ' ' + (f.run === '周目' ? '周目' : '次') +
+      (d.rewatches.length ? '（' + cnNum(1 + d.rewatches.length) + f.run + '）' : '') + '" disabled></label>' +
       '</div></section>';
 
     /* 看剧笔记 / 读书笔记 */
@@ -2451,10 +3435,10 @@
     if (isBookType(type)) html += notesLogHTML(d);
 
     /* 重看记录 */
-    html += '<section class="block"><p class="block-title">' + (isReadWord ? '重读' : '重看') + '记录</p>' +
+    html += '<section class="block"><p class="block-title">' + f.again + '记录</p>' +
       '<div class="field">' +
       d.rewatches.map(function (w, i) { return rewatchRow(w, i); }).join('') +
-      '<button class="btn btn-ghost btn-sm" data-action="add-rewatch">＋ 添加一次' + (isReadWord ? '重读' : '重看') + '</button>' +
+      '<button class="btn btn-ghost btn-sm" data-action="add-rewatch">＋ 添加一次' + f.again + '</button>' +
       '</div></section>';
 
     /* 操作历史 */
@@ -2486,7 +3470,7 @@
   function rewatchRow(w, i) {
     return '<div class="rewatch">' +
       '<div class="rewatch-head">' +
-      '<span class="rw-badge">' + cnNum(i + 2) + '刷</span>' +
+      '<span class="rw-badge">' + cnNum(i + 2) + formOf(state.draft.type).run + '</span>' +
       '<input class="input input-date" type="date" data-rw="date" data-id="' + w.id + '" value="' + esc(w.date) + '">' +
       '<button class="icon-btn tiny" data-action="del-rewatch" data-id="' + w.id + '" aria-label="删除这次记录">' + icon('close', 13) + '</button>' +
       '</div>' +
@@ -2651,16 +3635,16 @@
       '<input type="range" class="range" min="0" max="100" step="1" value="' + pct + '" data-field="p.percent" style="--pct:' + pct + '%">' +
       '<div class="rating-value"><strong id="percent-num">' + pct + '%</strong></div>' +
       '</div>' +
-      '<p class="hint" style="margin-top:2px">适合没有固定章节的游戏；状态改成「已完成」会自动显示为已通关。</p>' +
+      '<p class="hint" style="margin-top:2px">适合没有固定章节的游戏；状态选「已通关」就按 100% 显示。</p>' +
       '</section>';
   }
 
   function dateSpanHint(d) {
-    if (!d.startedAt || !d.finishedAt) return '填了开始和完成日期，会自动算用时';
+    if (!d.startedAt || !d.finishedAt) return '两个日期都填上，会自动算用时';
     var a = new Date(d.startedAt + 'T00:00:00');
     var b = new Date(d.finishedAt + 'T00:00:00');
     var days = Math.round((b - a) / 86400000) + 1;
-    return days > 0 ? '用时 ' + days + ' 天' : '完成日期早于开始日期';
+    return days > 0 ? '用时 ' + days + ' 天' : '结束日期早于开始日期';
   }
 
   function isScreenType(type) {
@@ -2790,40 +3774,68 @@
       '</section>';
   }
 
+  var META_GROUPS = { pub: '作品信息', prod: '制作信息', mine: '我的信息' };
+
   function extrasFieldsHTML(d) {
-    var list = EXTRA_FIELDS[d.type] || [];
-    if (!list.length) return '';
+    var raw = EXTRA_FIELDS[d.type] || [];
+    if (!raw.length) return '';
+    /* 按「作品 → 制作 → 我的」归拢，避免同组字段被拆成好几段 */
+    var bucket = { pub: [], prod: [], mine: [] };
+    raw.forEach(function (f) { (bucket[f.g] || bucket.pub).push(f); });
+    var list = bucket.pub.concat(bucket.prod, bucket.mine);
     var m = d.meta || (d.meta = {});
-    var pairs = [], wides = [];
+    var body = '';
+    var pairs = [];
+    var curG = '';
+
+    function flush() {
+      for (var i = 0; i < pairs.length; i += 2) {
+        body += '<div class="row2">' + pairs[i] + (pairs[i + 1] || '<span></span>') + '</div>';
+      }
+      pairs = [];
+    }
+
     list.forEach(function (f) {
       var val = m[f.key] == null ? '' : String(m[f.key]);
+      /* 详情页只显示填过的，避免一屏空输入框 */
+      if (state.readonly && !val) return;
+
+      var g = f.g || 'pub';
+      if (g !== curG) {
+        flush();
+        body += '<p class="meta-group">' + esc(META_GROUPS[g] || '') + '</p>';
+        curG = g;
+      }
+
       var input;
       if (f.options) {
+        var opts = fieldOptions(f.key, true);
+        if (val && opts.indexOf(val) < 0) opts.unshift(val);
         input = '<select class="input" data-field="meta.' + f.key + '">' +
           '<option value="">不指定</option>' +
-          f.options.map(function (o) {
+          opts.map(function (o) {
             return '<option value="' + esc(o) + '"' + (val === o ? ' selected' : '') + '>' + esc(o) + '</option>';
           }).join('') + '</select>';
+      } else if (f.date) {
+        input = '<input class="input" type="date" data-field="meta.' + f.key + '" value="' + esc(val) + '">';
       } else {
         input = '<input class="input" ' + (f.numeric ? 'type="number" min="0" ' : '') +
           'data-field="meta.' + f.key + '" value="' + esc(val) + '" placeholder="' + esc(f.placeholder || '选填') + '">';
       }
+
       var cell = '<label class="field"><span class="field-label">' + esc(f.label) + '</span>' + input + '</label>';
-      if (f.wide) wides.push(cell); else pairs.push(cell);
+      if (f.wide) { flush(); body += cell; } else { pairs.push(cell); }
     });
+    flush();
 
-    var body = '';
-    for (var i = 0; i < pairs.length; i += 2) {
-      body += '<div class="row2">' + pairs[i] + (pairs[i + 1] || '<span></span>') + '</div>';
-    }
-    body += wides.join('');
-
-    var section = '<section class="block"><p class="block-title">' + TYPES[d.type].label + '信息</p>' + body + '</section>';
-    return section + customFieldsHTML(d);
+    if (!body) return customFieldsHTML(d);
+    return '<section class="block"><p class="block-title">' + TYPES[d.type].label + '信息</p>' +
+      body + '</section>' + customFieldsHTML(d);
   }
 
   function customFieldsHTML(d) {
     var list = Array.isArray(d.custom) ? d.custom : [];
+    if (state.readonly && !list.length) return '';
     var rows = list.map(function (row, i) {
       return '<div class="custom-row">' +
         '<input class="input custom-k" data-custom="' + i + '.k" value="' + esc(row.k || '') + '" placeholder="字段名" maxlength="20">' +
@@ -3112,6 +4124,17 @@
     }).join('') + '</div>';
   }
 
+  function monthKeys() {
+    var seen = {};
+    var out = [];
+    state.records.slice().sort(function (a, b) { return b.createdAt - a.createdAt; }).forEach(function (r) {
+      var d = new Date(r.createdAt);
+      var key = d.getFullYear() + '-' + pad(d.getMonth() + 1);
+      if (!seen[key]) { seen[key] = 1; out.push(key); }
+    });
+    return out;
+  }
+
   function axisHTML() {
     var recs = state.records.slice().sort(function (a, b) { return b.createdAt - a.createdAt; });
     if (!recs.length) {
@@ -3129,12 +4152,26 @@
       groups[key].push(r);
     });
 
-    return order.map(function (key) {
+    var folded = state.ui.fold || (state.ui.fold = {});
+    var allFolded = true;
+    for (var fi = 0; fi < order.length; fi++) {
+      if (!folded['tl_' + order[fi]]) { allFolded = false; break; }
+    }
+
+    var head = '<div class="tl-foldbar"><span class="tl-foldnote">共 ' + order.length + ' 个月份</span>' +
+      '<button class="link-btn" data-action="tl-fold-all">' + (allFolded ? '展开全部月份' : '折叠全部月份') + '</button></div>';
+
+    return head + order.map(function (key) {
       var parts = key.split('-');
       var list = groups[key];
-      return '<div class="tl-month"><h3>' + parts[0] + ' 年 ' + Number(parts[1]) + ' 月</h3>' +
-        '<span>' + list.length + ' 条</span></div>' +
-        '<div class="tl-list">' + list.map(timelineItem).join('') + '</div>';
+      var isFolded = !!folded['tl_' + key];
+      return '<div class="tl-month-wrap">' +
+        '<button class="tl-month" data-action="fold" data-key="tl_' + key + '" aria-expanded="' + (isFolded ? 'false' : 'true') + '">' +
+        '<span class="tl-month-t"><b>' + parts[0] + ' 年 ' + Number(parts[1]) + ' 月</b><i>' + list.length + ' 条</i></span>' +
+        '<span class="tl-month-ic">' + icon('chevron', 14) + '</span>' +
+        '</button>' +
+        '<div class="tl-list' + (isFolded ? ' is-folded' : '') + '">' + list.map(timelineItem).join('') + '</div>' +
+        '</div>';
     }).join('');
   }
 
@@ -3142,7 +4179,7 @@
     var d = new Date(r.createdAt);
     return '<div class="tl-item"><div class="tl-body" data-action="open" data-id="' + r.id + '" role="button" tabindex="0">' +
       '<div class="tl-top"><span class="tl-date">' + md(d) + '</span>' +
-      '<span class="chip" data-s="' + r.status + '">' + STATUSES[r.status] + '</span></div>' +
+      '<span class="chip" data-s="' + r.status + '">' + statusLabelFor(r) + '</span></div>' +
       '<h3 class="tl-title">' + esc(r.title) + '</h3>' +
       (r.review ? '<p class="tl-review">' + esc(r.review) + '</p>' : '') +
       (r.quotes && r.quotes.length ? '<div class="quote-block">' + esc(r.quotes[0].text) + '</div>' +
@@ -3609,6 +4646,7 @@
       '<div class="kpi"><strong>' + fmtHours(hours) + '</strong><span>累计小时</span></div>' +
       '<div class="kpi"><strong>' + (avg ? ratingText(avg) : '—') + '</strong><span>平均评分</span></div>' +
       '<div class="kpi"><strong>' + (tags.length ? tags[0][0] : '—') + '</strong><span>最常题材</span></div>' +
+      '<div class="kpi"><strong>' + (recordDayCount() || '—') + '</strong><span>记录天数</span></div>' +
       '</div>';
 
     /* 趋势 */
@@ -3684,6 +4722,7 @@
       '<button class="more-btn" data-action="go" data-to="quotes">' + icon('quote', 18) + '<span>摘抄库</span></button>' +
       '<button class="more-btn" data-action="go" data-to="authors">' + icon('user', 18) + '<span>创作者</span></button>' +
       '<button class="more-btn" data-action="go" data-to="archive">' + icon('archive', 18) + '<span>归档</span></button>' +
+      '<button class="more-btn" data-action="go" data-to="badges">' + icon('trophy', 18) + '<span>徽章</span></button>' +
       '</div>';
     return html;
   }
@@ -4368,7 +5407,7 @@
           ? '<div class="auth-body">' + g.list.slice().sort(function (a, b) { return b.updatedAt - a.updatedAt; }).map(function (r) {
             return '<div class="auth-item" data-action="open" data-id="' + r.id + '" role="button" tabindex="0">' +
               '<span class="auth-item-title">' + esc(r.title) + '</span>' +
-              '<span class="auth-item-meta">' + TYPES[r.type].label + ' · ' + STATUSES[r.status] +
+              '<span class="auth-item-meta">' + TYPES[r.type].label + ' · ' + statusLabelFor(r) +
               (r.rating ? ' · ' + ratingText(r.rating) : '') + '</span>' +
               '</div>';
           }).join('') + '</div>'
@@ -4388,6 +5427,113 @@
       map[y] = (map[y] || 0) + 1;
     });
     return Object.keys(map).sort().reverse().map(function (y) { return { year: y, count: map[y] }; });
+  }
+
+  /* 点封面弹出的信息卡：封面占满左侧，信息在右 */
+  function recordCardHTML(r) {
+    var f = formOf(r.type);
+    var m = r.meta || {};
+    var rows = [];
+    (EXTRA_FIELDS[r.type] || []).forEach(function (fd) {
+      if (rows.length >= 9) return;
+      if (m[fd.key]) rows.push([fd.label, m[fd.key]]);
+    });
+    if (r.hours) rows.push(['投入时长', fmtHours(r.hours) + ' 小时']);
+    if (r.releaseDate) rows.push([f.release, r.releaseDate]);
+    if (r.startedAt) rows.push([f.start || '开始', r.startedAt]);
+    if (r.finishedAt) rows.push([f.finish || '完成', r.finishedAt]);
+
+    var quoteN = (r.quotes || []).length;
+    var noteN = (r.notesLog || []).length;
+    var pct = progressPercent(r);
+
+    return '<div class="rcard">' +
+      '<div class="rcard-left" style="--cc:' + coverColor(r.title) + '">' +
+      coverInner(r) +
+      '<span class="rcard-veil"></span>' +
+      '<span class="rcard-kind">' + TYPES[r.type].label + '</span>' +
+      '</div>' +
+      '<div class="rcard-right">' +
+      '<span class="rcard-type">' + statusLabelFor(r) + '</span>' +
+      '<h4 class="rcard-title">' + esc(r.title) + '</h4>' +
+      (r.originalTitle ? '<p class="rcard-sub">' + esc(r.originalTitle) + '</p>' : '') +
+      ([r.creator, r.year].filter(Boolean).length
+        ? '<p class="rcard-sub">' + esc([r.creator, r.year].filter(Boolean).join(' · ')) + '</p>'
+        : '') +
+      '<div class="rcard-rate">' +
+      (r.rating
+        ? '<b>' + ratingText(r.rating) + '</b><span>/ 10</span>'
+        : '<span class="rcard-norate">还没评分</span>') +
+      (r.douban ? '<em>' + (f.score || '外部评分') + ' ' + r.douban.toFixed(1) + '</em>' : '') +
+      '</div>' +
+      '<div class="rcard-prog"><div class="rcard-bar"><i style="width:' + pct + '%"></i></div>' +
+      '<span>' + esc(progressText(r)) + '</span></div>' +
+
+      (rows.length ? '<div class="rcard-rows">' + rows.map(function (x) {
+        return '<div class="rcard-row"><span>' + esc(x[0]) + '</span><b>' + esc(x[1]) + '</b></div>';
+      }).join('') + '</div>' : '') +
+
+      (r.review ? '<p class="rcard-review">' + esc(r.review) + '</p>' : '') +
+
+      ((r.tags || []).length ? '<div class="rcard-tags">' + r.tags.map(function (t) {
+        return '<span class="rcard-tag">' + esc(t) + '</span>';
+      }).join('') + '</div>' : '') +
+
+      ((quoteN || noteN) ? '<p class="rcard-extra">' +
+        (quoteN ? '摘抄 ' + quoteN + ' 条' : '') +
+        (quoteN && noteN ? ' · ' : '') +
+        (noteN ? '笔记 ' + noteN + ' 条' : '') + '</p>' : '') +
+
+      '<p class="rcard-foot">收录于 ' + ymd(new Date(r.createdAt)) +
+      (r.updatedAt ? ' · 更新于 ' + ymd(new Date(r.updatedAt)) : '') + '</p>' +
+      '<div class="rcard-actions">' +
+      '<button class="rcard-btn" data-action="close-modal">关闭</button>' +
+      '<button class="rcard-btn is-primary" data-action="rcard-edit" data-id="' + r.id + '">编辑</button>' +
+      '</div>' +
+      '</div></div>';
+  }
+
+  function openRecordCard(id) {
+    var r = null;
+    for (var i = 0; i < state.records.length; i++) {
+      if (state.records[i].id === id) { r = state.records[i]; break; }
+    }
+    if (!r) return;
+    var back = location.hash || '#/archive';
+    openModal({
+      title: '',
+      cls: 'rcard-modal',
+      body: recordCardHTML(r),
+      actions: []
+    });
+  }
+
+  /* 一叠封面：重叠摆放，点哪张开哪条 */
+  function coverFanHTML(list) {
+    var MAX = 9;
+    var hasRest = list.length > MAX;
+    var shown = list.slice(0, hasRest ? MAX - 1 : MAX);
+    var rest = list.length - shown.length;
+    var n = shown.length;
+    var slots = n + (hasRest ? 1 : 0);
+    var W = 300;
+    var step = slots > 1 ? Math.min(34, (W - 86) / (slots - 1)) : 0;
+    var total = (slots - 1) * step + 86;
+
+    var items = shown.map(function (r, i) {
+      return '<button class="fan-item" data-action="record-card" data-id="' + r.id + '" ' +
+        'style="left:' + (i * step).toFixed(1) + 'px;z-index:' + (i + 1) + ';--cc:' + coverColor(r.title) + '" ' +
+        'aria-label="' + esc(r.title) + '">' +
+        coverInner(r) +
+        '</button>';
+    }).join('');
+
+    if (hasRest) {
+      items += '<span class="fan-item fan-more" style="left:' + (n * step).toFixed(1) + 'px;z-index:' + (n + 1) + '">' +
+        '+' + rest + '</span>';
+    }
+
+    return '<div class="fan" style="width:' + total.toFixed(0) + 'px">' + items + '</div>';
   }
 
   function archiveView() {
@@ -4457,22 +5603,19 @@
       '<div><strong>' + checkinN + '</strong><span>打卡</span></div>' +
       '</div>';
 
+    html += '<p class="fan-hint">按类型分成一叠，点哪张封面就看哪一条。</p>';
+
     TYPE_KEYS.forEach(function (k) {
-      var group = recs.filter(function (r) { return r.type === k; });
+      var group = recs.filter(function (r) { return r.type === k; })
+        .sort(function (a, b) { return b.updatedAt - a.updatedAt; });
       if (!group.length) return;
+      var top = group.filter(function (r) { return r.rating > 0; })
+        .sort(function (a, b) { return b.rating - a.rating; })[0];
       html += '<section class="section"><div class="section-head">' +
         '<h2 class="section-title">' + TYPES[k].label + '</h2>' +
-        '<span class="section-note">' + group.length + ' 条</span></div>' +
-        '<div class="arch-list">' + group.slice().sort(function (a, b) { return b.updatedAt - a.updatedAt; }).map(function (r) {
-          return '<div class="arch-item" data-action="open" data-id="' + r.id + '" role="button" tabindex="0">' +
-            '<span class="arch-cover" style="--cc:' + coverColor(r.title) + '">' + esc(firstChar(r.title)) + '</span>' +
-            '<span class="arch-main">' +
-            '<span class="arch-title">' + esc(r.title) + '</span>' +
-            '<span class="arch-meta">' + esc(progressText(r)) + (r.rating ? ' · ' + ratingText(r.rating) : '') + '</span>' +
-            '</span>' +
-            '<span class="chip" data-s="' + r.status + '">' + STATUSES[r.status] + '</span>' +
-            '</div>';
-        }).join('') + '</div></section>';
+        '<span class="section-note">' + group.length + ' 条' +
+        (top ? ' · 最高 ' + esc(top.title) + ' ' + ratingText(top.rating) : '') + '</span></div>' +
+        coverFanHTML(group) + '</section>';
     });
 
     return html;
@@ -4556,6 +5699,10 @@
       '<div class="set-desc">检查重复条目、缺封面、缺评分等问题</div>' +
       '</div><button class="btn btn-ghost btn-sm" data-action="health">检查</button></div>' +
       '<div class="set-row"><div class="set-row-main">' +
+      '<div class="set-label">筛选项管理</div>' +
+      '<div class="set-desc">筛选项来自你的记录，可以删掉不用的或自己加</div>' +
+      '</div><button class="btn btn-ghost btn-sm" data-action="go" data-to="options">管理</button></div>' +
+      '<div class="set-row"><div class="set-row-main">' +
       '<div class="set-label">跨设备同步</div>' +
       '<div class="set-desc">导出后在另一台设备导入即可，数据不经过任何服务器</div>' +
       '</div></div>' +
@@ -4618,7 +5765,7 @@
     /* 其他 */
     html += '<div class="set-group"><h2>其他</h2>' +
       '<div class="set-row"><div class="set-row-main"><div class="set-label">按年份补全发布日期</div>' +
-      '<div class="set-desc">给只有年份的作品补一个 1 月 1 日，便于按上映状态筛选</div></div>' +
+      '<div class="set-desc">给只有年份的作品补一个 1 月 1 日，便于按发布状态筛选</div></div>' +
       '<button class="btn btn-ghost btn-sm" data-action="backfill-date">补全</button></div>' +
       '<div class="set-row"><div class="set-row-main"><div class="set-label">示例数据</div>' +
       '<div class="set-desc">填充几条演示记录，随时可以删掉</div></div>' +
@@ -4705,7 +5852,7 @@
         r.rating ? ratingText(r.rating) : '',
         r.douban ? r.douban.toFixed(1) : '',
         r.recommend ? (RECOMMEND_LEVELS.filter(function (x) { return x.key === r.recommend; })[0] || {}).label || '' : '',
-        STATUSES[r.status],
+        statusLabelFor(r),
         progressText(r),
         r.type === 'magazine' ? magazineIssueText(r) : '',
         metaSummary(r),
@@ -4764,9 +5911,9 @@
         (r.custom || []).forEach(function (c) {
           if (c && c.k) facts.push('**' + mdEscape(c.k) + '**：' + mdEscape(c.v || ''));
         });
-        facts.push('**状态**：' + STATUSES[r.status]);
+        facts.push('**状态**：' + statusLabelFor(r));
         if (r.rating) facts.push('**我的评分**：' + ratingText(r.rating));
-        if (r.douban) facts.push('**豆瓣**：' + r.douban.toFixed(1));
+        if (r.douban) facts.push('**' + (formOf(r.type).score || '外部评分') + '**：' + r.douban.toFixed(1));
         if (r.recommend) {
           var lv = RECOMMEND_LEVELS.filter(function (x) { return x.key === r.recommend; })[0];
           if (lv) facts.push('**推荐**：' + lv.label);
@@ -5457,7 +6604,7 @@
           return '<label class="bulk-item">' +
             '<input type="checkbox" data-bulk-idx="' + i + '"' + (picked[i] ? ' checked' : '') + '>' +
             '<span class="bulk-main"><strong>' + esc(it.title) + '</strong>' +
-            '<em>' + esc([TYPES[it.type].label, it.creator, it.year, it.rating ? ratingText(it.rating) : '', STATUSES[it.status]].filter(Boolean).join(' · ')) + '</em></span>' +
+            '<em>' + esc([TYPES[it.type].label, it.creator, it.year, it.rating ? ratingText(it.rating) : '', statusLabel(it.type, it.status)].filter(Boolean).join(' · ')) + '</em></span>' +
             (dup ? '<span class="bulk-dup">已存在</span>' : '') +
             '</label>';
         }).join('') + '</div>' +
@@ -5650,7 +6797,9 @@
   }
 
   function closeModal() {
-    document.getElementById('modal-root').innerHTML = '';
+    var root = document.getElementById('modal-root');
+    if (root && typeof root.__finish === 'function') { root.__finish(null); return; }
+    if (root) root.innerHTML = '';
   }
 
   function openModal(opts) {
@@ -5658,7 +6807,7 @@
       var root = document.getElementById('modal-root');
       var actions = opts.actions || [{ label: '取消', value: null, variant: 'ghost' }];
       root.innerHTML = '<div class="modal-backdrop">' +
-        '<div class="modal" role="dialog" aria-modal="true">' +
+        '<div class="modal' + (opts.cls ? ' ' + opts.cls : '') + '" role="dialog" aria-modal="true">' +
         '<h3 class="modal-title">' + esc(opts.title || '') + '</h3>' +
         (opts.desc ? '<p class="modal-desc">' + esc(opts.desc) + '</p>' : '') +
         (opts.body || '') +
@@ -5674,9 +6823,11 @@
         if (done) return;
         done = true;
         document.removeEventListener('keydown', onKey);
+        root.__finish = null;
         root.innerHTML = '';
         resolve(v);
       }
+      root.__finish = finish;
 
       root.querySelectorAll('[data-idx]').forEach(function (btn) {
         btn.addEventListener('click', function () {
@@ -6031,7 +7182,7 @@
   }
 
   var READONLY_BLOCKED = {
-    'set-type': 1, 'set-star': 1, 'set-unit': 1, 'plus-one': 1,
+    'set-type': 1, 'set-status': 1, 'set-star': 1, 'set-unit': 1, 'plus-one': 1,
     'add-quote': 1, 'del-quote': 1, 'add-note': 1, 'del-note': 1,
     'add-episode': 1, 'del-episode': 1, 'add-season': 1, 'del-season': 1,
     'add-rewatch': 1, 'del-rewatch': 1, 'add-custom': 1, 'del-custom': 1,
@@ -6095,13 +7246,98 @@
 
       case 'filter-type':
         state.filters.type = el.dataset.value;
+        state.filters.meta = {};
+        state.filters.status = 'all';
         render({ keepScroll: true });
         break;
 
       case 'toggle-view':
-        state.ui.view = state.ui.view === 'wall' ? 'grid' : 'wall';
+        state.ui.view = state.ui.view === 'grid' ? 'wall' : (state.ui.view === 'wall' ? 'board' : 'grid');
         render({ keepScroll: true });
         break;
+
+      case 'opt-del': {
+        var ok2 = el.dataset.key, ov = el.dataset.value;
+        var oc = metaCounts(ok2);
+        if (oc[ov]) {
+          var hid = state.prefs.vocabHidden[ok2] || (state.prefs.vocabHidden[ok2] = []);
+          if (hid.indexOf(ov) < 0) hid.push(ov);
+        } else {
+          var voc = state.prefs.vocab[ok2] || [];
+          var vi = voc.indexOf(ov);
+          if (vi >= 0) voc.splice(vi, 1);
+        }
+        savePrefs();
+        render({ keepScroll: true });
+        toast('已从筛选项移除');
+        break;
+      }
+
+      case 'opt-reset':
+        delete state.prefs.vocabHidden[el.dataset.key];
+        savePrefs();
+        render({ keepScroll: true });
+        break;
+
+      case 'opt-add': {
+        var ak = el.dataset.key;
+        var af = fieldDef(ak);
+        openModal({
+          title: '添加选项',
+          desc: '给「' + (af ? af.label : ak) + '」加一个新值，之后筛选和新增记录都能选到。',
+          body: '<input class="input" id="modal-input" maxlength="20" placeholder="例如：精装">',
+          actions: [
+            { label: '取消', value: null, variant: 'ghost' },
+            { label: '添加', value: 'ok', variant: 'primary', collect: true }
+          ]
+        }).then(function (v) {
+          if (!v) return;
+          var nv = String(v).trim().slice(0, 20);
+          if (!nv) return;
+          var vl = state.prefs.vocab[ak] || (state.prefs.vocab[ak] = []);
+          if (vl.indexOf(nv) < 0) vl.push(nv);
+          var hd = state.prefs.vocabHidden[ak];
+          if (hd) {
+            var hi = hd.indexOf(nv);
+            if (hi >= 0) hd.splice(hi, 1);
+          }
+          savePrefs();
+          render({ keepScroll: true });
+          toast('已添加：' + nv);
+        });
+        break;
+      }
+
+      case 'close-modal':
+        closeModal();
+        break;
+
+      case 'rcard-edit':
+        closeModal();
+        state.returnTo = location.hash || '#/archive';
+        location.hash = '#/edit/' + el.dataset.id;
+        break;
+
+      case 'record-card':
+        openRecordCard(el.dataset.id);
+        break;
+
+      case 'open-year':
+        state.archive.year = el.dataset.value;
+        if (location.hash === '#/archive') render({ keepScroll: true });
+        else location.hash = '#/archive';
+        break;
+
+      case 'tl-fold-all': {
+        var mk = monthKeys();
+        var anyOpen = false;
+        for (var mi = 0; mi < mk.length; mi++) {
+          if (!state.ui.fold['tl_' + mk[mi]]) { anyOpen = true; break; }
+        }
+        for (var mj = 0; mj < mk.length; mj++) state.ui.fold['tl_' + mk[mj]] = anyOpen;
+        render({ keepScroll: true });
+        break;
+      }
 
       case 'quote-type':
         state.ui.quoteType = el.dataset.value;
@@ -6134,6 +7370,7 @@
         state.filters.year = 'all';
         state.filters.release = 'all';
         state.filters.rating = 'all';
+        state.filters.meta = {};
         render({ keepScroll: true });
         break;
 
@@ -6211,6 +7448,13 @@
             var ss = state.draft.progress.segments || (state.draft.progress.segments = []);
             if (!ss.length) ss.push({ n: 1, current: 0, total: 0, done: false });
           }
+          render({ keepScroll: true });
+        }
+        break;
+
+      case 'set-status':
+        if (state.draft && STATUS_KEYS.indexOf(el.dataset.value) >= 0 && state.draft.status !== el.dataset.value) {
+          state.draft.status = el.dataset.value;
           render({ keepScroll: true });
         }
         break;
@@ -6615,6 +7859,7 @@
         break;
 
       case 'go':
+        if (el.dataset.to === 'badges' || el.dataset.to === 'options') state.returnTo = '#/' + state.route.name;
         location.hash = '#/' + el.dataset.to;
         break;
 
@@ -6907,7 +8152,7 @@
 
   function filterLibraryCards(raw) {
     var q = String(raw || '').trim().toLowerCase();
-    var cards = document.querySelectorAll('.pcard, .wcard');
+    var cards = document.querySelectorAll('.pcard, .wcard, .bcard');
     var shown = 0;
     for (var i = 0; i < cards.length; i++) {
       var hay = cards[i].getAttribute('data-hay') || '';
@@ -7053,6 +8298,12 @@
     document.addEventListener('change', function (e) {
       var el = e.target;
 
+      if (el.dataset && el.dataset.filter === 'meta') {
+        if (!state.filters.meta) state.filters.meta = {};
+        state.filters.meta[el.dataset.key] = el.value;
+        render({ keepScroll: true });
+        return;
+      }
       if (el.dataset && el.dataset.filter) {
         state.filters[el.dataset.filter] = el.value;
         render({ keepScroll: true });
