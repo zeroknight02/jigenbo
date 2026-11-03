@@ -10,8 +10,8 @@
   var SCHEMA_VERSION = 1;
 
   /* 每次发布改这里和 sw.js 的 VERSION（两者一起改） */
-  var APP_VERSION = '1.31';
-  var SW_VERSION = 'v32';
+  var APP_VERSION = '1.33';
+  var SW_VERSION = 'v34';
   var DB_KEY = 'shilu.db.v1';
   var PREF_KEY = 'shilu.prefs.v1';
   var DAY = 86400000;
@@ -362,7 +362,7 @@
   var state = {
     records: [],
     lists: [],
-    prefs: { theme: 'system', lastExportAt: 0, ratingScale: '10', goalCount: 0, goalHours: 0 },
+    prefs: { theme: 'system', lastExportAt: 0, ratingScale: '10', goalCount: 0, goalHours: 0, seenStandaloneTip: 0 },
     route: { name: 'home', id: null },
     returnTo: '#/home',
     filters: { status: 'all', type: 'all', tag: 'all', year: 'all', release: 'all', rating: 'all', sort: 'updated' },
@@ -1105,6 +1105,7 @@
     var html = '<span class="pcard-initial">' + esc(firstChar(r.title)) + '</span>';
     if (r.cover) {
       html += '<img class="pcard-img" src="' + esc(r.cover) + '" alt="" loading="lazy" decoding="async" ' +
+        'referrerpolicy="no-referrer" ' +
         'onload="this.classList.add(\'is-loaded\')" onerror="this.parentNode.removeChild(this)">';
     }
     return html;
@@ -1488,6 +1489,9 @@
     panel.innerHTML = q ? searchResultsHTML(q) : '';
     panel.classList.toggle('hidden', !q);
     main.classList.toggle('hidden', !!q);
+    /* 老 Safari 不支持 :has()，用 class 兜住「清除」按钮的显示 */
+    var box = document.querySelector('.search');
+    if (box) box.classList.toggle('has-text', !!q);
   }
 
   /* ---------------- 收藏 ---------------- */
@@ -4032,7 +4036,7 @@
     });
   }
 
-  function downloadBlob(blob, name) {
+  function anchorDownload(blob, name) {
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
@@ -4043,6 +4047,25 @@
       URL.revokeObjectURL(url);
       a.remove();
     }, 800);
+  }
+
+  /* iOS「添加到主屏幕」后是独立窗口，<a download> 不会真的存文件，
+     改用系统分享（存到「文件」/ 发微信 / 存相册）。只在 iOS 独立模式启用，
+     其它环境行为完全不变。 */
+  function downloadBlob(blob, name) {
+    var iosStandalone = false;
+    try { iosStandalone = window.navigator.standalone === true; } catch (e) { iosStandalone = false; }
+    if (iosStandalone && navigator.canShare && navigator.share) {
+      var file = null;
+      try { file = new File([blob], name, { type: blob.type || 'application/octet-stream' }); } catch (e2) { file = null; }
+      if (file && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: name }).catch(function () {
+          /* 用户取消分享时不再重复下载，避免弹两次 */
+        });
+        return;
+      }
+    }
+    anchorDownload(blob, name);
   }
 
   function posterName() {
@@ -7156,6 +7179,7 @@
     bindEvents();
     registerSW();
     watchInstall();
+    checkStandaloneTip();
 
     /* 切后台或关闭时，把缓存和数据库都强制落一次 */
     window.addEventListener('pagehide', function () { writeCacheNow(); flushWrite(); });
@@ -7341,6 +7365,32 @@
   function isStandalone() {
     if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return true;
     return window.navigator.standalone === true;
+  }
+
+  /* iOS「添加到主屏幕」后是独立存储，和 Safari 里的数据互不相通。
+     第一次在独立窗口打开、又没有记录时，直接说清楚怎么把数据搬过来。 */
+  function checkStandaloneTip() {
+    var standalone = false;
+    try {
+      if (window.navigator.standalone === true) standalone = true;
+      else if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) standalone = true;
+    } catch (e) { standalone = false; }
+    if (!standalone) return;
+    if (state.prefs.seenStandaloneTip) return;
+    if (state.records.length) return;
+
+    setTimeout(function () {
+      openModal({
+        title: '第一次从主屏幕打开？',
+        desc: '主屏幕版和 Safari 里是两个独立的存储空间，这里看不到 Safari 里的记录。\n\n' +
+          '如果之前记过东西：先用 Safari 打开同一网址 → 设置 → 导出全部数据（JSON），' +
+          '再回到这里 → 设置 → 从 JSON 文件导入。',
+        actions: [{ label: '知道了', value: 'ok', variant: 'primary' }]
+      }).then(function () {
+        state.prefs.seenStandaloneTip = 1;
+        savePrefs();
+      });
+    }, 1200);
   }
 
   function watchInstall() {
