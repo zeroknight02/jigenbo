@@ -10,8 +10,8 @@
   var SCHEMA_VERSION = 1;
 
   /* 每次发布改这里和 sw.js 的 VERSION（两者一起改） */
-  var APP_VERSION = '1.40';
-  var SW_VERSION = 'v41';
+  var APP_VERSION = '1.41';
+  var SW_VERSION = 'v42';
   var DB_KEY = 'shilu.db.v1';
   var PREF_KEY = 'shilu.prefs.v1';
   var DAY = 86400000;
@@ -64,6 +64,13 @@
     }
   };
   var TYPE_KEYS = ['novel', 'comic', 'anime', 'tv', 'movie', 'variety', 'drama', 'stage', 'game', 'music', 'magazine'];
+
+  /* 用户在设置里关掉的类型：不出现在类型栏、新增页、筛选项里，数据仍保留 */
+  function typesOn() {
+    var off = state.prefs.offTypes || {};
+    var out = TYPE_KEYS.filter(function (k) { return !off[k]; });
+    return out.length ? out : TYPE_KEYS.slice();
+  }
 
   var MAG_EDITIONS = ['国内版', '港版', '台版', '日版', '韩版', '美版', '欧版', '其他'];
   var MAG_PARTS = ['A', 'B', 'C', '合刊', '增刊', '别册'];
@@ -600,7 +607,134 @@
   }
 
   function safeCover(url) {
-    return /^https?:\/\//i.test(String(url || '')) ? String(url) : '';
+    var v = String(url || '');
+    if (/^https?:\/\//i.test(v)) return v;
+    if (/^data:image\//i.test(v)) return v;
+    if (/^img:[A-Za-z0-9_]+$/.test(v)) return v;
+    return '';
+  }
+
+  /* ---------------- 本地图片库 ---------------- */
+  /* 图片单独存在 IndexedDB 的 images 表里，记录里只存 img:<id>，
+     这样记录本身很小，导出/缓存都不会被图片撑爆。 */
+
+  var IMG = {};             /* id -> dataURL */
+  var IMG_MISSING = {};     /* 已知取不到的 id，避免反复查库 */
+
+  function coverSrc(cover) {
+    if (!cover) return '';
+    if (cover.indexOf('img:') === 0) return IMG[cover.slice(4)] || '';
+    return cover;
+  }
+
+  function dbImages() {
+    return dbOpen().then(function (db) {
+      if (!db || !db.objectStoreNames.contains(DB_IMG)) return null;
+      return db;
+    });
+  }
+
+  function loadImages() {
+    return dbImages().then(function (db) {
+      if (!db) return 0;
+      return new Promise(function (resolve) {
+        try {
+          var req = db.transaction(DB_IMG, 'readonly').objectStore(DB_IMG).getAll();
+          req.onsuccess = function () {
+            var n = 0;
+            (req.result || []).forEach(function (row) {
+              if (row && row.id && row.data) { IMG[row.id] = row.data; n++; }
+            });
+            resolve(n);
+          };
+          req.onerror = function () { resolve(0); };
+        } catch (e) { resolve(0); }
+      });
+    }).catch(function () { return 0; });
+  }
+
+  function imgPut(id, data) {
+    return dbImages().then(function (db) {
+      if (!db) return false;
+      return new Promise(function (resolve) {
+        try {
+          var tx = db.transaction(DB_IMG, 'readwrite');
+          tx.objectStore(DB_IMG).put({ id: id, data: data, at: Date.now() });
+          tx.oncomplete = function () { resolve(true); };
+          tx.onerror = function () { resolve(false); };
+          tx.onabort = function () { resolve(false); };
+        } catch (e) { resolve(false); }
+      });
+    }).catch(function () { return false; });
+  }
+
+  /* 彻底删除记录时，把它独占的图片一起清掉，避免图片越攒越多 */
+  function purgeImages(records) {
+    (records || []).forEach(function (r) {
+      var refs = [];
+      if (r && typeof r.cover === 'string' && r.cover.indexOf('img:') === 0) refs.push(r.cover.slice(4));
+      (r && r.images || []).forEach(function (x) {
+        if (typeof x === 'string' && x.indexOf('img:') === 0) refs.push(x.slice(4));
+      });
+      refs.forEach(function (id) { imgDelete(id); });
+    });
+  }
+
+  function imgDelete(id) {
+    if (!id) return;
+    delete IMG[id];
+    dbImages().then(function (db) {
+      if (!db) return;
+      try {
+        db.transaction(DB_IMG, 'readwrite').objectStore(DB_IMG).delete(id);
+      } catch (e) { /* ignore */ }
+    });
+  }
+
+  /* 压缩：最长边不超过 max，转 JPEG，通常 20–50KB */
+  function shrinkImage(file, max, quality) {
+    max = max || 560;
+    quality = quality || 0.82;
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file);
+      var im = new Image();
+      im.onload = function () {
+        try {
+          var w = im.naturalWidth || im.width;
+          var h = im.naturalHeight || im.height;
+          if (!w || !h) { URL.revokeObjectURL(url); reject(new Error('bad')); return; }
+          var scale = Math.min(1, max / Math.max(w, h));
+          var cw = Math.max(1, Math.round(w * scale));
+          var ch = Math.max(1, Math.round(h * scale));
+          var cv = document.createElement('canvas');
+          cv.width = cw; cv.height = ch;
+          var ctx = cv.getContext('2d');
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(0, 0, cw, ch);
+          ctx.drawImage(im, 0, 0, cw, ch);
+          var out = cv.toDataURL('image/jpeg', quality);
+          URL.revokeObjectURL(url);
+          resolve(out);
+        } catch (e) {
+          URL.revokeObjectURL(url);
+          reject(e);
+        }
+      };
+      im.onerror = function () { URL.revokeObjectURL(url); reject(new Error('decode')); };
+      im.src = url;
+    });
+  }
+
+  /* 存一张图，返回可直接放进 cover / images 的引用 */
+  function saveImageFile(file, max) {
+    return shrinkImage(file, max).then(function (data) {
+      var id = 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+      IMG[id] = data;
+      return imgPut(id, data).then(function (ok) {
+        /* 数据库不可用时退化成内联，至少当下能看 */
+        return ok ? ('img:' + id) : data;
+      });
+    });
   }
 
   /* ---------- 评分制 ---------- */
@@ -656,12 +790,14 @@
   var state = {
     records: [],
     lists: [],
-    prefs: { theme: 'system', lastExportAt: 0, ratingScale: '10', goalCount: 0, goalHours: 0, seenStandaloneTip: 0, vocab: {}, vocabHidden: {} },
+    prefs: { theme: 'system', accent: 'rose', lastExportAt: 0, ratingScale: '10', goalCount: 0, goalHours: 0,
+      seenStandaloneTip: 0, vocab: {}, vocabHidden: {}, offTypes: {}, cardFields: {}, backups: [] },
     route: { name: 'home', id: null },
     returnTo: '#/home',
     filters: { status: 'all', type: 'all', tag: 'all', year: 'all', release: 'all', rating: 'all', sort: 'updated', meta: {} },
     ui: {
       listId: 'all', selectMode: false, selected: {}, sortMode: false, view: 'grid', fold: {},
+      limit: 60, limitSig: '',
       quoteType: 'all', quoteQ: ''
     },
     archive: { year: 0 },
@@ -670,6 +806,7 @@
     categories: [],
     timeline: { view: 'axis', y: 0, m: 0, selected: null, type: 'all' },
     checkins: [],
+    trash: [],
     checkin: { y: 0, m: 0, sel: '' },
     report: { year: 0, month: 'all', type: 'all', data: null },
     draft: null,
@@ -866,6 +1003,8 @@
       notesLog: notesLog,
       hours: num(r.hours),
       cover: safeCover(r.cover),
+      images: Array.isArray(r.images) ? r.images.map(function (x) { return safeCover(x); })
+        .filter(Boolean).slice(0, 12) : [],
       updateDay: updateDay,
       meta: normalizeMeta(r.meta),
       custom: normalizeCustom(r.custom),
@@ -889,6 +1028,40 @@
       createdAt: Number(r.createdAt) || now,
       updatedAt: Number(r.updatedAt) || now
     };
+  }
+
+  /* ---------------- 回收站 ---------------- */
+  /* 删除只是挪进回收站，可以恢复；30 天后才在清理时彻底移除 */
+
+  var TRASH_DAYS = 30;
+
+  function normalizeTrash(list) {
+    if (!Array.isArray(list)) return [];
+    return list.map(function (x) {
+      var rec = normalizeRecord(x && x.r ? x.r : x);
+      if (!rec) return null;
+      var at = Number(x && x.at) || Date.now();
+      return { at: at, r: rec };
+    }).filter(Boolean).slice(0, 500);
+  }
+
+  function trashAdd(records) {
+    records.forEach(function (r) {
+      state.trash.unshift({ at: Date.now(), r: r });
+    });
+    state.trash = state.trash.slice(0, 500);
+  }
+
+  function trashRestore(id) {
+    var hit = null;
+    state.trash = state.trash.filter(function (x) {
+      if (!hit && x.r.id === id) { hit = x.r; return false; }
+      return true;
+    });
+    if (!hit) return null;
+    hit.updatedAt = Date.now();
+    state.records.push(hit);
+    return hit;
   }
 
   function normalizeCategories(list) {
@@ -949,6 +1122,7 @@
         return true;
       });
     state.categories = normalizeCategories(data && data.categories);
+    state.trash = normalizeTrash(data && data.trash);
     return (data && data.savedAt) || '';
   }
 
@@ -979,6 +1153,10 @@
       if (p.seenStandaloneTip) state.prefs.seenStandaloneTip = 1;
       if (p.vocab && typeof p.vocab === 'object') state.prefs.vocab = p.vocab;
       if (p.vocabHidden && typeof p.vocabHidden === 'object') state.prefs.vocabHidden = p.vocabHidden;
+      if (p.accent) state.prefs.accent = p.accent;
+      if (p.offTypes && typeof p.offTypes === 'object') state.prefs.offTypes = p.offTypes;
+      if (p.cardFields && typeof p.cardFields === 'object') state.prefs.cardFields = p.cardFields;
+      if (Array.isArray(p.backups)) state.prefs.backups = p.backups.slice(0, 10);
     } catch (e) { /* ignore */ }
   }
 
@@ -988,9 +1166,10 @@
      数据量大了自动停用缓存，改为从数据库异步载入。 */
 
   var DB_NAME = 'shilu-db';
-  var DB_VER = 2;
+  var DB_VER = 3;
   var DB_REC = 'records';
   var DB_META = 'meta';
+  var DB_IMG = 'images';
   var CACHE_MAX_RECORDS = 2200;   /* 超过这个条数就不再写 localStorage 缓存 */
   var CACHE_MIN_INTERVAL = 10000; /* 缓存最快 10 秒写一次，避免每次保存都全量序列化 */
 
@@ -1008,6 +1187,7 @@
         var db = req.result;
         if (!db.objectStoreNames.contains(DB_REC)) db.createObjectStore(DB_REC, { keyPath: 'id' });
         if (!db.objectStoreNames.contains(DB_META)) db.createObjectStore(DB_META, { keyPath: 'k' });
+        if (!db.objectStoreNames.contains(DB_IMG)) db.createObjectStore(DB_IMG, { keyPath: 'id' });
       };
       req.onsuccess = function () { resolve(req.result); };
       req.onerror = function () { resolve(null); };
@@ -1075,7 +1255,7 @@
           for (var i = 0; i < records.length; i++) store.put(records[i]);
           tx.objectStore(DB_META).put({
             k: 'collections', savedAt: currentSavedAt,
-            lists: lists, checkins: checkins, categories: categories
+            lists: lists, checkins: checkins, categories: categories, trash: state.trash
           });
           tx.oncomplete = function () { seedWritten(records); resolve(true); };
           tx.onerror = function () { resolve(false); };
@@ -1112,7 +1292,8 @@
           for (var m = 0; m < dels.length; m++) store.delete(dels[m]);
           tx.objectStore(DB_META).put({
             k: 'collections', savedAt: currentSavedAt,
-            lists: state.lists, checkins: state.checkins, categories: state.categories
+            lists: state.lists, checkins: state.checkins, categories: state.categories,
+            trash: state.trash
           });
           tx.oncomplete = function () { written = next; resolve(true); };
           tx.onerror = function () { resolve(false); };
@@ -1126,9 +1307,12 @@
     return dbOpen().then(function (db) {
       if (!db) return;
       try {
-        var tx = db.transaction([DB_REC, DB_META], 'readwrite');
+        var stores = [DB_REC, DB_META];
+        if (db.objectStoreNames.contains(DB_IMG)) stores.push(DB_IMG);
+        var tx = db.transaction(stores, 'readwrite');
         tx.objectStore(DB_REC).clear();
         tx.objectStore(DB_META).clear();
+        if (db.objectStoreNames.contains(DB_IMG)) tx.objectStore(DB_IMG).clear();
       } catch (e) { /* ignore */ }
       written = {};
     }).catch(function () { /* ignore */ });
@@ -1150,6 +1334,7 @@
         return true;
       });
     state.categories = normalizeCategories(meta.categories);
+    state.trash = normalizeTrash(meta.trash);
   }
 
   /* 启动时：迁移旧数据 / 用数据库校正缓存 */
@@ -1235,7 +1420,8 @@
         records: state.records,
         lists: state.lists,
         checkins: state.checkins,
-        categories: state.categories
+        categories: state.categories,
+        trash: state.trash
       });
     } catch (e) {
       return null;
@@ -1288,6 +1474,7 @@
     var dark = t === 'dark' || (t === 'system' && window.matchMedia &&
       window.matchMedia('(prefers-color-scheme: dark)').matches);
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    document.documentElement.dataset.accent = state.prefs.accent || 'rose';
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', dark ? '#14111F' : '#FAF7FF');
   }
@@ -1300,8 +1487,10 @@
     var name = parts[0];
     if (!name) return { name: 'home', id: null };
     if (name === 'edit' && parts[1]) return { name: 'edit', id: parts[1] };
+    if (name === 'person' && parts[1]) return { name: 'person', id: decodeURIComponent(parts.slice(1).join('/')) };
     if (['home', 'library', 'timeline', 'stats', 'settings', 'new',
-      'quotes', 'authors', 'archive', 'badges', 'options'].indexOf(name) >= 0) {
+      'quotes', 'authors', 'archive', 'badges', 'options',
+      'calendar', 'week', 'tags', 'trash'].indexOf(name) >= 0) {
       return { name: name, id: null };
     }
     return { name: 'home', id: null };
@@ -1333,6 +1522,11 @@
     else if (r.name === 'archive') html = archiveView();
     else if (r.name === 'badges') html = badgesView();
     else if (r.name === 'options') html = optionsView();
+    else if (r.name === 'calendar') html = calendarView();
+    else if (r.name === 'week') html = weekView();
+    else if (r.name === 'tags') html = tagsView();
+    else if (r.name === 'trash') html = trashView();
+    else if (r.name === 'person') html = personView(r.id || '');
     else if (r.name === 'settings') html = settingsView();
 
     view.innerHTML = '<div class="page">' + html + '</div>';
@@ -1417,8 +1611,9 @@
 
   function coverInner(r, cls) {
     var html = '<span class="pcard-initial">' + esc(firstChar(r.title)) + '</span>';
-    if (r.cover) {
-      html += '<img class="pcard-img" src="' + esc(r.cover) + '" alt="" loading="lazy" decoding="async" ' +
+    var src = coverSrc(r.cover);
+    if (src) {
+      html += '<img class="pcard-img" src="' + esc(src) + '" alt="" loading="lazy" decoding="async" ' +
         'referrerpolicy="no-referrer" ' +
         'onload="this.classList.add(\'is-loaded\')" onerror="this.parentNode.removeChild(this)">';
     }
@@ -1553,6 +1748,420 @@
 
   /* ---------------- 总览 ---------------- */
 
+  /* ---------------- 本周追更 / 记录月历 / 标签云 / 回收站 / 人物 ---------------- */
+
+  var WEEK_FULL = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+  /* 取这条记录的更新日：优先用记录里的「更新日」，其次读专属字段里的放送/更新星期 */
+  function updateDayOf(r) {
+    if (typeof r.updateDay === 'number' && r.updateDay >= 0) return r.updateDay;
+    var m = r.meta || {};
+    var txt = m.airWeekday || m.updateWeekday || '';
+    var i = WEEK_FULL.indexOf(txt);
+    if (i >= 0) return i;
+    var m2 = String(txt).match(/[1-7]/);
+    if (m2) return Number(m2[1]) % 7;
+    return -1;
+  }
+
+  function weekSchedule() {
+    var out = [[], [], [], [], [], [], []];
+    state.records.forEach(function (r) {
+      if (r.status !== 'doing') return;
+      var d = updateDayOf(r);
+      if (d < 0) return;
+      out[d].push(r);
+    });
+    out.forEach(function (list) {
+      list.sort(function (a, b) { return b.updatedAt - a.updatedAt; });
+    });
+    return out;
+  }
+
+  function weekItem(r) {
+    return '<button class="wk-item" data-action="open" data-id="' + r.id + '">' +
+      '<span class="wk-cover" style="--cc:' + coverColor(r.title) + '">' + coverInner(r) + '</span>' +
+      '<span class="wk-main"><span class="wk-title">' + esc(r.title) + '</span>' +
+      '<span class="wk-sub">' + TYPES[r.type].label + ' · ' + esc(progressText(r)) + '</span></span>' +
+      '</button>';
+  }
+
+  function weekView() {
+    var sched = weekSchedule();
+    var today = new Date().getDay();
+    var total = sched.reduce(function (a, l) { return a + l.length; }, 0);
+
+    var html = '<header class="page-head">' +
+      '<div class="head-left"><button class="icon-btn" data-action="back" aria-label="返回">' + icon('back', 20) + '</button>' +
+      '<div><p class="eyebrow">' + total + ' 部在追</p><h1 class="page-title">本周追更</h1></div></div>' +
+      '<button class="icon-btn" data-action="settings" aria-label="设置">' + icon('gear', 20) + '</button>' +
+      '</header>';
+
+    if (!total) {
+      return html + '<div class="empty"><div class="empty-mark">·</div>' +
+        '<p class="empty-title">还没有设置更新日</p>' +
+        '<p class="empty-text">在「进行中」的记录里填上放送星期或更新日，这里就会按周排出来。</p>' +
+        '<button class="btn btn-ghost btn-sm" data-action="go" data-to="library">去收藏看看</button></div>';
+    }
+
+    html += '<p class="fan-hint">按更新日排的一周表，今天那行会高亮。</p>';
+    html += '<div class="week">' + sched.map(function (list, d) {
+      return '<section class="wk-day' + (d === today ? ' is-today' : '') + '">' +
+        '<header class="wk-head"><span class="wk-name">' + WEEK_FULL[d] + '</span>' +
+        (d === today ? '<span class="wk-now">今天</span>' : '') +
+        '<span class="wk-n">' + (list.length ? list.length + ' 部' : '') + '</span></header>' +
+        (list.length ? list.map(weekItem).join('') : '<p class="wk-empty">没有更新</p>') +
+        '</section>';
+    }).join('') + '</div>';
+    return html;
+  }
+
+  /* ---- 记录月历 ---- */
+  function rcalState() {
+    if (!state.rcal) {
+      var n = new Date();
+      state.rcal = { y: n.getFullYear(), m: n.getMonth() };
+    }
+    return state.rcal;
+  }
+
+  function dayRecordsMap() {
+    var map = {};
+    state.records.forEach(function (r) {
+      var d = new Date(r.createdAt);
+      var k = ymd(d);
+      (map[k] = map[k] || []).push(r);
+    });
+    return map;
+  }
+
+  function calendarView() {
+    var c = rcalState();
+    var map = dayRecordsMap();
+    var first = new Date(c.y, c.m, 1);
+    var offset = first.getDay();
+    var days = new Date(c.y, c.m + 1, 0).getDate();
+    var todayKey = todayISO();
+    var monthCount = 0;
+    for (var d = 1; d <= days; d++) {
+      var k = c.y + '-' + pad(c.m + 1) + '-' + pad(d);
+      monthCount += (map[k] || []).length;
+    }
+
+    var html = '<header class="page-head">' +
+      '<div class="head-left"><button class="icon-btn" data-action="back" aria-label="返回">' + icon('back', 20) + '</button>' +
+      '<div><p class="eyebrow">本月 ' + monthCount + ' 条</p><h1 class="page-title">记录月历</h1></div></div>' +
+      '<button class="icon-btn" data-action="settings" aria-label="设置">' + icon('gear', 20) + '</button>' +
+      '</header>';
+
+    html += '<div class="rcal-bar">' +
+      '<button class="icon-btn" data-action="rcal-prev" aria-label="上个月">' + icon('back', 18) + '</button>' +
+      '<b>' + c.y + ' 年 ' + (c.m + 1) + ' 月</b>' +
+      '<button class="icon-btn" data-action="rcal-next" aria-label="下个月" style="transform:rotate(180deg)">' + icon('back', 18) + '</button>' +
+      '</div>';
+
+    html += '<div class="rcal">' + ['日', '一', '二', '三', '四', '五', '六'].map(function (w) {
+      return '<span class="rcal-w">' + w + '</span>';
+    }).join('');
+
+    for (var e = 0; e < offset; e++) html += '<span class="rcal-cell is-blank"></span>';
+    for (var d2 = 1; d2 <= days; d2++) {
+      var key = c.y + '-' + pad(c.m + 1) + '-' + pad(d2);
+      var list = map[key] || [];
+      html += '<button class="rcal-cell' + (key === todayKey ? ' is-today' : '') + (list.length ? ' has' : '') +
+        '" data-action="rcal-day" data-date="' + key + '">' +
+        '<span class="rcal-d">' + d2 + '</span>' +
+        (list.length
+          ? '<span class="rcal-covers">' + list.slice(0, 3).map(function (r) {
+            return '<span class="rcal-cv" style="--cc:' + coverColor(r.title) + '">' + coverInner(r) + '</span>';
+          }).join('') + '</span>' +
+          (list.length > 3 ? '<span class="rcal-more">+' + (list.length - 3) + '</span>' : '')
+          : '') +
+        '</button>';
+    }
+    html += '</div>';
+
+    html += '<p class="fan-hint" style="margin-top:12px">格子里的缩略图是当天收录的作品，点一天看全部。</p>';
+    return html;
+  }
+
+  function openDayList(date) {
+    var list = state.records.filter(function (r) { return ymd(new Date(r.createdAt)) === date; })
+      .sort(function (a, b) { return a.createdAt - b.createdAt; });
+    if (!list.length) { toast('这天没有记录'); return; }
+    openModal({
+      title: md(new Date(date + 'T00:00:00')),
+      desc: '共 ' + list.length + ' 条',
+      body: '<div class="day-list">' + list.map(function (r) {
+        return '<button class="day-row" data-action="record-card" data-id="' + r.id + '">' +
+          '<span class="day-cover" style="--cc:' + coverColor(r.title) + '">' + coverInner(r) + '</span>' +
+          '<span class="day-main"><span class="day-title">' + esc(r.title) + '</span>' +
+          '<span class="day-sub">' + TYPES[r.type].label + ' · ' + statusLabelFor(r) +
+          (r.rating ? ' · ' + ratingText(r.rating) : '') + '</span></span></button>';
+      }).join('') + '</div>',
+      actions: [{ label: '关闭', value: null, variant: 'ghost' }]
+    });
+  }
+
+  /* ---- 标签云 ---- */
+  function tagsView() {
+    var tags = tagCounts();
+    var max = tags.length ? tags[0][1] : 1;
+    var html = '<header class="page-head">' +
+      '<div class="head-left"><button class="icon-btn" data-action="back" aria-label="返回">' + icon('back', 20) + '</button>' +
+      '<div><p class="eyebrow">' + tags.length + ' 个题材</p><h1 class="page-title">题材云</h1></div></div>' +
+      '<button class="icon-btn" data-action="settings" aria-label="设置">' + icon('gear', 20) + '</button>' +
+      '</header>';
+
+    if (!tags.length) {
+      return html + '<div class="empty"><div class="empty-mark">·</div>' +
+        '<p class="empty-title">还没有题材标签</p>' +
+        '<p class="empty-text">记录时加几个标签，这里会按用得多少排出大小。</p></div>';
+    }
+
+    html += '<div class="cloud">' + tags.map(function (t) {
+      var ratio = t[1] / max;
+      var size = 13 + Math.round(ratio * 13);
+      var op = 0.55 + ratio * 0.45;
+      return '<button class="cloud-tag" data-action="tag-open" data-tag="' + esc(t[0]) + '" ' +
+        'style="font-size:' + size + 'px;opacity:' + op.toFixed(2) + '">' + esc(t[0]) +
+        '<i>' + t[1] + '</i></button>';
+    }).join('') + '</div>';
+    html += '<p class="fan-hint" style="text-align:center;margin-top:18px">点任意题材，直接筛出对应的作品。</p>';
+    return html;
+  }
+
+  /* ---- 回收站 ---- */
+  function trashView() {
+    var list = state.trash.slice().sort(function (a, b) { return b.at - a.at; });
+    var html = '<header class="page-head">' +
+      '<div class="head-left"><button class="icon-btn" data-action="back" aria-label="返回">' + icon('back', 20) + '</button>' +
+      '<div><p class="eyebrow">' + list.length + ' 条待清理</p><h1 class="page-title">回收站</h1></div></div>' +
+      (list.length ? '<button class="link-btn" data-action="trash-clear">清空</button>' : '') +
+      '</header>';
+
+    if (!list.length) {
+      return html + '<div class="empty"><div class="empty-mark">·</div>' +
+        '<p class="empty-title">回收站是空的</p>' +
+        '<p class="empty-text">删掉的记录会先放到这里，30 天内都能恢复。</p></div>';
+    }
+
+    html += '<p class="fan-hint">恢复后回到原来的收藏里，标签和进度都还在。</p>';
+    html += '<div class="trash-list">' + list.map(function (x) {
+      var days = Math.max(0, TRASH_DAYS - Math.floor((Date.now() - x.at) / DAY));
+      return '<div class="trash-row">' +
+        '<span class="trash-cover" style="--cc:' + coverColor(x.r.title) + '">' + coverInner(x.r) + '</span>' +
+        '<span class="trash-main"><span class="trash-title">' + esc(x.r.title) + '</span>' +
+        '<span class="trash-sub">' + TYPES[x.r.type].label + ' · 删除于 ' + ymd(new Date(x.at)) +
+        ' · 还剩 ' + days + ' 天</span></span>' +
+        '<span class="trash-ops">' +
+        '<button class="mini-btn" data-action="trash-restore" data-id="' + x.r.id + '">恢复</button>' +
+        '<button class="mini-btn danger" data-action="trash-purge" data-id="' + x.r.id + '">彻底删除</button>' +
+        '</span></div>';
+    }).join('') + '</div>';
+    return html;
+  }
+
+  /* ---- 人物页 ---- */
+  function personRecords(name) {
+    return state.records.filter(function (r) { return String(r.creator || '').trim() === name; });
+  }
+
+  function personView(name) {
+    var list = personRecords(name).sort(function (a, b) { return b.updatedAt - a.updatedAt; });
+    var rated = list.filter(function (r) { return r.rating > 0; });
+    var avg = rated.length ? rated.reduce(function (s, r) { return s + r.rating; }, 0) / rated.length : 0;
+    var hours = list.reduce(function (s, r) { return s + (r.hours || 0); }, 0);
+    var doneN = list.filter(function (r) { return r.status === 'done'; }).length;
+    var types = {};
+    list.forEach(function (r) { types[r.type] = (types[r.type] || 0) + 1; });
+    var years = {};
+    list.forEach(function (r) {
+      var y = recordYear(r) || new Date(r.createdAt).getFullYear();
+      years[y] = (years[y] || 0) + 1;
+    });
+    var top = list.filter(function (r) { return r.rating > 0; })
+      .sort(function (a, b) { return b.rating - a.rating; })[0];
+
+    var html = '<header class="page-head">' +
+      '<div class="head-left"><button class="icon-btn" data-action="back" aria-label="返回">' + icon('back', 20) + '</button>' +
+      '<div><p class="eyebrow">' + list.length + ' 部作品</p><h1 class="page-title">' + esc(name) + '</h1></div></div>' +
+      '<button class="icon-btn" data-action="settings" aria-label="设置">' + icon('gear', 20) + '</button>' +
+      '</header>';
+
+    html += '<div class="person-card">' +
+      '<span class="person-avatar" style="--cc:' + coverColor(name) + '">' + esc(firstChar(name)) + '</span>' +
+      '<div class="person-stats">' +
+      '<div class="person-stat"><b>' + list.length + '</b><span>作品</span></div>' +
+      '<div class="person-stat"><b>' + doneN + '</b><span>完成</span></div>' +
+      '<div class="person-stat"><b>' + (avg ? ratingText(avg) : '—') + '</b><span>均分</span></div>' +
+      '<div class="person-stat"><b>' + (hours ? fmtHours(hours) : '—') + '</b><span>小时</span></div>' +
+      '</div></div>';
+
+    html += '<div class="person-meta">' + Object.keys(types).sort(function (a, b) { return types[b] - types[a]; })
+      .map(function (k) {
+        return '<span class="person-tag">' + TYPES[k].label + ' ' + types[k] + '</span>';
+      }).join('') +
+      Object.keys(years).sort().map(function (y) {
+        return '<span class="person-tag is-year">' + y + '</span>';
+      }).join('') + '</div>';
+
+    if (top) {
+      html += '<p class="person-top">最高分：<b>' + esc(top.title) + '</b> ' + ratingText(top.rating) + '</p>';
+    }
+
+    html += '<div class="auth-list" style="margin-top:6px">' + list.map(function (r) {
+      return '<div class="auth-item" data-action="open" data-id="' + r.id + '" role="button" tabindex="0">' +
+        '<span class="auth-item-title">' + esc(r.title) + '</span>' +
+        '<span class="auth-item-meta">' + TYPES[r.type].label + ' · ' + statusLabelFor(r) +
+        (r.rating ? ' · ' + ratingText(r.rating) : '') + (recordYear(r) ? ' · ' + recordYear(r) : '') + '</span>' +
+        '</div>';
+    }).join('') + '</div>';
+    return html;
+  }
+
+  /* ---- 一键跳转搜索 ---- */
+  var SEARCH_SITES = {
+    doubanBook: { label: '豆瓣读书', url: 'https://search.douban.com/book/subject_search?search_text=' },
+    doubanMovie: { label: '豆瓣电影', url: 'https://search.douban.com/movie/subject_search?search_text=' },
+    doubanMusic: { label: '豆瓣音乐', url: 'https://search.douban.com/music/subject_search?search_text=' },
+    doubanAll: { label: '豆瓣', url: 'https://www.douban.com/search?q=' },
+    bangumi: { label: 'Bangumi', url: 'https://bgm.tv/subject_search/' },
+    steam: { label: 'Steam', url: 'https://store.steampowered.com/search/?term=' },
+    bili: { label: 'B 站', url: 'https://search.bilibili.com/all?keyword=' },
+    netease: { label: '网易云', url: 'https://music.163.com/#/search/m/?s=' },
+    qqmusic: { label: 'QQ 音乐', url: 'https://y.qq.com/n/ryqq/search?w=' },
+    weread: { label: '微信读书', url: 'https://weread.qq.com/web/search/books?keyword=' },
+    jd: { label: '京东', url: 'https://search.jd.com/Search?keyword=' },
+    kongfz: { label: '孔夫子', url: 'https://search.kongfz.com/product/?keyword=' },
+    wiki: { label: '维基', url: 'https://zh.wikipedia.org/w/index.php?search=' }
+  };
+
+  var SEARCH_BY_TYPE = {
+    novel: ['doubanBook', 'weread', 'jd', 'kongfz', 'wiki'],
+    comic: ['doubanBook', 'bangumi', 'jd', 'kongfz'],
+    magazine: ['doubanAll', 'kongfz', 'jd'],
+    anime: ['bangumi', 'doubanMovie', 'bili', 'wiki'],
+    tv: ['doubanMovie', 'bili', 'wiki'],
+    movie: ['doubanMovie', 'wiki', 'bili'],
+    variety: ['doubanMovie', 'bili', 'wiki'],
+    drama: ['doubanAll', 'netease', 'bili'],
+    stage: ['doubanAll', 'bili', 'wiki'],
+    game: ['steam', 'bangumi', 'doubanAll', 'bili'],
+    music: ['netease', 'qqmusic', 'doubanMusic', 'wiki']
+  };
+
+  function searchLinksHTML(r) {
+    var keys = SEARCH_BY_TYPE[r.type] || ['doubanAll', 'wiki'];
+    var q = encodeURIComponent(r.title);
+    return '<div class="slinks">' + keys.map(function (k) {
+      var site = SEARCH_SITES[k];
+      if (!site) return '';
+      return '<a class="slink" href="' + site.url + q + '" target="_blank" rel="noopener noreferrer">' +
+        esc(site.label) + '</a>';
+    }).join('') + '</div>';
+  }
+
+  /* ---- ISBN 查询（Google Books，失败再试 Open Library） ---- */
+  function fillFromIsbn(data) {
+    var d = state.draft;
+    if (!d) return 0;
+    var n = 0;
+    function set(path, val) {
+      if (!val) return;
+      var parts = path.split('.');
+      if (parts[0] === 'meta') {
+        d.meta = d.meta || {};
+        if (!d.meta[parts[1]]) { d.meta[parts[1]] = String(val).slice(0, 200); n++; }
+      } else if (!d[parts[0]]) {
+        d[parts[0]] = String(val).slice(0, 120);
+        n++;
+      }
+    }
+    set('title', data.title);
+    set('originalTitle', data.originalTitle);
+    set('creator', data.creator);
+    set('year', data.year);
+    set('meta.publisher', data.publisher);
+    set('meta.pages', data.pages);
+    set('meta.isbn', data.isbn);
+    if (!d.cover && data.cover) { d.cover = data.cover; n++; }
+    return n;
+  }
+
+  function isbnLookup() {
+    var el = document.getElementById('isbn-input');
+    var isbn = el ? el.value.replace(/[^0-9Xx]/g, '') : '';
+    if (isbn.length < 10) { toast('请输入 10 或 13 位 ISBN'); return; }
+    toast('查询中…');
+    fetch('https://www.googleapis.com/books/v1/volumes?q=isbn:' + isbn + '&maxResults=1')
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        var v = j && j.items && j.items[0] && j.items[0].volumeInfo;
+        if (!v) throw new Error('empty');
+        var n = fillFromIsbn({
+          title: v.title,
+          originalTitle: v.subtitle || '',
+          creator: (v.authors || []).join('、'),
+          year: (v.publishedDate || '').slice(0, 4),
+          publisher: v.publisher,
+          pages: v.pageCount,
+          isbn: isbn,
+          cover: (v.imageLinks && (v.imageLinks.thumbnail || v.imageLinks.smallThumbnail) || '').replace(/^http:/, 'https:')
+        });
+        save();
+        render({ keepScroll: true });
+        toast(n ? '已填入 ' + n + ' 项' : '查到条目，但没有新信息');
+      })
+      .catch(function () {
+        toast('查询失败：网络或接口不可用，可以手动填写');
+      });
+  }
+
+  /* ---- 紧凑列表视图 ---- */
+  function listRowsHTML(rows) {
+    return '<div class="rowlist">' + rows.map(function (r) {
+      return '<button class="lrow" data-action="open" data-id="' + r.id +
+        '" data-hay="' + esc(haystack(r)) + '">' +
+        '<span class="lrow-cover" style="--cc:' + coverColor(r.title) + '">' + coverInner(r) + '</span>' +
+        '<span class="lrow-main"><span class="lrow-title">' + esc(r.title) + '</span>' +
+        '<span class="lrow-sub">' + TYPES[r.type].label + ' · ' + esc(r.creator || '—') + '</span></span>' +
+        '<span class="lrow-status chip" data-s="' + r.status + '">' + statusLabelFor(r) + '</span>' +
+        '<span class="lrow-rate">' + (r.rating ? ratingText(r.rating) : '') + '</span>' +
+        '<span class="lrow-date">' + ymd(new Date(r.updatedAt)) + '</span>' +
+        '</button>';
+    }).join('') + '</div>';
+  }
+
+  /* ---- 相册 ---- */
+  function galleryHTML(r, editable) {
+    var list = r.images || [];
+    if (!list.length && !editable) return '';
+    return '<div class="gal' + (editable ? ' is-edit' : '') + '">' + list.map(function (src, i) {
+      return '<span class="gal-item" style="--cc:' + coverColor(r.title) + '">' +
+        '<img src="' + esc(coverSrc(src)) + '" alt="" loading="lazy">' +
+        (editable
+          ? '<button class="gal-del" data-action="del-image" data-idx="' + i + '" aria-label="移除这张">' + icon('close', 12) + '</button>'
+          : '') +
+        '</span>';
+    }).join('') +
+      (editable
+        ? '<label class="gal-add">' + icon('plus', 16) + '<span>加图</span>' +
+        '<input type="file" accept="image/*" class="file-input" data-image="1" hidden></label>'
+        : '') +
+      '</div>';
+  }
+
+  function viewImage(src) {
+    if (!src) return;
+    openModal({
+      title: '',
+      cls: 'img-modal',
+      body: '<img class="img-full" src="' + esc(src) + '" alt="">',
+      actions: [{ label: '关闭', value: null, variant: 'ghost' }]
+    });
+  }
+
   function homeView() {
     var recs = state.records;
     var q = state.search.trim();
@@ -1627,6 +2236,23 @@
         (rest.length ? '<div class="rail" style="margin-top:12px">' + rest.map(railCard).join('') + '</div>' : '') +
         '</section>';
     }
+
+    /* 更多入口 */
+    var moreItems = [
+      { to: 'week', ic: 'calendar', label: '本周追更', note: weekSchedule().reduce(function (a2, l) { return a2 + l.length; }, 0) + ' 部' },
+      { to: 'calendar', ic: 'calendar', label: '记录月历', note: '按天看' },
+      { to: 'tags', ic: 'list', label: '题材云', note: tagCounts().length + ' 个' },
+      { to: 'authors', ic: 'user', label: '创作者', note: '' },
+      { to: 'archive', ic: 'archive', label: '年度档案', note: '' },
+      { to: 'quotes', ic: 'quote', label: '摘抄库', note: allQuotes().length + ' 条' }
+    ];
+    html += '<section class="section"><div class="section-head"><h2 class="section-title">翻一翻</h2>' +
+      '<button class="link-btn" data-action="random">' + icon('sparkle', 14) + ' 随机回顾</button></div>' +
+      '<div class="more-grid">' + moreItems.map(function (m) {
+        return '<button class="more-tile" data-action="go" data-to="' + m.to + '">' +
+          icon(m.ic, 18) + '<b>' + m.label + '</b>' +
+          (m.note ? '<i>' + m.note + '</i>' : '') + '</button>';
+      }).join('') + '</div></section>';
 
     html += backupHintHTML();
     html += '</div>';
@@ -2064,7 +2690,7 @@
     html += '<p class="opt-hint">下拉里的值都来自你库里已有的记录。点 × 可以不再显示它，也可以自己加一个；已有记录不会被改动。</p>';
 
     var any = false;
-    TYPE_KEYS.forEach(function (k) {
+    typesOn().forEach(function (k) {
       var fields = (EXTRA_FIELDS[k] || []).filter(function (fd) {
         if (!fd.options) return false;
         return Object.keys(metaCountsOf(k, fd.key)).length > 0 ||
@@ -2387,8 +3013,11 @@
     var years = yearOptions();
     var selecting = state.ui.selectMode;
     var selCount = Object.keys(state.ui.selected).filter(function (k) { return state.ui.selected[k]; }).length;
-    var nextView = state.ui.view === 'grid' ? 'wall' : (state.ui.view === 'wall' ? 'board' : 'grid');
-    var viewLabel = { grid: '封面网格', wall: '封面墙', board: '状态看板' };
+    var VIEWS = ['grid', 'wall', 'board', 'list'];
+    var viewIdx = VIEWS.indexOf(state.ui.view);
+    var nextView = VIEWS[(viewIdx + 1) % VIEWS.length];
+    var viewLabel = { grid: '封面网格', wall: '封面墙', board: '状态看板', list: '紧凑列表' };
+    var viewIcon = { grid: 'grid', wall: 'wall', board: 'board', list: 'list' };
 
     var html = '<header class="page-head">' +
       '<div><p class="eyebrow">共 ' + state.records.length + ' 条' +
@@ -2396,7 +3025,7 @@
       '<div class="head-actions">' +
       (state.records.length
         ? '<button class="icon-btn" data-action="toggle-view" aria-label="切换到' + viewLabel[nextView] + '">' +
-        icon(nextView === 'grid' ? 'grid' : (nextView === 'wall' ? 'wall' : 'board'), 19) + '</button>' : '') +
+        icon(viewIcon[nextView], 19) + '</button>' : '') +
       (state.records.length && !selecting
         ? '<button class="icon-btn" data-action="select-mode" aria-label="批量选择">' + icon('check-square', 19) + '</button>' : '') +
       '<button class="icon-btn" data-action="settings" aria-label="设置">' + icon('gear', 20) + '</button>' +
@@ -2427,7 +3056,7 @@
     var baseN = typeBaseCount();
     var isAll = f.type === 'all';
     html += '<div class="type-tabs">' +
-      ['all'].concat(TYPE_KEYS).map(function (k) {
+      ['all'].concat(typesOn()).map(function (k) {
         var n = k === 'all' ? baseN : (tc[k] || 0);
         return '<button class="type-tab ' + (f.type === k ? 'is-active' : '') + (n ? '' : ' is-empty') +
           '" data-action="filter-type" data-value="' + k + '">' +
@@ -2493,6 +3122,19 @@
       html += '<div class="select-note">选择模式下点击卡片多选 · 已选 ' + selCount + ' 项</div>';
     }
 
+    /* 记录多的时候先渲染一批，避免手机上一屏几百张卡 */
+    var PAGE = 60;
+    var sig = [f.type, f.status, f.tag, f.year, f.release, f.rating, f.sort,
+      state.ui.listId, state.libQ || ''].join('|');
+    if (state.ui.limitSig !== sig) { state.ui.limitSig = sig; state.ui.limit = PAGE; }
+    var limit = state.ui.limit || PAGE;
+    var shown = rows;
+    var hasMore = false;
+    if (!selecting && !isAll && state.ui.view !== 'board' && rows.length > limit) {
+      shown = rows.slice(0, limit);
+      hasMore = true;
+    }
+
     if (!rows.length) {
       if (!state.records.length) html += emptyLibrary();
       else if (list && list.kind === 'manual') {
@@ -2509,18 +3151,25 @@
     } else if (isAll) {
       html += typeSectionsHTML(rows);
     } else if (state.ui.view === 'wall') {
-      html += '<div class="wall-cards">' + rows.map(wallCard).join('') + '</div>';
+      html += '<div class="wall-cards">' + shown.map(wallCard).join('') + '</div>';
     } else if (state.ui.view === 'board') {
       html += boardHTML(rows);
+    } else if (state.ui.view === 'list') {
+      html += listRowsHTML(shown);
     } else {
       html += '<div class="grid-cards' + (state.ui.sortMode ? ' is-sorting' : '') + '">' +
-        rows.map(posterCard).join('') + '</div>';
+        shown.map(posterCard).join('') + '</div>';
       if (list && list.kind === 'manual') {
         html += '<div class="list-tools">' +
           '<button class="btn btn-ghost btn-sm" data-action="toggle-sort">' + (state.ui.sortMode ? '完成排序' : '拖动排序') + '</button>' +
           '<button class="btn btn-ghost btn-sm" data-action="list-pick">添加作品</button>' +
           '</div>';
       }
+    }
+
+    if (hasMore) {
+      html += '<button class="btn btn-ghost load-more" data-action="load-more">加载更多（还有 ' +
+        (rows.length - shown.length) + ' 条）</button>';
     }
 
     html += '<p class="lib-empty hidden" id="lib-empty">没有匹配的记录，换个词试试</p>';
@@ -2546,7 +3195,7 @@
     rows.forEach(function (r) { (groups[r.type] || groups.novel).push(r); });
 
     var out = '';
-    TYPE_KEYS.forEach(function (k) {
+    typesOn().forEach(function (k) {
       var list = groups[k];
       if (!list.length) return;
       out += '<section class="section"><div class="section-head">' +
@@ -3185,11 +3834,13 @@
     if (!ids.length) { toast('先选几条记录'); return; }
     openModal({
       title: '删除 ' + ids.length + ' 条记录？',
-      desc: '这些记录会从本地数据中移除，无法撤销。',
-      actions: [{ label: '取消', value: null, variant: 'ghost' }, { label: '删除', value: 'ok', variant: 'danger' }]
+      desc: '这些记录会移到回收站，' + TRASH_DAYS + ' 天内可以恢复。',
+      actions: [{ label: '取消', value: null, variant: 'ghost' }, { label: '移到回收站', value: 'ok', variant: 'danger' }]
     }).then(function (v) {
       if (v !== 'ok') return;
+      var moved = state.records.filter(function (r) { return ids.indexOf(r.id) >= 0; });
       state.records = state.records.filter(function (r) { return ids.indexOf(r.id) < 0; });
+      trashAdd(moved);
       state.lists.forEach(function (l) {
         l.ids = l.ids.filter(function (id) { return ids.indexOf(id) < 0; });
       });
@@ -3220,7 +3871,7 @@
       state.draft = {
         id: '', type: 'novel', title: '', originalTitle: '', aliases: [],
         creator: '', year: '', releaseDate: '', tags: [], rating: 0,
-        status: 'wish', review: '', quotes: [], hours: 0, cover: '', updateDay: -1,
+        status: 'wish', review: '', quotes: [], hours: 0, cover: '', images: [], updateDay: -1,
         douban: 0, recommend: '', category: '', sections: {}, notesLog: [],
         meta: {},
         custom: [],
@@ -3276,8 +3927,10 @@
       '</header>';
 
     /* 类型 */
+    var pickTypes = typesOn().slice();
+    if (pickTypes.indexOf(type) < 0) pickTypes.push(type);
     html += '<section class="block"><div class="type-picker">' +
-      TYPE_KEYS.map(function (k) {
+      pickTypes.map(function (k) {
         return '<button class="type-tile ' + (type === k ? 'is-on' : '') + '" data-action="set-type" data-value="' + k + '">' +
           icon(k, 24) + '<span>' + TYPES[k].label + '</span></button>';
       }).join('') + '</div></section>';
@@ -3447,12 +4100,39 @@
         '<div class="log-list">' + logListHTML(d.logs) + '</div></section>';
     }
 
-    /* 封面 */
-    html += '<section class="block">' +
-      '<label class="field"><span class="field-label">封面图片链接</span>' +
-      '<input class="input" data-field="cover" value="' + esc(d.cover) + '" placeholder="https://…jpg" inputmode="url"></label>' +
-      '<p class="hint">只支持图片链接，不会把图片存进数据里，导出更轻。</p>' +
+    /* ISBN 查询（只有书刊类需要） */
+    if (['novel', 'comic', 'magazine'].indexOf(type) >= 0) {
+      html += '<section class="block"><p class="block-title">按 ISBN 自动填</p>' +
+        '<div class="isbn-row">' +
+        '<input class="input" id="isbn-input" placeholder="978…（10 或 13 位）" inputmode="numeric">' +
+        '<button class="btn btn-ghost btn-sm" data-action="isbn">查询</button>' +
+        '</div>' +
+        '<p class="hint">联网查书名、作者、出版社、页数；已经填过的字段不会被覆盖。</p></section>';
+    }
+
+    /* 封面与相册 */
+    var coverIsLocal = d.cover.indexOf('img:') === 0 || d.cover.indexOf('data:') === 0;
+    html += '<section class="block"><p class="block-title">封面与图片</p>' +
+      '<div class="cover-edit">' +
+      '<span class="cover-prev" style="--cc:' + coverColor(d.title || '·') + '">' + coverInner(d) + '</span>' +
+      '<div class="cover-ops">' +
+      '<label class="btn btn-ghost btn-sm">' + icon('plus', 14) + ' 从相册选' +
+      '<input type="file" accept="image/*" class="file-input" data-cover="1" hidden></label>' +
+      (d.cover ? '<button class="btn btn-ghost btn-sm" data-action="clear-cover">移除封面</button>' : '') +
+      '<p class="hint" style="margin:2px 0 0">图片会压到 560px 存进本机，导出时不带图。</p>' +
+      '</div></div>' +
+      '<label class="field" style="margin-top:12px"><span class="field-label">或粘贴图片链接</span>' +
+      '<input class="input" data-field="cover" value="' + esc(coverIsLocal ? '' : d.cover) + '" placeholder="https://…jpg" inputmode="url"></label>' +
+      (coverIsLocal ? '<p class="hint">当前用的是本机图片，填链接会替换它。</p>' : '') +
+      '<p class="block-title" style="margin:18px 0 8px">相册</p>' +
+      galleryHTML(d, true) +
       '</section>';
+
+    /* 资料站跳转 */
+    if (d.title) {
+      html += '<section class="block"><p class="block-title">去这些地方找资料</p>' +
+        searchLinksHTML(d) + '</section>';
+    }
 
     html += state.readonly
       ? '<div class="edit-bar">' +
@@ -3941,6 +4621,7 @@
       notesLog: (d.notesLog || []).filter(function (n) { return n.text && n.text.trim(); }),
       hours: d.hours,
       cover: d.cover,
+      images: d.images || [],
       updateDay: d.updateDay,
       meta: d.meta || {},
       custom: d.custom || [],
@@ -5404,7 +6085,9 @@
         '<span class="auth-arrow">' + icon('chevron', 15) + '</span>' +
         '</button>' +
         (isOpen
-          ? '<div class="auth-body">' + g.list.slice().sort(function (a, b) { return b.updatedAt - a.updatedAt; }).map(function (r) {
+          ? '<div class="auth-body">' +
+          '<button class="link-btn auth-more" data-action="open-person" data-name="' + esc(g.name) + '">' +
+          '查看人物页 →</button>' + g.list.slice().sort(function (a, b) { return b.updatedAt - a.updatedAt; }).map(function (r) {
             return '<div class="auth-item" data-action="open" data-id="' + r.id + '" role="button" tabindex="0">' +
               '<span class="auth-item-title">' + esc(r.title) + '</span>' +
               '<span class="auth-item-meta">' + TYPES[r.type].label + ' · ' + statusLabelFor(r) +
@@ -5430,6 +6113,23 @@
   }
 
   /* 点封面弹出的信息卡：封面占满左侧，信息在右 */
+  /* 信息卡上显示哪些块，可在设置里关掉 */
+  var CARD_FIELDS = [
+    { k: 'rating', label: '评分' },
+    { k: 'progress', label: '进度' },
+    { k: 'rows', label: '专属信息' },
+    { k: 'review', label: '短评' },
+    { k: 'tags', label: '题材标签' },
+    { k: 'extra', label: '摘抄与笔记' },
+    { k: 'links', label: '搜索入口' },
+    { k: 'time', label: '收录时间' }
+  ];
+
+  function cardOn(k) {
+    var c = state.prefs.cardFields || {};
+    return c[k] !== false;
+  }
+
   function recordCardHTML(r) {
     var f = formOf(r.type);
     var m = r.meta || {};
@@ -5460,32 +6160,48 @@
       ([r.creator, r.year].filter(Boolean).length
         ? '<p class="rcard-sub">' + esc([r.creator, r.year].filter(Boolean).join(' · ')) + '</p>'
         : '') +
-      '<div class="rcard-rate">' +
-      (r.rating
-        ? '<b>' + ratingText(r.rating) + '</b><span>/ 10</span>'
-        : '<span class="rcard-norate">还没评分</span>') +
-      (r.douban ? '<em>' + (f.score || '外部评分') + ' ' + r.douban.toFixed(1) + '</em>' : '') +
-      '</div>' +
-      '<div class="rcard-prog"><div class="rcard-bar"><i style="width:' + pct + '%"></i></div>' +
-      '<span>' + esc(progressText(r)) + '</span></div>' +
 
-      (rows.length ? '<div class="rcard-rows">' + rows.map(function (x) {
+      (cardOn('rating')
+        ? '<div class="rcard-rate">' +
+        (r.rating
+          ? '<b>' + ratingText(r.rating) + '</b><span>/ 10</span>'
+          : '<span class="rcard-norate">还没评分</span>') +
+        (r.douban ? '<em>' + (f.score || '外部评分') + ' ' + r.douban.toFixed(1) + '</em>' : '') +
+        '</div>'
+        : '') +
+
+      (cardOn('progress')
+        ? '<div class="rcard-prog"><div class="rcard-bar"><i style="width:' + pct + '%"></i></div>' +
+        '<span>' + esc(progressText(r)) + '</span></div>'
+        : '') +
+
+      ((r.images || []).length
+        ? '<div class="rcard-gal">' + r.images.slice(0, 4).map(function (src) {
+          return '<button class="rcard-gal-i" data-action="view-img" data-src="' + esc(coverSrc(src)) + '">' +
+            '<img src="' + esc(coverSrc(src)) + '" alt="" loading="lazy"></button>';
+        }).join('') + '</div>'
+        : '') +
+
+      ((cardOn('rows') && rows.length) ? '<div class="rcard-rows">' + rows.map(function (x) {
         return '<div class="rcard-row"><span>' + esc(x[0]) + '</span><b>' + esc(x[1]) + '</b></div>';
       }).join('') + '</div>' : '') +
 
-      (r.review ? '<p class="rcard-review">' + esc(r.review) + '</p>' : '') +
+      ((cardOn('review') && r.review) ? '<p class="rcard-review">' + esc(r.review) + '</p>' : '') +
 
-      ((r.tags || []).length ? '<div class="rcard-tags">' + r.tags.map(function (t) {
+      ((cardOn('tags') && (r.tags || []).length) ? '<div class="rcard-tags">' + r.tags.map(function (t) {
         return '<span class="rcard-tag">' + esc(t) + '</span>';
       }).join('') + '</div>' : '') +
 
-      ((quoteN || noteN) ? '<p class="rcard-extra">' +
+      ((cardOn('extra') && (quoteN || noteN)) ? '<p class="rcard-extra">' +
         (quoteN ? '摘抄 ' + quoteN + ' 条' : '') +
         (quoteN && noteN ? ' · ' : '') +
         (noteN ? '笔记 ' + noteN + ' 条' : '') + '</p>' : '') +
 
-      '<p class="rcard-foot">收录于 ' + ymd(new Date(r.createdAt)) +
-      (r.updatedAt ? ' · 更新于 ' + ymd(new Date(r.updatedAt)) : '') + '</p>' +
+      (cardOn('links') ? searchLinksHTML(r) : '') +
+
+      (cardOn('time') ? '<p class="rcard-foot">收录于 ' + ymd(new Date(r.createdAt)) +
+        (r.updatedAt ? ' · 更新于 ' + ymd(new Date(r.updatedAt)) : '') + '</p>' : '') +
+
       '<div class="rcard-actions">' +
       '<button class="rcard-btn" data-action="close-modal">关闭</button>' +
       '<button class="rcard-btn is-primary" data-action="rcard-edit" data-id="' + r.id + '">编辑</button>' +
@@ -5605,7 +6321,7 @@
 
     html += '<p class="fan-hint">按类型分成一叠，点哪张封面就看哪一条。</p>';
 
-    TYPE_KEYS.forEach(function (k) {
+    typesOn().forEach(function (k) {
       var group = recs.filter(function (r) { return r.type === k; })
         .sort(function (a, b) { return b.updatedAt - a.updatedAt; });
       if (!group.length) return;
@@ -5638,6 +6354,15 @@
         return '<button data-action="theme" data-value="' + t[0] + '" class="' + (theme === t[0] ? 'is-active' : '') + '">' + t[1] + '</button>';
       }).join('') +
       '</div>' +
+      '<div class="set-label" style="margin:16px 0 8px">主题色</div>' +
+      '<div class="accent-row">' +
+      [['rose', '玫红'], ['indigo', '靛蓝'], ['mint', '薄荷'], ['amber', '琥珀'],
+      ['violet', '紫罗兰'], ['sand', '米黄']].map(function (a2) {
+        return '<button class="accent-dot' + ((state.prefs.accent || 'rose') === a2[0] ? ' is-on' : '') + '" ' +
+          'data-action="accent" data-value="' + a2[0] + '" data-accent="' + a2[0] + '" ' +
+          'title="' + a2[1] + '" aria-label="' + a2[1] + '"></button>';
+      }).join('') +
+      '</div>' +
       '<div class="set-label" style="margin:16px 0 8px">评分制</div>' +
       '<div class="scale-seg">' +
       '<button data-action="rating-scale" data-value="10" class="' + (state.prefs.ratingScale !== '5' ? 'is-active' : '') + '">10 分制</button>' +
@@ -5660,6 +6385,23 @@
       '</div><button class="btn btn-ghost btn-sm" data-action="go" data-to="archive">打开</button></div>' +
       '</div>';
 
+    /* 显示哪些类型 */
+    var off = state.prefs.offTypes || {};
+    html += '<div class="set-group"><h2>显示的类型</h2>' +
+      '<p class="muted" style="margin:0 0 10px">关掉的类型不再出现在收藏栏、新增页和筛选项里，已有记录不会被删。</p>' +
+      '<div class="type-switch">' + TYPE_KEYS.map(function (k) {
+        return '<button class="tsw' + (off[k] ? '' : ' is-on') + '" data-action="toggle-type" data-value="' + k + '">' +
+          icon(k, 14) + '<span>' + TYPES[k].label + '</span></button>';
+      }).join('') + '</div></div>';
+
+    /* 信息卡显示项 */
+    html += '<div class="set-group"><h2>信息卡显示项</h2>' +
+      '<p class="muted" style="margin:0 0 10px">点封面弹出的卡片里要显示哪些块。</p>' +
+      '<div class="card-switch">' + CARD_FIELDS.map(function (cf) {
+        return '<button class="tsw' + (cardOn(cf.k) ? ' is-on' : '') + '" data-action="toggle-card" data-value="' + cf.k + '">' +
+          '<span>' + cf.label + '</span></button>';
+      }).join('') + '</div></div>';
+
     /* 年度目标 */
     var gc = Number(state.prefs.goalCount) || 0;
     var gh = Number(state.prefs.goalHours) || 0;
@@ -5676,7 +6418,8 @@
     html += '<div class="set-group"><h2>备份与恢复</h2>' +
       '<div class="set-row"><div class="set-row-main">' +
       '<div class="set-label">导出全部数据</div>' +
-      '<div class="set-desc">' + (last ? '上次备份：' + ymd(new Date(last)) : '还没有备份过') + ' · 共 ' + state.records.length + ' 条</div>' +
+      '<div class="set-desc">' + (last ? '上次备份：' + ymd(new Date(last)) : '还没有备份过') + ' · 共 ' + state.records.length + ' 条' +
+      '<br>图片存在本机，备份文件不含图片</div>' +
       '</div><div class="set-actions">' +
       '<button class="btn btn-primary btn-sm" data-action="export">JSON</button>' +
       '<button class="btn btn-ghost btn-sm" data-action="export-csv">CSV</button>' +
@@ -5699,9 +6442,20 @@
       '<div class="set-desc">检查重复条目、缺封面、缺评分等问题</div>' +
       '</div><button class="btn btn-ghost btn-sm" data-action="health">检查</button></div>' +
       '<div class="set-row"><div class="set-row-main">' +
+      '<div class="set-label">回收站</div>' +
+      '<div class="set-desc">' + (state.trash.length ? state.trash.length + ' 条已删除，30 天内可恢复' : '没有待清理的记录') + '</div>' +
+      '</div><button class="btn btn-ghost btn-sm" data-action="go" data-to="trash">打开</button></div>' +
+      '<div class="set-row"><div class="set-row-main">' +
       '<div class="set-label">筛选项管理</div>' +
       '<div class="set-desc">筛选项来自你的记录，可以删掉不用的或自己加</div>' +
       '</div><button class="btn btn-ghost btn-sm" data-action="go" data-to="options">管理</button></div>' +
+      ((state.prefs.backups || []).length
+        ? '<div class="bk-list">' + state.prefs.backups.slice(0, 5).map(function (b2) {
+          return '<div class="bk-row"><span>' + ymd(new Date(b2.at)) + ' ' +
+            pad(new Date(b2.at).getHours()) + ':' + pad(new Date(b2.at).getMinutes()) + '</span>' +
+            '<b>' + (b2.count || 0) + ' 条</b><i>' + (b2.kind || 'JSON') + '</i></div>';
+        }).join('') + '</div>'
+        : '') +
       '<div class="set-row"><div class="set-row-main">' +
       '<div class="set-label">跨设备同步</div>' +
       '<div class="set-desc">导出后在另一台设备导入即可，数据不经过任何服务器</div>' +
@@ -5814,10 +6568,13 @@
       checkins: state.checkins,
       categories: state.categories
     };
+    payload.trash = state.trash;
     var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    var name = 'iread-backup-' + todayISO() + '.json';
+    var name = 'cimeibu-backup-' + todayISO() + '.json';
     downloadBlob(blob, name);
     state.prefs.lastExportAt = Date.now();
+    state.prefs.backups = [{ at: Date.now(), count: state.records.length, kind: 'JSON' }]
+      .concat(state.prefs.backups || []).slice(0, 10);
     savePrefs();
     toast('已导出 ' + state.records.length + ' 条记录');
     if (state.route.name === 'settings') render({ keepScroll: true });
@@ -5862,7 +6619,7 @@
         r.review,
         (r.quotes || []).map(function (q) { return q.text; }).join(' / '),
         (r.notesLog || []).length || '',
-        r.cover,
+        r.cover.indexOf('img:') === 0 ? '' : r.cover,
         r.releaseDate,
         r.startedAt || '',
         r.finishedAt || '',
@@ -5978,10 +6735,17 @@
     if (state.route.name === 'settings') render({ keepScroll: true });
   }
 
+  function logBackup(kind) {
+    state.prefs.backups = [{ at: Date.now(), count: state.records.length, kind: kind }]
+      .concat(state.prefs.backups || []).slice(0, 10);
+    savePrefs();
+  }
+
   function exportCSV() {
     var csv = buildCSV();
     var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
-    downloadBlob(blob, 'iread-export-' + todayISO() + '.csv');
+    downloadBlob(blob, 'cimeibu-' + todayISO() + '.csv');
+    logBackup('CSV');
     toast('已导出 ' + state.records.length + ' 条 CSV');
   }
 
@@ -6029,7 +6793,8 @@
       pendingExtras = {
         lists: (data && Array.isArray(data.lists)) ? data.lists.map(normalizeList).filter(Boolean) : null,
         checkins: (data && Array.isArray(data.checkins)) ? data.checkins.map(normalizeCheckin).filter(Boolean) : null,
-        categories: (data && Array.isArray(data.categories)) ? normalizeCategories(data.categories) : null
+        categories: (data && Array.isArray(data.categories)) ? normalizeCategories(data.categories) : null,
+        trash: (data && Array.isArray(data.trash)) ? normalizeTrash(data.trash) : null
       };
 
       var ver = data && Number(data.schemaVersion);
@@ -6104,6 +6869,7 @@
         if (pendingExtras.lists) state.lists = pendingExtras.lists;
         if (pendingExtras.checkins) state.checkins = pendingExtras.checkins;
         if (pendingExtras.categories) state.categories = pendingExtras.categories;
+        if (pendingExtras.trash) state.trash = pendingExtras.trash;
       }
     } else {
       var map = {};
@@ -7187,8 +7953,32 @@
     'add-episode': 1, 'del-episode': 1, 'add-season': 1, 'del-season': 1,
     'add-rewatch': 1, 'del-rewatch': 1, 'add-custom': 1, 'del-custom': 1,
     'parse-paste': 1, 'toggle-paste': 1, 'save': 1,
+    'isbn': 1, 'clear-cover': 1, 'del-image': 1,
     'edit-list': 1, 'new-list': 1, 'list-pick': 1
   };
+
+  function handleImagePick(input) {
+    if (state.readonly) return;
+    var file = input.files && input.files[0];
+    if (!file || !state.draft) return;
+    if (!/^image\//.test(file.type || '')) { toast('请选择图片文件'); return; }
+    toast('处理中…');
+    saveImageFile(file, input.dataset.cover ? 640 : 900).then(function (ref) {
+      if (input.dataset.cover) {
+        state.draft.cover = ref;
+      } else {
+        state.draft.images = state.draft.images || [];
+        if (state.draft.images.length >= 12) { toast('相册最多 12 张'); return; }
+        state.draft.images.push(ref);
+      }
+      queueStash();
+      render({ keepScroll: true });
+      toast('已添加图片');
+    }).catch(function () {
+      toast('图片读取失败，换一张试试');
+    });
+    input.value = '';
+  }
 
   function handleAction(action, el) {
     if (state.readonly && READONLY_BLOCKED[action]) return;
@@ -7252,7 +8042,7 @@
         break;
 
       case 'toggle-view':
-        state.ui.view = state.ui.view === 'grid' ? 'wall' : (state.ui.view === 'wall' ? 'board' : 'grid');
+        state.ui.view = { grid: 'wall', wall: 'board', board: 'list', list: 'grid' }[state.ui.view] || 'grid';
         render({ keepScroll: true });
         break;
 
@@ -7320,6 +8110,140 @@
 
       case 'record-card':
         openRecordCard(el.dataset.id);
+        break;
+
+      case 'accent':
+        state.prefs.accent = el.dataset.value || 'rose';
+        savePrefs();
+        applyTheme();
+        render({ keepScroll: true });
+        break;
+
+      case 'toggle-type': {
+        var tk = el.dataset.value;
+        state.prefs.offTypes = state.prefs.offTypes || {};
+        if (state.prefs.offTypes[tk]) delete state.prefs.offTypes[tk];
+        else state.prefs.offTypes[tk] = 1;
+        if (state.filters.type === tk && state.prefs.offTypes[tk]) state.filters.type = 'all';
+        savePrefs();
+        render({ keepScroll: true });
+        break;
+      }
+
+      case 'toggle-card':
+        state.prefs.cardFields = state.prefs.cardFields || {};
+        if (state.prefs.cardFields[el.dataset.value] === false) delete state.prefs.cardFields[el.dataset.value];
+        else state.prefs.cardFields[el.dataset.value] = false;
+        savePrefs();
+        render({ keepScroll: true });
+        break;
+
+      case 'load-more':
+        state.ui.limit = (state.ui.limit || 60) + 60;
+        render({ keepScroll: true });
+        break;
+
+      case 'random': {
+        if (!state.records.length) { toast('还没有记录'); break; }
+        var pick = state.records[Math.floor(Math.random() * state.records.length)];
+        openRecordCard(pick.id);
+        break;
+      }
+
+      case 'tag-open':
+        state.filters.type = 'all';
+        state.filters.status = 'all';
+        state.filters.tag = el.dataset.tag;
+        state.returnTo = '#/tags';
+        location.hash = '#/library';
+        break;
+
+      case 'open-person':
+        state.returnTo = '#/authors';
+        location.hash = '#/person/' + encodeURIComponent(el.dataset.name);
+        break;
+
+      case 'rcal-prev':
+        state.rcal = rcalState();
+        state.rcal.m--;
+        if (state.rcal.m < 0) { state.rcal.m = 11; state.rcal.y--; }
+        render({ keepScroll: true });
+        break;
+
+      case 'rcal-next':
+        state.rcal = rcalState();
+        state.rcal.m++;
+        if (state.rcal.m > 11) { state.rcal.m = 0; state.rcal.y++; }
+        render({ keepScroll: true });
+        break;
+
+      case 'rcal-day':
+        openDayList(el.dataset.date);
+        break;
+
+      case 'view-img':
+        viewImage(el.dataset.src);
+        break;
+
+      case 'trash-restore': {
+        var back = trashRestore(el.dataset.id);
+        if (!back) break;
+        save();
+        render({ keepScroll: true });
+        toast('已恢复「' + back.title + '」');
+        break;
+      }
+
+      case 'trash-purge':
+        openModal({
+          title: '彻底删除？',
+          desc: '这条记录将从本机移除，无法再恢复。',
+          actions: [{ label: '取消', value: null, variant: 'ghost' }, { label: '删除', value: 'ok', variant: 'danger' }]
+        }).then(function (v) {
+          if (v !== 'ok') return;
+          var gone = state.trash.filter(function (x) { return x.r.id === el.dataset.id; });
+          purgeImages(gone.map(function (x) { return x.r; }));
+          state.trash = state.trash.filter(function (x) { return x.r.id !== el.dataset.id; });
+          save();
+          render({ keepScroll: true });
+          toast('已彻底删除');
+        });
+        break;
+
+      case 'trash-clear':
+        openModal({
+          title: '清空回收站？',
+          desc: '共 ' + state.trash.length + ' 条，清空后无法恢复。',
+          actions: [{ label: '取消', value: null, variant: 'ghost' }, { label: '清空', value: 'ok', variant: 'danger' }]
+        }).then(function (v) {
+          if (v !== 'ok') return;
+          purgeImages(state.trash.map(function (x) { return x.r; }));
+          state.trash = [];
+          save();
+          render({ keepScroll: true });
+          toast('回收站已清空');
+        });
+        break;
+
+      case 'isbn':
+        isbnLookup();
+        break;
+
+      case 'clear-cover':
+        if (!state.draft) break;
+        state.draft.cover = '';
+        queueStash();
+        render({ keepScroll: true });
+        break;
+
+      case 'del-image':
+        if (!state.draft) break;
+        var idx = Number(el.dataset.idx);
+        if (state.draft.images && state.draft.images[idx] != null) {
+          state.draft.images.splice(idx, 1);
+          queueStash();
+          render({ keepScroll: true });
+        }
         break;
 
       case 'open-year':
@@ -7689,11 +8613,12 @@
           if (rec) {
             openModal({
               title: '删除这条记录？',
-              desc: '「' + rec.title + '」将从本地数据中移除，无法撤销。',
-              actions: [{ label: '取消', value: null, variant: 'ghost' }, { label: '删除', value: 'ok', variant: 'danger' }]
+              desc: '「' + rec.title + '」会移到回收站，' + TRASH_DAYS + ' 天内可以恢复。',
+              actions: [{ label: '取消', value: null, variant: 'ghost' }, { label: '移到回收站', value: 'ok', variant: 'danger' }]
             }).then(function (v) {
               if (v !== 'ok') return;
               state.records = state.records.filter(function (r) { return r.id !== rec.id; });
+              trashAdd([rec]);
               save();
               state.draft = null;
               state.readonly = false;
@@ -7859,7 +8784,10 @@
         break;
 
       case 'go':
-        if (el.dataset.to === 'badges' || el.dataset.to === 'options') state.returnTo = '#/' + state.route.name;
+        if (['badges', 'options', 'week', 'calendar', 'tags', 'trash', 'archive',
+          'quotes', 'authors'].indexOf(el.dataset.to) >= 0) {
+          state.returnTo = '#/' + state.route.name;
+        }
         location.hash = '#/' + el.dataset.to;
         break;
 
@@ -7918,6 +8846,7 @@
           state.ui.selectMode = false;
           state.ui.selected = {};
           state.prefs.lastExportAt = 0;
+          state.trash = [];
           savePrefs();
           save();
           dbClear();
@@ -8152,7 +9081,7 @@
 
   function filterLibraryCards(raw) {
     var q = String(raw || '').trim().toLowerCase();
-    var cards = document.querySelectorAll('.pcard, .wcard, .bcard');
+    var cards = document.querySelectorAll('.pcard, .wcard, .bcard, .lrow');
     var shown = 0;
     for (var i = 0; i < cards.length; i++) {
       var hay = cards[i].getAttribute('data-hay') || '';
@@ -8298,6 +9227,11 @@
     document.addEventListener('change', function (e) {
       var el = e.target;
 
+      if (el.type === 'file' && el.dataset && (el.dataset.cover || el.dataset.image)) {
+        handleImagePick(el);
+        return;
+      }
+
       if (el.dataset && el.dataset.filter === 'meta') {
         if (!state.filters.meta) state.filters.meta = {};
         state.filters.meta[el.dataset.key] = el.value;
@@ -8427,6 +9361,7 @@
     if (!state.route.name) state.route.name = 'home';
 
     render();
+    loadImages().then(function (n) { if (n) render({ keepScroll: true }); });
     bindEvents();
     registerSW();
     watchInstall();
@@ -8685,6 +9620,8 @@
   init();
 
   /* 便于调试：控制台可用 */
-  window.__shilu = { state: state, render: render, save: save };
+  window.__shilu = { state: state, render: render, save: save,
+    flushWrite: flushWrite, loadImages: loadImages, coverSrc: coverSrc, IMG: IMG,
+    initDB: initDB, typesOn: typesOn };
 
 })();
