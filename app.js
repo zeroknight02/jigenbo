@@ -10,8 +10,8 @@
   var SCHEMA_VERSION = 1;
 
   /* 每次发布改这里和 sw.js 的 VERSION（两者一起改） */
-  var APP_VERSION = '1.41';
-  var SW_VERSION = 'v42';
+  var APP_VERSION = '1.51';
+  var SW_VERSION = 'v52';
   var DB_KEY = 'shilu.db.v1';
   var PREF_KEY = 'shilu.prefs.v1';
   var DAY = 86400000;
@@ -525,6 +525,7 @@
     user: '<circle cx="12" cy="8.4" r="3.6"/><path d="M4.8 20c.6-3.6 3.5-5.6 7.2-5.6s6.6 2 7.2 5.6"/>',
     archive: '<rect x="3.4" y="4.2" width="17.2" height="4.6" rx="2"/><path d="M5 8.8v9.4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.8"/><path d="M9.8 12.6h4.4"/>',
     board: '<rect x="3" y="4" width="5" height="16" rx="2"/><rect x="9.5" y="4" width="5" height="11" rx="2"/><rect x="16" y="4" width="5" height="16" rx="2"/>',
+    image: '<rect x="3.4" y="4.4" width="17.2" height="15.2" rx="3"/><circle cx="8.7" cy="9.7" r="1.6"/><path d="m4.4 17.6 4.9-4.9 3.3 3.3 2.6-2.6 4.4 4.4"/>',
     trophy: '<path d="M8 4h8v3.6a4 4 0 0 1-8 0z"/><path d="M8 5.2H5.4v1.4A3 3 0 0 0 8 9.6M16 5.2h2.6v1.4A3 3 0 0 1 16 9.6"/><path d="M12 11.6v4.2M9 20h6M9.8 15.8h4.4l.6 4.2H9.2z"/>',
     flame: '<path d="M12 3s5 4.3 5 8.7A5 5 0 0 1 7 11.7C7 7.3 12 3 12 3z"/><path d="M12 20.6a2.9 2.9 0 0 0 2.9-2.9c0-2-2.9-4.3-2.9-4.3s-2.9 2.3-2.9 4.3a2.9 2.9 0 0 0 2.9 2.9z"/>',
     clock: '<circle cx="12" cy="12" r="8.4"/><path d="M12 7.4V12l3.2 2"/>',
@@ -534,6 +535,13 @@
     diamond: '<path d="M12 3.4 20.6 9 12 20.6 3.4 9z"/><path d="M3.4 9h17.2M12 3.4 8.4 9l3.6 11.6L15.6 9z"/>',
     medal: '<path d="M7.4 3h3.2l1.4 5M16.6 3h-3.2l-1.4 5"/><circle cx="12" cy="15.2" r="5.4"/><path d="m12 12.6.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z"/>',
     feather: '<path d="M20 4.4c-4.4-.6-8.4.8-10.6 3S6 13 6.4 15.6l4.2-4.2"/><path d="M4 20.2c1-3.4 3-6.2 6-8"/><path d="M13.6 10.6h3.8M12.4 13.4h3"/>',
+    book: '<path d="M4 4.6h6.2a2 2 0 0 1 1.8 1.1 2 2 0 0 1 1.8-1.1H20v13.2h-6.2a2 2 0 0 0-1.8 1.1 2 2 0 0 0-1.8-1.1H4z"/><path d="M12 5.7v13.2"/>',
+    ticket: '<path d="M3.5 8.4a1.9 1.9 0 0 0 0 3.8v3.9a1.4 1.4 0 0 0 1.4 1.4h14.2a1.4 1.4 0 0 0 1.4-1.4v-3.9a1.9 1.9 0 0 1 0-3.8V5.9a1.4 1.4 0 0 0-1.4-1.4H4.9a1.4 1.4 0 0 0-1.4 1.4z"/><path d="M14.6 6.2v2M14.6 10.6v2M14.6 15v2"/>',
+    stamp: '<path d="M6.2 3.6h11.6v5.2a2.4 2.4 0 0 0 0 4.8v4.8H6.2v-4.8a2.4 2.4 0 0 0 0-4.8z"/><path d="M9 8h6M9 12h6M9 16h4"/>',
+    sound: '<path d="M4 9.4h3.2L12 5.6v12.8L7.2 14.6H4z"/><path d="M15.4 9a4 4 0 0 1 0 6M17.8 6.6a7.4 7.4 0 0 1 0 10.8"/>',
+    mute: '<path d="M4 9.4h3.2L12 5.6v12.8L7.2 14.6H4z"/><path d="m15.6 9.6 4.4 4.4M20 9.6l-4.4 4.4"/>',
+    'chevron-left': '<path d="m14.6 5.6-6.4 6.4 6.4 6.4"/>',
+    'chevron-right': '<path d="m9.4 5.6 6.4 6.4-6.4 6.4"/>',
     pen: '<path d="M4 20.2 8 19l10.6-10.6a2.2 2.2 0 0 0-3.1-3.1L4.9 16z"/><path d="m14.4 7.6 2.9 2.9"/>',
     moon: '<path d="M20 14.4A8.4 8.4 0 0 1 9.6 4 8.6 8.6 0 1 0 20 14.4z"/>',
     sun: '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4 17 7M7 17l-1.6 1.6"/>',
@@ -668,16 +676,32 @@
     }).catch(function () { return false; });
   }
 
-  /* 彻底删除记录时，把它独占的图片一起清掉，避免图片越攒越多 */
-  function purgeImages(records) {
-    (records || []).forEach(function (r) {
-      var refs = [];
-      if (r && typeof r.cover === 'string' && r.cover.indexOf('img:') === 0) refs.push(r.cover.slice(4));
-      (r && r.images || []).forEach(function (x) {
-        if (typeof x === 'string' && x.indexOf('img:') === 0) refs.push(x.slice(4));
-      });
-      refs.forEach(function (id) { imgDelete(id); });
-    });
+  /* 图片可能被多条记录/书脊共用：只回收不再被引用的候选图片。 */
+  function imageRefs(value, out) {
+    out = out || Object.create(null);
+    if (typeof value === 'string') {
+      if (value.indexOf('img:') === 0) out[value.slice(4)] = true;
+    } else if (Array.isArray(value)) {
+      value.forEach(function (v) { imageRefs(v, out); });
+    } else if (value && typeof value === 'object') {
+      Object.keys(value).forEach(function (k) { imageRefs(value[k], out); });
+    }
+    return out;
+  }
+
+  function liveImageRefs() {
+    var refs = imageRefs([state.records, state.trash, state.draft, state.prefs.spineArt]);
+    try {
+      var stash = JSON.parse(localStorage.getItem('shilu.draft.v1') || 'null');
+      if (stash && stash.json) imageRefs(JSON.parse(stash.json), refs);
+    } catch (e) { /* ignore damaged stash */ }
+    return refs;
+  }
+
+  function purgeImages(values) {
+    var candidates = imageRefs(values);
+    var used = liveImageRefs();
+    Object.keys(candidates).forEach(function (id) { if (!used[id]) imgDelete(id); });
   }
 
   function imgDelete(id) {
@@ -791,16 +815,18 @@
     records: [],
     lists: [],
     prefs: { theme: 'system', accent: 'rose', lastExportAt: 0, ratingScale: '10', goalCount: 0, goalHours: 0,
-      seenStandaloneTip: 0, vocab: {}, vocabHidden: {}, offTypes: {}, cardFields: {}, backups: [] },
+      seenStandaloneTip: 0, vocab: {}, vocabHidden: {}, offTypes: {}, cardFields: {}, backups: [],
+      book: {}, bookOrder: [], spineArt: {}, ybStamp: {}, accounts: [], platforms: [] },
     route: { name: 'home', id: null },
     returnTo: '#/home',
     filters: { status: 'all', type: 'all', tag: 'all', year: 'all', release: 'all', rating: 'all', sort: 'updated', meta: {} },
     ui: {
       listId: 'all', selectMode: false, selected: {}, sortMode: false, view: 'grid', fold: {},
-      limit: 60, limitSig: '',
+      ybMonth: 0, acctQuick: '', acctFold: {},
       quoteType: 'all', quoteQ: ''
     },
-    archive: { year: 0 },
+    archive: { year: 0, type: '' },
+    book: { type: '', page: 0 },
     serverSw: '',
     authors: { open: '' },
     categories: [],
@@ -1059,9 +1085,245 @@
       return true;
     });
     if (!hit) return null;
+    var present = state.records.filter(function (r) { return r.id === hit.id; })[0];
+    if (present) return present;
     hit.updatedAt = Date.now();
     state.records.push(hit);
     return hit;
+  }
+
+  /* ---------------- 游戏账号库 ---------------- */
+
+  var DEFAULT_PLATFORMS = [
+    'Nintendo Switch', 'Nintendo Switch 2', 'Nintendo 3DS', 'Wii U',
+    'PlayStation 5', 'PlayStation 4', 'PlayStation 3', 'PS Vita',
+    'Xbox Series X|S', 'Xbox One', 'Xbox 360',
+    'Steam', 'Steam Deck', 'Epic Games', 'GOG', 'Ubisoft Connect',
+    'EA App', 'Battle.net', 'Amazon Games', 'itch.io',
+    'App Store', 'Google Play', 'TapTap', 'WeGame', '米哈游', '网易', '腾讯'
+  ];
+
+  var CURRENCIES = [
+    { code: 'CNY', symbol: '¥', label: '人民币' },
+    { code: 'HKD', symbol: 'HK$', label: '港币' },
+    { code: 'TWD', symbol: 'NT$', label: '新台币' },
+    { code: 'JPY', symbol: '¥', label: '日元' },
+    { code: 'KRW', symbol: '₩', label: '韩元' },
+    { code: 'USD', symbol: '$', label: '美元' },
+    { code: 'CAD', symbol: 'C$', label: '加元' },
+    { code: 'AUD', symbol: 'A$', label: '澳元' },
+    { code: 'NZD', symbol: 'NZ$', label: '新西兰元' },
+    { code: 'SGD', symbol: 'S$', label: '新加坡元' },
+    { code: 'EUR', symbol: '€', label: '欧元' },
+    { code: 'GBP', symbol: '£', label: '英镑' },
+    { code: 'CHF', symbol: 'CHF', label: '瑞士法郎' },
+    { code: 'SEK', symbol: 'kr', label: '瑞典克朗' },
+    { code: 'NOK', symbol: 'kr', label: '挪威克朗' },
+    { code: 'DKK', symbol: 'kr', label: '丹麦克朗' },
+    { code: 'PLN', symbol: 'zł', label: '波兰兹罗提' },
+    { code: 'CZK', symbol: 'Kč', label: '捷克克朗' },
+    { code: 'HUF', symbol: 'Ft', label: '匈牙利福林' },
+    { code: 'RUB', symbol: '₽', label: '卢布' },
+    { code: 'TRY', symbol: '₺', label: '土耳其里拉' },
+    { code: 'INR', symbol: '₹', label: '印度卢比' },
+    { code: 'THB', symbol: '฿', label: '泰铢' },
+    { code: 'MYR', symbol: 'RM', label: '马来西亚林吉特' },
+    { code: 'IDR', symbol: 'Rp', label: '印尼盾' },
+    { code: 'PHP', symbol: '₱', label: '菲律宾比索' },
+    { code: 'VND', symbol: '₫', label: '越南盾' },
+    { code: 'BRL', symbol: 'R$', label: '巴西雷亚尔' },
+    { code: 'MXN', symbol: 'MX$', label: '墨西哥比索' },
+    { code: 'ARS', symbol: 'AR$', label: '阿根廷比索' },
+    { code: 'CLP', symbol: 'CL$', label: '智利比索' },
+    { code: 'COP', symbol: 'CO$', label: '哥伦比亚比索' },
+    { code: 'PEN', symbol: 'S/', label: '秘鲁索尔' },
+    { code: 'AED', symbol: 'د.إ', label: '阿联酋迪拉姆' },
+    { code: 'SAR', symbol: '﷼', label: '沙特里亚尔' },
+    { code: 'ZAR', symbol: 'R', label: '南非兰特' },
+    { code: 'ILS', symbol: '₪', label: '以色列谢克尔' },
+    { code: 'UAH', symbol: '₴', label: '乌克兰格里夫纳' }
+  ];
+
+  /* 这些货币通常不带小数 */
+  var ZERO_DECIMAL = { JPY: 1, KRW: 1, VND: 1, IDR: 1, CLP: 1, COP: 1, HUF: 1 };
+
+  var REGIONS = [
+    { label: '国区', currency: 'CNY' }, { label: '港区', currency: 'HKD' },
+    { label: '台区', currency: 'TWD' }, { label: '日区', currency: 'JPY' },
+    { label: '韩区', currency: 'KRW' }, { label: '美区', currency: 'USD' },
+    { label: '加区', currency: 'CAD' }, { label: '澳区', currency: 'AUD' },
+    { label: '新区', currency: 'NZD' }, { label: '新加坡', currency: 'SGD' },
+    { label: '欧区', currency: 'EUR' }, { label: '英区', currency: 'GBP' },
+    { label: '瑞区', currency: 'CHF' }, { label: '瑞典', currency: 'SEK' },
+    { label: '挪威', currency: 'NOK' }, { label: '丹麦', currency: 'DKK' },
+    { label: '波兰', currency: 'PLN' }, { label: '捷克', currency: 'CZK' },
+    { label: '匈牙利', currency: 'HUF' }, { label: '俄区', currency: 'RUB' },
+    { label: '土区', currency: 'TRY' }, { label: '印区', currency: 'INR' },
+    { label: '泰区', currency: 'THB' }, { label: '马区', currency: 'MYR' },
+    { label: '印尼', currency: 'IDR' }, { label: '菲区', currency: 'PHP' },
+    { label: '越区', currency: 'VND' }, { label: '巴西', currency: 'BRL' },
+    { label: '墨区', currency: 'MXN' }, { label: '阿区', currency: 'ARS' },
+    { label: '智利', currency: 'CLP' }, { label: '哥伦比亚', currency: 'COP' },
+    { label: '秘鲁', currency: 'PEN' }, { label: '阿联酋', currency: 'AED' },
+    { label: '沙特', currency: 'SAR' }, { label: '南非', currency: 'ZAR' },
+    { label: '以色列', currency: 'ILS' }, { label: '乌克兰', currency: 'UAH' }
+  ];
+
+  var MEMBERSHIPS = [
+    { key: '', label: '无 / 不记' },
+    { key: 'nso', label: 'Nintendo Switch Online' },
+    { key: 'psplus', label: 'PlayStation Plus' },
+    { key: 'xgp', label: 'Xbox Game Pass' },
+    { key: 'ubisoft', label: 'Ubisoft+' },
+    { key: 'ea', label: 'EA Play' },
+    { key: 'other', label: '其他会员' }
+  ];
+
+  var GAME_STATUS = [
+    { key: 'owned', label: '已购' },
+    { key: 'playing', label: '在玩' },
+    { key: 'done', label: '通关' },
+    { key: 'idle', label: '吃灰' },
+    { key: 'wish', label: '愿望单' }
+  ];
+
+  function currencyInfo(code) {
+    var hit = CURRENCIES.filter(function (c) { return c.code === code; })[0];
+    return hit || CURRENCIES[0];
+  }
+
+  function moneyText(n, code) {
+    var c = currencyInfo(code);
+    var v = Number(n) || 0;
+    var num = ZERO_DECIMAL[code] ? String(Math.round(v)) : v.toFixed(2);
+    /* 外币统一带代码，避免 ¥ / $ / kr 这些符号混淆 */
+    return c.symbol + num + (code && code !== 'CNY' ? ' ' + code : '');
+  }
+
+  function membershipLabel(key) {
+    var hit = MEMBERSHIPS.filter(function (m) { return m.key === key; })[0];
+    return hit ? hit.label : '';
+  }
+
+  function gameStatusLabel(key) {
+    var hit = GAME_STATUS.filter(function (g) { return g.key === key; })[0];
+    return hit ? hit.label : '已购';
+  }
+
+  function platformOptions() {
+    var out = DEFAULT_PLATFORMS.slice();
+    (state.prefs.platforms || []).forEach(function (p) {
+      var v = String(p || '').trim();
+      if (v && out.indexOf(v) < 0) out.push(v);
+    });
+    return out;
+  }
+
+  function normalizePlatforms(list) {
+    if (!Array.isArray(list)) return [];
+    var out = [];
+    list.forEach(function (p) {
+      var v = String(p || '').trim().slice(0, 40);
+      if (v && DEFAULT_PLATFORMS.indexOf(v) < 0 && out.indexOf(v) < 0) out.push(v);
+    });
+    return out.slice(0, 60);
+  }
+
+  /* 游戏清单：换行 / 逗号 / 顿号 / 分号 / 竖线 / 制表符都能拆，顺手去掉序号和书名号 */
+  function parseGameList(text) {
+    if (Array.isArray(text)) {
+      var flat = [];
+      text.forEach(function (x) { flat = flat.concat(parseGameList(x)); });
+      return flat;
+    }
+    var raw = String(text || '').split(/[\n\r,，、;；|｜\t]+/);
+    var out = [];
+    raw.forEach(function (s) {
+      var v = String(s || '')
+        .replace(/^\s*(?:\d+\s*[.、)．]|[-•*·])\s*/, '')
+        .replace(/^[《「『"'“”]+/, '')
+        .replace(/[》」』"'“”]+$/, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 60);
+      if (v && out.indexOf(v) < 0) out.push(v);
+    });
+    return out;
+  }
+
+  function normalizeGame(g) {
+    if (typeof g === 'string') {
+      var nm = String(g).trim().slice(0, 60);
+      return nm ? { name: nm, status: 'owned', price: 0, buyDate: '' } : null;
+    }
+    if (!g || typeof g !== 'object') return null;
+    var name = String(g.name || g.n || '').trim().slice(0, 60);
+    if (!name) return null;
+    var st = GAME_STATUS.filter(function (x) { return x.key === g.status; }).length ? g.status : 'owned';
+    return {
+      name: name,
+      status: st,
+      price: Math.max(0, Math.round((Number(g.price) || 0) * 100) / 100),
+      buyDate: /^\d{4}-\d{2}-\d{2}$/.test(String(g.buyDate || '')) ? String(g.buyDate) : ''
+    };
+  }
+
+  function normalizeGames(list) {
+    var raw = Array.isArray(list) ? list : parseGameList(list);
+    var out = [];
+    raw.forEach(function (g) {
+      var ng = normalizeGame(g);
+      if (!ng) return;
+      if (out.some(function (x) { return x.name === ng.name; })) return;
+      out.push(ng);
+    });
+    return out.slice(0, 120);
+  }
+
+  function normalizeAccount(a) {
+    if (!a || typeof a !== 'object') return null;
+    var name = String(a.name || '').trim().slice(0, 40);
+    if (!name) return null;
+    var region = String(a.region || '').trim().slice(0, 40);
+    var currency = String(a.currency || '').toUpperCase();
+    if (!CURRENCIES.filter(function (c) { return c.code === currency; }).length) {
+      var rg = REGIONS.filter(function (x) { return x.label === region; })[0];
+      currency = rg ? rg.currency : 'CNY';
+    }
+    var twoFA = ['off', 'email', 'phone', 'app'].indexOf(a.twoFA) >= 0 ? a.twoFA : '';
+    var membership = MEMBERSHIPS.filter(function (m) { return m.key && m.key === a.membership; }).length ? a.membership : '';
+    var membershipEnd = /^\d{4}-\d{2}-\d{2}$/.test(String(a.membershipEnd || '')) ? String(a.membershipEnd) : '';
+    var registeredAt = /^\d{4}-\d{2}-\d{2}$/.test(String(a.registeredAt || '')) ? String(a.registeredAt) : '';
+    var status = ['normal', 'limited', 'banned'].indexOf(a.status) >= 0 ? a.status : 'normal';
+    return {
+      id: String(a.id || uid()).slice(0, 40),
+      name: name,
+      nickname: String(a.nickname || '').trim().slice(0, 40),
+      email: String(a.email || '').trim().slice(0, 80),
+      twoFA: twoFA,
+      platform: String(a.platform || '').trim().slice(0, 40),
+      region: region,
+      currency: currency,
+      friendCode: String(a.friendCode || '').trim().slice(0, 40),
+      membership: membership,
+      membershipEnd: membershipEnd,
+      registeredAt: registeredAt,
+      status: status,
+      games: normalizeGames(a.games),
+      balance: Math.max(0, Math.round((Number(a.balance) || 0) * 100) / 100),
+      note: String(a.note || '').trim().slice(0, 200),
+      updatedAt: Number(a.updatedAt) || Date.now()
+    };
+  }
+
+  function normalizeAccounts(list) {
+    if (!Array.isArray(list)) return [];
+    return list.map(normalizeAccount).filter(Boolean).slice(0, 60);
+  }
+
+  function accounts() {
+    if (!Array.isArray(state.prefs.accounts)) state.prefs.accounts = [];
+    return state.prefs.accounts;
   }
 
   function normalizeCategories(list) {
@@ -1157,6 +1419,20 @@
       if (p.offTypes && typeof p.offTypes === 'object') state.prefs.offTypes = p.offTypes;
       if (p.cardFields && typeof p.cardFields === 'object') state.prefs.cardFields = p.cardFields;
       if (Array.isArray(p.backups)) state.prefs.backups = p.backups.slice(0, 10);
+      if (p.book && typeof p.book === 'object') state.prefs.book = p.book;
+      if (Array.isArray(p.bookOrder)) {
+        state.prefs.bookOrder = p.bookOrder.filter(function (k) { return TYPE_KEYS.indexOf(k) >= 0; }).slice(0, 20);
+      }
+      if (p.spineArt && typeof p.spineArt === 'object') {
+        var sa = {};
+        TYPE_KEYS.forEach(function (k) {
+          if (typeof p.spineArt[k] === 'string' && p.spineArt[k]) sa[k] = p.spineArt[k];
+        });
+        state.prefs.spineArt = sa;
+      }
+      if (p.ybStamp && typeof p.ybStamp === 'object') state.prefs.ybStamp = p.ybStamp;
+      if (Array.isArray(p.accounts)) state.prefs.accounts = normalizeAccounts(p.accounts);
+      if (Array.isArray(p.platforms)) state.prefs.platforms = normalizePlatforms(p.platforms);
     } catch (e) { /* ignore */ }
   }
 
@@ -1488,9 +1764,12 @@
     if (!name) return { name: 'home', id: null };
     if (name === 'edit' && parts[1]) return { name: 'edit', id: parts[1] };
     if (name === 'person' && parts[1]) return { name: 'person', id: decodeURIComponent(parts.slice(1).join('/')) };
-    if (['home', 'library', 'timeline', 'stats', 'settings', 'new',
-      'quotes', 'authors', 'archive', 'badges', 'options',
-      'calendar', 'week', 'tags', 'trash'].indexOf(name) >= 0) {
+    if (name === 'book' || name === 'library') return { name: 'book', id: name === 'book' ? (parts[1] || null) : null };
+    if (name === 'archive') return { name: 'archive', id: parts[1] || null };
+    if (name === 'accounts') return { name: 'accounts', id: parts[1] || null };
+    if (['home', 'timeline', 'stats', 'settings', 'new',
+      'quotes', 'authors', 'badges', 'options',
+      'week', 'tags', 'trash'].indexOf(name) >= 0) {
       return { name: name, id: null };
     }
     return { name: 'home', id: null };
@@ -1513,19 +1792,19 @@
 
     var html = '';
     if (r.name === 'home') html = homeView();
-    else if (r.name === 'library') html = libraryView();
     else if (r.name === 'new' || r.name === 'edit') html = editView();
     else if (r.name === 'timeline') html = timelineView();
     else if (r.name === 'stats') html = statsView();
     else if (r.name === 'quotes') html = quotesView();
     else if (r.name === 'authors') html = authorsView();
-    else if (r.name === 'archive') html = archiveView();
+    else if (r.name === 'archive') html = yearbookView(r.id);
+    else if (r.name === 'book') html = r.id ? bookView(r.id) : bookOverviewView();
     else if (r.name === 'badges') html = badgesView();
     else if (r.name === 'options') html = optionsView();
-    else if (r.name === 'calendar') html = calendarView();
     else if (r.name === 'week') html = weekView();
     else if (r.name === 'tags') html = tagsView();
     else if (r.name === 'trash') html = trashView();
+    else if (r.name === 'accounts') html = r.id === 'stats' ? acctStatsView() : accountsView();
     else if (r.name === 'person') html = personView(r.id || '');
     else if (r.name === 'settings') html = settingsView();
 
@@ -1537,6 +1816,7 @@
   }
 
   function afterRender() {
+    paintIconTips();
     if (state.ui.sortMode) enableDragSort();
     if (state.route.name === 'quotes' && state.ui.quoteQ) filterQuoteCards(state.ui.quoteQ);
     if (state.route.name === 'settings') { paintServerVersion(); paintStorageInfo(); }
@@ -1544,16 +1824,7 @@
       var hw = document.querySelector('.heat-wrap');
       if (hw) hw.scrollLeft = hw.scrollWidth;
     }
-    if (state.route.name === 'library' && state.libQ) filterLibraryCards(state.libQ);
-    if (state.route.name === 'library' && state.ui.view === 'board') {
-      /* 第一列可能是空的，直接滑到第一个有卡片的列，免得以为看板没内容 */
-      var bd = document.querySelector('.board');
-      var firstCard = bd && bd.querySelector('.bcard');
-      var col = firstCard && firstCard.parentNode && firstCard.parentNode.parentNode;
-      if (bd && col && col.classList && col.classList.contains('board-col')) {
-        bd.scrollLeft = col.offsetLeft - bd.offsetLeft;
-      }
-    }
+    if (state.route.name === 'book' && state.route.id) bookMaybeInsert();
     if (state.readonly && state.route.name === 'edit') {
       /* 只读详情：输入框加 readonly，下拉禁用，键盘也改不了 */
       var roInputs = view.querySelectorAll('input, textarea');
@@ -1602,11 +1873,21 @@
 
   /* ---------------- 通用片段 ---------------- */
 
-  function pageHead(eyebrow, title, withGear) {
+  function pageHead(eyebrow, title, mode) {
+    var acts;
+    if (mode === false) acts = '';
+    else if (mode === 'home') {
+      acts = '<div class="head-actions">' +
+        '<button class="icon-btn" data-action="go" data-to="badges" aria-label="徽章">' + icon('trophy', 19) + '</button>' +
+        '<button class="icon-btn" data-action="go" data-to="tags" aria-label="题材云">' + icon('list', 19) + '</button>' +
+        '<button class="icon-btn" data-action="settings" aria-label="设置">' + icon('gear', 20) + '</button>' +
+        '</div>';
+    } else {
+      acts = '<button class="icon-btn" data-action="settings" aria-label="设置">' + icon('gear', 20) + '</button>';
+    }
     return '<header class="page-head">' +
       '<div><p class="eyebrow">' + esc(eyebrow) + '</p><h1 class="page-title">' + esc(title) + '</h1></div>' +
-      (withGear === false ? '' : '<button class="icon-btn" data-action="settings" aria-label="设置">' + icon('gear', 20) + '</button>') +
-      '</header>';
+      acts + '</header>';
   }
 
   function coverInner(r, cls) {
@@ -1800,8 +2081,7 @@
     if (!total) {
       return html + '<div class="empty"><div class="empty-mark">·</div>' +
         '<p class="empty-title">还没有设置更新日</p>' +
-        '<p class="empty-text">在「进行中」的记录里填上放送星期或更新日，这里就会按周排出来。</p>' +
-        '<button class="btn btn-ghost btn-sm" data-action="go" data-to="library">去收藏看看</button></div>';
+        '<p class="empty-text">在「进行中」的记录里填上放送星期或更新日，这里就会按周排出来。</p></div>';
     }
 
     html += '<p class="fan-hint">按更新日排的一周表，今天那行会高亮。</p>';
@@ -1814,93 +2094,6 @@
         '</section>';
     }).join('') + '</div>';
     return html;
-  }
-
-  /* ---- 记录月历 ---- */
-  function rcalState() {
-    if (!state.rcal) {
-      var n = new Date();
-      state.rcal = { y: n.getFullYear(), m: n.getMonth() };
-    }
-    return state.rcal;
-  }
-
-  function dayRecordsMap() {
-    var map = {};
-    state.records.forEach(function (r) {
-      var d = new Date(r.createdAt);
-      var k = ymd(d);
-      (map[k] = map[k] || []).push(r);
-    });
-    return map;
-  }
-
-  function calendarView() {
-    var c = rcalState();
-    var map = dayRecordsMap();
-    var first = new Date(c.y, c.m, 1);
-    var offset = first.getDay();
-    var days = new Date(c.y, c.m + 1, 0).getDate();
-    var todayKey = todayISO();
-    var monthCount = 0;
-    for (var d = 1; d <= days; d++) {
-      var k = c.y + '-' + pad(c.m + 1) + '-' + pad(d);
-      monthCount += (map[k] || []).length;
-    }
-
-    var html = '<header class="page-head">' +
-      '<div class="head-left"><button class="icon-btn" data-action="back" aria-label="返回">' + icon('back', 20) + '</button>' +
-      '<div><p class="eyebrow">本月 ' + monthCount + ' 条</p><h1 class="page-title">记录月历</h1></div></div>' +
-      '<button class="icon-btn" data-action="settings" aria-label="设置">' + icon('gear', 20) + '</button>' +
-      '</header>';
-
-    html += '<div class="rcal-bar">' +
-      '<button class="icon-btn" data-action="rcal-prev" aria-label="上个月">' + icon('back', 18) + '</button>' +
-      '<b>' + c.y + ' 年 ' + (c.m + 1) + ' 月</b>' +
-      '<button class="icon-btn" data-action="rcal-next" aria-label="下个月" style="transform:rotate(180deg)">' + icon('back', 18) + '</button>' +
-      '</div>';
-
-    html += '<div class="rcal">' + ['日', '一', '二', '三', '四', '五', '六'].map(function (w) {
-      return '<span class="rcal-w">' + w + '</span>';
-    }).join('');
-
-    for (var e = 0; e < offset; e++) html += '<span class="rcal-cell is-blank"></span>';
-    for (var d2 = 1; d2 <= days; d2++) {
-      var key = c.y + '-' + pad(c.m + 1) + '-' + pad(d2);
-      var list = map[key] || [];
-      html += '<button class="rcal-cell' + (key === todayKey ? ' is-today' : '') + (list.length ? ' has' : '') +
-        '" data-action="rcal-day" data-date="' + key + '">' +
-        '<span class="rcal-d">' + d2 + '</span>' +
-        (list.length
-          ? '<span class="rcal-covers">' + list.slice(0, 3).map(function (r) {
-            return '<span class="rcal-cv" style="--cc:' + coverColor(r.title) + '">' + coverInner(r) + '</span>';
-          }).join('') + '</span>' +
-          (list.length > 3 ? '<span class="rcal-more">+' + (list.length - 3) + '</span>' : '')
-          : '') +
-        '</button>';
-    }
-    html += '</div>';
-
-    html += '<p class="fan-hint" style="margin-top:12px">格子里的缩略图是当天收录的作品，点一天看全部。</p>';
-    return html;
-  }
-
-  function openDayList(date) {
-    var list = state.records.filter(function (r) { return ymd(new Date(r.createdAt)) === date; })
-      .sort(function (a, b) { return a.createdAt - b.createdAt; });
-    if (!list.length) { toast('这天没有记录'); return; }
-    openModal({
-      title: md(new Date(date + 'T00:00:00')),
-      desc: '共 ' + list.length + ' 条',
-      body: '<div class="day-list">' + list.map(function (r) {
-        return '<button class="day-row" data-action="record-card" data-id="' + r.id + '">' +
-          '<span class="day-cover" style="--cc:' + coverColor(r.title) + '">' + coverInner(r) + '</span>' +
-          '<span class="day-main"><span class="day-title">' + esc(r.title) + '</span>' +
-          '<span class="day-sub">' + TYPES[r.type].label + ' · ' + statusLabelFor(r) +
-          (r.rating ? ' · ' + ratingText(r.rating) : '') + '</span></span></button>';
-      }).join('') + '</div>',
-      actions: [{ label: '关闭', value: null, variant: 'ghost' }]
-    });
   }
 
   /* ---- 标签云 ---- */
@@ -2063,75 +2256,9 @@
   }
 
   /* ---- ISBN 查询（Google Books，失败再试 Open Library） ---- */
-  function fillFromIsbn(data) {
-    var d = state.draft;
-    if (!d) return 0;
-    var n = 0;
-    function set(path, val) {
-      if (!val) return;
-      var parts = path.split('.');
-      if (parts[0] === 'meta') {
-        d.meta = d.meta || {};
-        if (!d.meta[parts[1]]) { d.meta[parts[1]] = String(val).slice(0, 200); n++; }
-      } else if (!d[parts[0]]) {
-        d[parts[0]] = String(val).slice(0, 120);
-        n++;
-      }
-    }
-    set('title', data.title);
-    set('originalTitle', data.originalTitle);
-    set('creator', data.creator);
-    set('year', data.year);
-    set('meta.publisher', data.publisher);
-    set('meta.pages', data.pages);
-    set('meta.isbn', data.isbn);
-    if (!d.cover && data.cover) { d.cover = data.cover; n++; }
-    return n;
-  }
 
-  function isbnLookup() {
-    var el = document.getElementById('isbn-input');
-    var isbn = el ? el.value.replace(/[^0-9Xx]/g, '') : '';
-    if (isbn.length < 10) { toast('请输入 10 或 13 位 ISBN'); return; }
-    toast('查询中…');
-    fetch('https://www.googleapis.com/books/v1/volumes?q=isbn:' + isbn + '&maxResults=1')
-      .then(function (r) { return r.json(); })
-      .then(function (j) {
-        var v = j && j.items && j.items[0] && j.items[0].volumeInfo;
-        if (!v) throw new Error('empty');
-        var n = fillFromIsbn({
-          title: v.title,
-          originalTitle: v.subtitle || '',
-          creator: (v.authors || []).join('、'),
-          year: (v.publishedDate || '').slice(0, 4),
-          publisher: v.publisher,
-          pages: v.pageCount,
-          isbn: isbn,
-          cover: (v.imageLinks && (v.imageLinks.thumbnail || v.imageLinks.smallThumbnail) || '').replace(/^http:/, 'https:')
-        });
-        save();
-        render({ keepScroll: true });
-        toast(n ? '已填入 ' + n + ' 项' : '查到条目，但没有新信息');
-      })
-      .catch(function () {
-        toast('查询失败：网络或接口不可用，可以手动填写');
-      });
-  }
 
   /* ---- 紧凑列表视图 ---- */
-  function listRowsHTML(rows) {
-    return '<div class="rowlist">' + rows.map(function (r) {
-      return '<button class="lrow" data-action="open" data-id="' + r.id +
-        '" data-hay="' + esc(haystack(r)) + '">' +
-        '<span class="lrow-cover" style="--cc:' + coverColor(r.title) + '">' + coverInner(r) + '</span>' +
-        '<span class="lrow-main"><span class="lrow-title">' + esc(r.title) + '</span>' +
-        '<span class="lrow-sub">' + TYPES[r.type].label + ' · ' + esc(r.creator || '—') + '</span></span>' +
-        '<span class="lrow-status chip" data-s="' + r.status + '">' + statusLabelFor(r) + '</span>' +
-        '<span class="lrow-rate">' + (r.rating ? ratingText(r.rating) : '') + '</span>' +
-        '<span class="lrow-date">' + ymd(new Date(r.updatedAt)) + '</span>' +
-        '</button>';
-    }).join('') + '</div>';
-  }
 
   /* ---- 相册 ---- */
   function galleryHTML(r, editable) {
@@ -2162,6 +2289,1680 @@
     });
   }
 
+  /* ================= 收藏册 / 票根 / 年度档案 ================= */
+
+  var TICKET_TYPES = ['movie', 'stage'];
+
+  function bookCfg() {
+    var b = state.prefs.book || {};
+    return {
+      per: (b.per === 2 || b.per === 4) ? b.per : 1,
+      order: b.order === 'new' ? 'new' : 'seq',
+      sound: b.sound !== false,
+      ticket: {
+        movie: (b.ticket && b.ticket.movie) || 'stub',
+        stage: (b.ticket && b.ticket.stage) || 'stub'
+      },
+      album: b.album || 'grid',
+      seen: b.seen || {}
+    };
+  }
+
+  function saveBookCfg(patch) {
+    var cur = bookCfg();
+    var prev = state.prefs.book || {};
+    state.prefs.book = {
+      per: patch.per != null ? patch.per : cur.per,
+      order: patch.order || cur.order,
+      sound: patch.sound != null ? patch.sound : cur.sound,
+      ticket: patch.ticket || cur.ticket,
+      album: patch.album || cur.album,
+      seen: patch.seen || cur.seen,
+      pos: patch.pos || prev.pos || {},
+      baseline: patch.baseline != null ? patch.baseline : (prev.baseline || 0)
+    };
+    savePrefs();
+  }
+
+  /* 完成日期：有就用手填的，标记完成但没填的按最后更新算 */
+  function doneISO(r) {
+    if (r.finishedAt) return r.finishedAt;
+    if (r.status === 'done') return ymd(new Date(r.updatedAt));
+    return '';
+  }
+
+  function yearOf(r) {
+    var d = doneISO(r);
+    return d ? d.slice(0, 4) : 'earlier';
+  }
+
+  function isTicketType(t) { return TICKET_TYPES.indexOf(t) >= 0; }
+
+  function bookList(type) {
+    var cfg = bookCfg();
+    return state.records.filter(function (r) { return r.type === type; }).slice()
+      .sort(function (a, b) {
+        var da = doneISO(a), db = doneISO(b);
+        if (da !== db) {
+          if (!da) return cfg.order === 'new' ? 1 : -1;
+          if (!db) return cfg.order === 'new' ? -1 : 1;
+          return cfg.order === 'new' ? (da < db ? 1 : -1) : (da > db ? 1 : -1);
+        }
+        return cfg.order === 'new' ? b.createdAt - a.createdAt : a.createdAt - b.createdAt;
+      });
+  }
+
+  function bookPending() {
+    var b = state.prefs.book || {};
+    if (!Number(b.baseline)) {
+      /* 第一次打开：把现有记录全部当作旧卡，不播动画 */
+      var seen0 = b.seen || {};
+      state.records.forEach(function (r) { seen0[r.id] = Date.now(); });
+      saveBookCfg({ seen: seen0, baseline: Date.now() });
+      return null;
+    }
+    var base = Number(b.baseline);
+    var seenMap = bookCfg().seen;
+    var list = state.records.filter(function (r) { return r.createdAt > base; })
+      .sort(function (x, y) { return y.createdAt - x.createdAt; });
+    for (var i = 0; i < list.length; i++) {
+      if (!seenMap[list[i].id]) return list[i];
+    }
+    return null;
+  }
+
+  function markBookSeen(id) {
+    var cfg = bookCfg();
+    var seen = cfg.seen;
+    seen[id] = Date.now();
+    /* 只留最近 400 条，避免无限膨胀 */
+    var keys = Object.keys(seen);
+    if (keys.length > 400) {
+      keys.sort(function (a, b) { return seen[a] - seen[b]; })
+        .slice(0, keys.length - 400)
+        .forEach(function (k) { delete seen[k]; });
+    }
+    saveBookCfg({ seen: seen });
+  }
+
+  /* ---------------- 纪念票根（9:16 瑞士国际主义） ---------------- */
+
+  function tkSerial(r) {
+    var str = String(r.id || r.title || '');
+    var h = 0;
+    for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 100000;
+    return ('00000' + h).slice(-5);
+  }
+
+  function ticketStill(r) {
+    var src = coverSrc(r.cover);
+    if (!src && (r.images || []).length) src = coverSrc(r.images[0]);
+    return src;
+  }
+
+  function tkBars() {
+    var out = '';
+    for (var i = 0; i < 84; i++) {
+      var w = 1 + ((i * 7 + (i % 5) * 3) % 3);
+      var gap = (i % 4 === 0) ? 2 : 1;
+      out += '<i style="width:' + w + 'px;margin-right:' + gap + 'px"></i>';
+    }
+    return out;
+  }
+
+  function ticketHTML(r, cls) {
+    var isStage = r.type === 'stage';
+    var m = r.meta || {};
+    var d = doneISO(r) || ymd(new Date(r.createdAt));
+    var parts = d.split('-');
+    var dateTxt = parts.length === 3 ? parts[0] + '.' + parts[1] + '.' + parts[2] : d;
+    var timeBits = [];
+    if (m.runtime) timeBits.push(m.runtime + ' MIN');
+    if (isStage && m.shows) timeBits.push('第 ' + m.shows + ' 场');
+    var venue = isStage ? (m.venue || '') : (m.cinema || m.watchPlace || '');
+    var seat = isStage ? (m.seat || '') : (m.watchPlace || '');
+    var still = ticketStill(r);
+    var review = (r.review || '').replace(/\s+/g, ' ').trim();
+
+    return '<div class="tk' + (cls ? ' ' + cls : '') + '" data-tid="' + r.id + '">' +
+      '<div class="tk-top">' +
+      '<span class="tk-brand">' + (isStage ? 'PERFORMANCE · 观演纪念' : 'CINEMA · 观影纪念') + '</span>' +
+      '<span class="tk-serial">NO. ' + tkSerial(r) + '</span>' +
+      '</div>' +
+      '<div class="tk-still' + (still ? '' : ' is-pat') + '">' +
+      (still ? '<img src="' + esc(still) + '" alt="" crossorigin="anonymous">' : '<i></i><i></i><i></i>') +
+      '<span class="tk-still-tag">' + (isStage ? 'STAGE' : 'STILL') + '</span>' +
+      '</div>' +
+      '<div class="tk-main">' +
+      '<h3 class="tk-title">' + esc(r.title) + '</h3>' +
+      (r.originalTitle ? '<p class="tk-orig">' + esc(r.originalTitle) + '</p>' : '') +
+      '<p class="tk-by">' + esc([r.creator, r.year].filter(Boolean).join(' / ') || '—') + '</p>' +
+      '</div>' +
+      '<div class="tk-grid">' +
+      '<div class="tk-cell"><span>DATE</span><b>' + dateTxt + '</b></div>' +
+      '<div class="tk-cell"><span>TIME</span><b>' + (timeBits.join(' · ') || '—') + '</b></div>' +
+      '<div class="tk-cell"><span>' + (isStage ? 'THEATRE' : 'VENUE') + '</span><b>' + esc(venue || '—') + '</b></div>' +
+      '<div class="tk-cell"><span>' + (isStage ? 'SEAT' : 'FORMAT') + '</span><b>' + esc(seat || '—') + '</b></div>' +
+      (m.ticketPrice ? '<div class="tk-cell"><span>PRICE</span><b>¥' + esc(m.ticketPrice) + '</b></div>' : '') +
+      '</div>' +
+      (review ? '<p class="tk-note">' + esc(review.slice(0, 60)) + (review.length > 60 ? '…' : '') + '</p>' : '') +
+      '<div class="tk-big" aria-hidden="true">' + esc(String(r.year || d.slice(0, 4) || '')) + '</div>' +
+      '<div class="tk-tear"><i></i><i></i></div>' +
+      '<div class="tk-foot">' +
+      '<span class="tk-bars">' + tkBars() + '</span>' +
+      '<span class="tk-admit">ADMIT ONE</span>' +
+      '<b class="tk-rate">' + (r.rating ? ratingText(r.rating) : '—') + '</b>' +
+      '</div>' +
+      '</div>';
+  }
+
+  function openTicket(id) {
+    var r = state.records.filter(function (x) { return x.id === id; })[0];
+    if (!r) return;
+    openModal({
+      title: '',
+      cls: 'ticket-modal',
+      body: '<div class="tk-stage">' + ticketHTML(r) + '</div>',
+      actions: [
+        { label: '关闭', value: null, variant: 'ghost' },
+        { label: '保存图片', value: 'save', variant: 'primary' }
+      ]
+    }).then(function (v) {
+      if (v === 'save') saveTicket(r);
+    });
+  }
+
+  function saveTicket(r) {
+    var node = document.querySelector('.tk-stage .tk');
+    if (!node) return;
+    toast('正在生成图片…');
+    var rect = node.getBoundingClientRect();
+    var sc = Math.min(4, Math.max(2, 1536 / Math.max(1, rect.width)));
+    loadHtml2Canvas().then(function (h2c) {
+      return h2c(node, { backgroundColor: '#ffffff', scale: sc, useCORS: true, logging: false });
+    }).then(function (cv) {
+      cv.toBlob(function (blob) {
+        if (!blob) { toast('生成失败'); return; }
+        downloadBlob(blob, 'ticket-' + (r.title || 'stub') + '-' + (doneISO(r) || todayISO()) + '.png');
+        toast('票根已保存');
+      }, 'image/png');
+    }).catch(function () {
+      toast('生成失败：封面来自外站时可能受限，可直接截图保存');
+    });
+  }
+
+  /* ---------------- 示例数据（每个类型三条） ---------------- */
+
+  function posterURI(title, color, sub) {
+    var ch = firstChar(title || '·');
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="360" height="480" viewBox="0 0 360 480">' +
+      '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
+      '<stop offset="0" stop-color="' + color + '"/><stop offset="1" stop-color="#1B1730"/></linearGradient></defs>' +
+      '<rect width="360" height="480" fill="url(#g)"/>' +
+      '<circle cx="296" cy="86" r="72" fill="rgba(255,255,255,.10)"/>' +
+      '<circle cx="296" cy="86" r="46" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="1"/>' +
+      '<rect x="28" y="318" width="64" height="3" fill="rgba(255,255,255,.8)"/>' +
+      '<text x="26" y="308" font-size="132" font-family="serif" fill="rgba(255,255,255,.94)">' + ch + '</text>' +
+      '<text x="28" y="454" font-size="13" font-family="sans-serif" letter-spacing="2" fill="rgba(255,255,255,.68)">' +
+      esc(String(sub || '').slice(0, 22)) + '</text>' +
+      '</svg>';
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }
+
+  var EXAMPLE_SEED = {
+    novel: [
+      ['三体', '刘慈欣', '2008', 9.5, 'done', '2026-02-18', '读完最后一页愣了很久。宇宙社会学的两条公理，把整个人类史重新解释了一遍。', { publisher: '重庆出版社', pages: '302', binding: '平装' }],
+      ['活着', '余华', '1993', 9, 'done', '2025-11-06', '福贵的一生像被反复揉皱又摊开的纸。余华写苦难写得很轻，轻得让人难受。', { publisher: '作家出版社', pages: '191' }],
+      ['百年孤独', '加西亚·马尔克斯', '1967', 8.5, 'doing', '', '读到第三代，人名已经要靠笔记本来记。魔幻的部分反而最真实。', { publisher: '南海出版公司', translator: '范晔', pages: '360' }]
+    ],
+    comic: [
+      ['灌篮高手', '井上雄彦', '1990', 9.5, 'done', '2026-04-12', '全国大赛那一册翻了三遍。最后一页没有台词，只有空白和心跳。', { volumes: '31', publisher: '长春出版社' }],
+      ['虫师', '漆原友纪', '1999', 9, 'done', '2025-08-21', '每一话都像一篇短篇小说。安静，克制，后劲很大。', { volumes: '10' }],
+      ['蓝色时期', '山口飞翔', '2017', 8.5, 'doing', '', '把"画画的人怎么面对自己不够好"画得很准。', { volumes: '14' }]
+    ],
+    anime: [
+      ['葬送的芙莉莲', 'MADHOUSE', '2023', 9.5, 'done', '2026-01-30', '时间尺度一拉开，告别就有了重量。第 12 集的分镜值得反复看。', { airWeekday: '周五', epCount: '28', studio: 'MADHOUSE', season: '2023 秋' }],
+      ['进击的巨人', 'WIT STUDIO', '2013', 9, 'doing', '', '看到第三季，才明白第一集那句"海的那边是敌人"是什么意思。', { airWeekday: '周日', epCount: '87', studio: 'WIT / MAPPA' }],
+      ['迷宫饭', 'TRIGGER', '2024', 8.5, 'done', '2025-06-14', '把做饭这件事认真对待，反而成了最温柔的世界观。', { airWeekday: '周四', epCount: '24', studio: 'TRIGGER' }]
+    ],
+    tv: [
+      ['漫长的季节', '辛爽', '2023', 9.5, 'done', '2026-03-09', '一桩旧案，三个老人，一整个下岗的东北。结尾那场雪下得很慢。', { epCount: '12', runtime: '45', country: '中国大陆' }],
+      ['请回答1988', '申源浩', '2015', 9.5, 'done', '2025-02-17', '每一集都在讲小事，攒起来却是一整个青春。', { epCount: '20', runtime: '90', country: '韩国' }],
+      ['黑镜', '查理·布鲁克', '2011', 8.5, 'doing', '', '看到第六季，越来越像纪录片。', { epCount: '27', country: '英国' }]
+    ],
+    movie: [
+      ['星际穿越', '克里斯托弗·诺兰', '2014', 9.5, 'done', '2026-06-02', '重看 IMAX。书架那场戏，声音先于画面到达，眼泪先于理解到达。', { runtime: '169', country: '美国', cinema: '万达影城 IMAX', watchPlace: '影院', screeningFormat: 'IMAX', composer: 'Hans Zimmer' }],
+      ['千与千寻', '宫崎骏', '2001', 9.5, 'done', '2025-12-24', '小时候看热闹，长大看离别。海上列车那一段什么都没说。', { runtime: '125', country: '日本', watchPlace: '流媒体', composer: '久石让' }],
+      ['奥本海默', '克里斯托弗·诺兰', '2023', 8.5, 'done', '2025-09-13', '三小时的对白戏，靠脸和眼睛撑住。爆炸那一段的静音处理很狠。', { runtime: '180', country: '美国', cinema: 'CGV 影城', watchPlace: '影院' }]
+    ],
+    variety: [
+      ['向往的生活', '湖南卫视', '2017', 8, 'done', '2025-07-19', '看他们做饭、聊天、发呆，比很多剧都解压。', { epCount: '100', host: '黄磊 / 何炅', channel: '湖南卫视' }],
+      ['脱口秀大会', '腾讯视频', '2017', 8.5, 'done', '2026-05-22', '第五季有几段文本真的很硬。', { epCount: '60', host: '李诞', channel: '腾讯视频' }],
+      ['国家宝藏', '央视', '2017', 9, 'doing', '', '每件文物都配一个故事，编排很讲究。', { epCount: '30', host: '张国立', channel: 'CCTV' }]
+    ],
+    drama: [
+      ['三体广播剧', '729 声工场', '2019', 9, 'done', '2026-02-02', '配音把"古筝行动"那一段撑起来了，听的时候手心出汗。', { epCount: '36', platform: '猫耳 FM', cv: '宝木中阳 / 图特哈蒙' }],
+      ['魔道祖师', '北斗企鹅', '2018', 9, 'done', '2025-10-05', '配乐和音效都在线，几场夜戏氛围极好。', { epCount: '30', platform: '猫耳 FM', cv: '路知行 / 边江' }],
+      ['将进酒', '光合积木', '2021', 8.5, 'doing', '', '权谋线清楚，就是人名太多。', { epCount: '24', platform: '猫耳 FM' }]
+    ],
+    stage: [
+      ['汉密尔顿', '林-曼努尔·米兰达', '2015', 9.5, 'done', '2026-05-30', '现场看和录音完全两回事。下半场开场那首歌一响，全场起立。', { venue: '上海文化广场', seat: '池座 5 排 12 号', shows: '3', runtime: '165', ticketPrice: '880', playType: '音乐剧' }],
+      ['巴黎圣母院', '吕克·普拉蒙东', '1998', 9, 'done', '2025-11-22', '《大教堂时代》前奏一起，鸡皮疙瘩。', { venue: '北京天桥艺术中心', seat: '楼座 2 排 8 号', shows: '1', runtime: '150', playType: '音乐剧' }],
+      ['不眠之夜', 'Punchdrunk', '2011', 8.5, 'done', '2025-04-18', '跟着一个演员跑了三层楼，最后也没搞清剧情，但很好玩。', { venue: '上海麦金侬酒店', shows: '2', runtime: '180', playType: '沉浸式戏剧' }]
+    ],
+    game: [
+      ['空洞骑士', 'Team Cherry', '2017', 9.5, 'done', '2026-09-28', '地图设计是教科书级别。打到辐光的时候手心全是汗。', { platform: 'PC / Switch', mcScore: '90', completion: '全成就', engine: 'Unity', playTime: '62' }],
+      ['艾尔登法环', 'FromSoftware', '2022', 9, 'doing', '', '死了很多次，但每次都想再来一次。', { platform: 'PS5', mcScore: '96', engine: 'Unreal', playTime: '40' }],
+      ['星露谷物语', 'ConcernedApe', '2016', 9, 'done', '2025-03-11', '种地、钓鱼、送礼，时间不知不觉就没了。', { platform: 'PC', mcScore: '89', completion: '主线通关', playTime: '88' }]
+    ],
+    music: [
+      ['范特西', '周杰伦', '2001', 9.5, 'done', '2025-08-08', '二十多年后再听，编曲依然不过时。', { albumType: '专辑', tracks: '10', medium: 'CD', publisher: '阿尔发' }],
+      ['Random Access Memories', 'Daft Punk', '2013', 9, 'done', '2026-07-15', '把 disco 录成了纪录片。Giorgio by Moroder 那段独白百听不厌。', { albumType: '专辑', tracks: '13', genre: '电子 / Disco' }],
+      ['冀西南林路行', '万能青年旅店', '2020', 9.5, 'done', '2025-05-20', '一张专辑听出一个县城。', { albumType: '专辑', tracks: '10', genre: '摇滚' }]
+    ],
+    magazine: [
+      ['读库', '张立宪', '2006', 9, 'doing', '', '每期都能读到一两篇意外的好文章。', { issueCount: '12', subscribeFrom: '官网', price: '45' }],
+      ['三联生活周刊', '三联书店', '1995', 8.5, 'doing', '', '封面专题做得扎实，适合通勤看。', { issueCount: '24', subscribeFrom: '邮局' }],
+      ['国家地理中文版', '国家地理', '1888', 8.5, 'paused', '', '图太好，纸太沉。', { issueCount: '6', subscribeFrom: '电商' }]
+    ]
+  };
+
+  function seedExamples() {
+    var now = Date.now();
+    var added = 0;
+    var seq = 0;
+    TYPE_KEYS.forEach(function (k) {
+      (EXAMPLE_SEED[k] || []).forEach(function (row, i) {
+        var id = 'ex_' + k + '_' + i;
+        if (state.records.some(function (r) { return r.id === id; })) return;
+        seq++;
+        var title = row[0];
+        var rec = normalizeRecord({
+          id: id,
+          type: k,
+          title: title,
+          creator: row[1],
+          year: row[2],
+          rating: row[3],
+          status: row[4],
+          finishedAt: row[5] || '',
+          startedAt: row[5] ? row[5] : '',
+          review: row[6] || '',
+          tags: [TYPES[k].label, '示例'].slice(0, 2),
+          cover: posterURI(title, TYPES[k].color, row[2]),
+          meta: row[7] || {},
+          hours: k === 'game' ? 30 + i * 20 : (k === 'anime' || k === 'tv' ? 10 + i * 6 : 6 + i * 3),
+          progress: {
+            percent: row[4] === 'done' ? 100 : (i === 1 ? 45 : 20),
+            chapter: { current: row[4] === 'done' ? 20 : 6, total: 20 },
+            volume: { current: row[4] === 'done' ? 3 : 1, total: 3 },
+            segments: (k === 'anime' || k === 'tv' || k === 'drama')
+              ? [{ n: 1, current: row[4] === 'done' ? 12 : 4, total: 12, done: row[4] === 'done' }] : []
+          },
+          quotes: i === 0 ? [{ id: 'q_' + k + '_0', text: (row[6] || '').slice(0, 30), page: '' }] : [],
+          createdAt: now - (30 + seq * 9) * DAY,
+          updatedAt: row[5] ? new Date(row[5] + 'T20:00:00').getTime() : now - seq * DAY
+        });
+        if (rec) { state.records.push(rec); added++; }
+      });
+    });
+    save();
+    toast(added ? '已加入 ' + added + ' 条示例' : '示例已经在库里了');
+    render({ keepScroll: true });
+  }
+
+  /* ---------------- 收藏册：总览 ---------------- */
+
+  function bookOrderKeys() {
+    var all = typesOn();
+    var saved = Array.isArray(state.prefs.bookOrder) ? state.prefs.bookOrder : [];
+    var out = [];
+    saved.forEach(function (k) {
+      if (all.indexOf(k) >= 0 && out.indexOf(k) < 0) out.push(k);
+    });
+    all.forEach(function (k) { if (out.indexOf(k) < 0) out.push(k); });
+    return out;
+  }
+
+  /* 书架排版：按可用宽度算每层几本、每本多宽，手机/平板/电脑各自成行 */
+  function shelfLayout(n) {
+    var vw = Math.min(window.innerWidth || 390, 980) - ((window.innerWidth || 390) <= 520 ? 32 : 40);
+    var avail = Math.max(220, Math.min(vw, 780) - 30);
+    var gap = avail < 400 ? 8 : 11;
+    var maxPer = Math.max(2, Math.min(8, Math.floor((avail + gap) / (72 + gap))));
+    var rows = Math.max(1, Math.ceil(n / maxPer));
+    var per = Math.max(1, Math.ceil(n / rows));
+    var bw = Math.floor((avail - gap * (per - 1)) / per);
+    bw = Math.max(50, Math.min(104, bw));
+    return { per: per, bw: bw, gap: gap };
+  }
+
+  function spineArtSrc(type) {
+    var m = state.prefs.spineArt || {};
+    return coverSrc(m[type] || '');
+  }
+
+  function modalScrollTop() {
+    var m = document.querySelector('#modal-root .modal');
+    return m ? m.scrollTop : 0;
+  }
+
+  function restoreModalScroll(y) {
+    var m = document.querySelector('#modal-root .modal');
+    if (m && y) m.scrollTop = y;
+  }
+
+  function openSpineArtPicker() {
+    var types = bookOrderKeys();
+    var rows = types.map(function (k) {
+      var src = spineArtSrc(k);
+      return '<div class="sa-row">' +
+        '<span class="sa-prev" style="--tc:' + TYPES[k].color + '">' +
+        (src ? '<img src="' + esc(src) + '" alt="">' : '<i>' + esc(TYPES[k].label.slice(0, 1)) + '</i>') +
+        '</span>' +
+        '<span class="sa-name">' + esc(TYPES[k].label) + '</span>' +
+        '<label class="btn btn-ghost btn-sm sa-pick">' + (src ? '换图' : '选图') +
+        '<input type="file" accept="image/*" data-spine="' + k + '" hidden></label>' +
+        (src ? '<button class="btn btn-ghost btn-sm" data-action="spine-art-clear" data-value="' + k + '">移除</button>' : '') +
+        '</div>';
+    }).join('');
+    openModal({
+      title: '书脊背景',
+      desc: '给每本册子的书脊换一张图，竖图效果最好；不选就用类型色。图片只存在这台设备。',
+      cls: 'sa-modal',
+      body: '<div class="sa-list">' + rows + '</div>',
+      actions: [{ label: '完成', value: null, variant: 'primary' }]
+    });
+  }
+
+  function handleSpineArtPick(input) {
+    var type = input.dataset ? input.dataset.spine : '';
+    var file = input.files && input.files[0];
+    input.value = '';
+    if (!type || !file) return;
+    if (!/^image\//.test(file.type || '')) { toast('请选择图片文件'); return; }
+    toast('处理中…');
+    var keepY = modalScrollTop();
+    saveImageFile(file, 560).then(function (ref) {
+      state.prefs.spineArt = state.prefs.spineArt || {};
+      var oldRef = state.prefs.spineArt[type];
+      state.prefs.spineArt[type] = ref;
+      purgeImages([oldRef]);
+      savePrefs();
+      save();
+      render({ keepScroll: true });
+      openSpineArtPicker();
+      restoreModalScroll(keepY);
+      toast('书脊背景已更新');
+    }).catch(function () {
+      toast('图片读取失败，换一张试试');
+    });
+  }
+
+  function bookOverviewView() {
+    var types = bookOrderKeys();
+    var html = '<header class="page-head">' +
+      '<div><p class="eyebrow">按类型装订</p><h1 class="page-title">收藏册</h1></div>' +
+      '<div class="head-actions">' +
+      '<button class="icon-btn" data-action="spine-art" aria-label="书脊背景">' + icon('image', 19) + '</button>' +
+      '<button class="icon-btn" data-action="settings" aria-label="设置">' + icon('gear', 20) + '</button>' +
+      '</div></header>';
+
+    html += '<p class="fan-hint">每类是一本册子，点开左右翻；<b>长按册子可拖动排序</b>，右上角可换书脊背景。</p>';
+
+    var lay = shelfLayout(types.length);
+    var tiers = [];
+    for (var ti = 0; ti < types.length; ti += lay.per) tiers.push(types.slice(ti, ti + lay.per));
+
+    html += '<div class="shelf" style="--gap:' + lay.gap + 'px">' + tiers.map(function (tier) {
+      return '<div class="shelf-tier">' + tier.map(function (k) {
+        var list = bookList(k);
+        var years = {};
+        list.forEach(function (r) { var y = yearOf(r); if (y !== 'earlier') years[y] = 1; });
+        var yk = Object.keys(years).sort();
+        var span = yk.length ? yk[0] + (yk.length > 1 ? '–' + yk[yk.length - 1] : '') : '';
+        var cnt = list.length;
+        var bh = Math.round(lay.bw * 2.12 * (0.93 + Math.min(cnt, 10) * 0.007));
+        var art = spineArtSrc(k);
+        return '<button class="shelf-book" data-action="book-open" data-value="' + k + '"' +
+          ' aria-label="' + esc(TYPES[k].label) + '，长按拖动排序"' +
+          ' style="--tc:' + TYPES[k].color + ';--bw:' + lay.bw + 'px;--bh:' + bh + 'px">' +
+          '<span class="spine' + (art ? ' has-art' : '') + '">' +
+          (art ? '<span class="spine-art"><img src="' + esc(art) + '" alt="" loading="lazy"></span>' : '') +
+          '<span class="spine-cap"></span>' +
+          '<span class="spine-icon">' + icon(k, 14) + '</span>' +
+          '<span class="spine-title">' + esc(TYPES[k].label) + '</span>' +
+          '<span class="spine-foot">' +
+          '<span class="spine-count">' + (cnt ? cnt + ' 张' : '空') + '</span>' +
+          (span ? '<span class="spine-years">' + esc(span) + '</span>' : '') +
+          '</span>' +
+          '</span></button>';
+      }).join('') + '</div>';
+    }).join('') + '</div>';
+
+    return html;
+  }
+
+  /* ---------------- 收藏册：长按拖动排序 ---------------- */
+  var shelfDrag = { timer: 0, active: false, el: null, ghost: null, sx: 0, sy: 0, suppress: 0, moved: false, mouse: false };
+
+  function shelfCancelTimer() {
+    if (shelfDrag.timer) { clearTimeout(shelfDrag.timer); shelfDrag.timer = 0; }
+  }
+
+  function shelfStartDrag() {
+    var el = shelfDrag.el;
+    if (!el || !el.isConnected || shelfDrag.active) return;
+    shelfDrag.active = true;
+    shelfDrag.moved = false;
+    shelfDrag.suppress = Date.now() + 700;
+    var r = el.getBoundingClientRect();
+    var g = el.cloneNode(true);
+    g.className = 'shelf-ghost';
+    g.removeAttribute('data-action');
+    g.style.left = r.left + 'px';
+    g.style.top = r.top + 'px';
+    g.style.width = r.width + 'px';
+    g.style.height = r.height + 'px';
+    document.body.appendChild(g);
+    shelfDrag.ghost = g;
+    el.classList.add('is-placeholder');
+    var shelf = el.closest('.shelf');
+    if (shelf) shelf.classList.add('is-dragging');
+    if (navigator.vibrate) { try { navigator.vibrate(9); } catch (e) { /* ignore */ } }
+  }
+
+  function shelfMoveTo(x, y) {
+    var g = shelfDrag.ghost, el = shelfDrag.el;
+    if (!g || !el) return;
+    g.style.transform = 'translate3d(' + (x - shelfDrag.sx) + 'px,' + (y - shelfDrag.sy) + 'px,0) scale(1.045) rotate(-1.2deg)';
+    var under = document.elementFromPoint(x, y);
+    var target = under && under.closest ? under.closest('.shelf-book') : null;
+    if (target && target !== el) {
+      var tr = target.getBoundingClientRect();
+      var after = x > tr.left + tr.width / 2;
+      if (after) target.parentNode.insertBefore(el, target.nextSibling);
+      else target.parentNode.insertBefore(el, target);
+    }
+    if (y < 96) window.scrollBy(0, -9);
+    else if (y > window.innerHeight - 96) window.scrollBy(0, 9);
+  }
+
+  function shelfEndDrag() {
+    var el = shelfDrag.el;
+    shelfCancelTimer();
+    if (!shelfDrag.active) { shelfDrag.el = null; return; }
+    shelfDrag.active = false;
+    if (shelfDrag.ghost) { shelfDrag.ghost.remove(); shelfDrag.ghost = null; }
+    var shelf = el && el.closest ? el.closest('.shelf') : null;
+    if (shelf) shelf.classList.remove('is-dragging');
+    if (el) el.classList.remove('is-placeholder');
+    var moved = shelfDrag.moved;
+    shelfDrag.el = null;
+    shelfDrag.suppress = Date.now() + 600;
+    if (!moved) return;
+    var order = [].map.call(document.querySelectorAll('#view .shelf-book'), function (b) { return b.dataset.value; });
+    if (!order.length) return;
+    state.prefs.bookOrder = order;
+    savePrefs();
+    save();
+    render({ keepScroll: true });
+    toast('顺序已保存');
+  }
+
+  document.addEventListener('pointerdown', function (e) {
+    if (state.route.name !== 'book' || state.route.id) return;
+    var el = e.target && e.target.closest ? e.target.closest('.shelf-book') : null;
+    if (!el || (e.button && e.button > 0)) return;
+    shelfCancelTimer();
+    shelfDrag.el = el;
+    shelfDrag.sx = e.clientX;
+    shelfDrag.sy = e.clientY;
+    shelfDrag.active = false;
+    shelfDrag.moved = false;
+    shelfDrag.mouse = e.pointerType === 'mouse';
+    if (!shelfDrag.mouse) {
+      shelfDrag.timer = setTimeout(function () { shelfStartDrag(); }, 380);
+    }
+  }, true);
+
+  document.addEventListener('pointermove', function (e) {
+    if (!shelfDrag.el) return;
+    var dx = e.clientX - shelfDrag.sx, dy = e.clientY - shelfDrag.sy;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    if (!shelfDrag.active) {
+      if (shelfDrag.timer && dist > 9) { shelfCancelTimer(); shelfDrag.el = null; return; }
+      if (shelfDrag.mouse && dist > 5) shelfStartDrag();
+      if (!shelfDrag.active) return;
+    }
+    if (e.cancelable) e.preventDefault();
+    if (dist > 7) shelfDrag.moved = true;
+    shelfMoveTo(e.clientX, e.clientY);
+  }, { passive: false });
+
+  document.addEventListener('touchmove', function (e) {
+    if (shelfDrag.active && e.cancelable) e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('pointerup', function () {
+    if (shelfDrag.active) shelfEndDrag();
+    else { shelfCancelTimer(); shelfDrag.el = null; }
+  });
+  document.addEventListener('pointercancel', function () {
+    if (shelfDrag.active) shelfEndDrag();
+    else { shelfCancelTimer(); shelfDrag.el = null; }
+  });
+
+  /* 拖完那一下不要顺手把册子点开 */
+  document.addEventListener('click', function (e) {
+    if (Date.now() > shelfDrag.suppress) return;
+    var el = e.target && e.target.closest ? e.target.closest('.shelf-book') : null;
+    if (el) { e.preventDefault(); e.stopPropagation(); }
+  }, true);
+
+  document.addEventListener('contextmenu', function (e) {
+    if (e.target && e.target.closest && e.target.closest('.shelf-book')) e.preventDefault();
+  });
+  document.addEventListener('dragstart', function (e) {
+    if (e.target && e.target.closest && e.target.closest('.shelf-book')) e.preventDefault();
+  });
+
+  var shelfResizeT = 0;
+  window.addEventListener('resize', function () {
+    if (state.route.name !== 'book' || shelfDrag.active) return;
+    clearTimeout(shelfResizeT);
+    shelfResizeT = setTimeout(function () {
+      if (state.route.name === 'book' && !shelfDrag.active) {
+        if (state.route.id) state.book.page = 0;
+        render({ keepScroll: true });
+      }
+    }, 200);
+  });
+
+  /* ---------------- 游戏账号库：视图 ---------------- */
+
+  function daysUntil(dateStr) {
+    if (!dateStr) return -1;
+    var d = new Date(dateStr + 'T00:00:00');
+    var t = new Date();
+    t.setHours(0, 0, 0, 0);
+    return Math.round((d - t) / 86400000);
+  }
+
+  function copyText(text) {
+    if (!text) { toast('没有可复制的内容'); return; }
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); toast('已复制'); }
+      catch (e) { toast('复制失败，请手动选择'); }
+      ta.remove();
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { toast('已复制'); }).catch(fallback);
+    } else fallback();
+  }
+
+  function acctCardHTML(a) {
+    var quick = state.ui.acctQuick === a.id;
+    var tags = [];
+    if (a.membership) {
+      var m = membershipLabel(a.membership);
+      if (a.membershipEnd) {
+        var days = daysUntil(a.membershipEnd);
+        m += ' · ' + a.membershipEnd + (days >= 0 && days <= 30 ? '（剩 ' + days + ' 天）' : '');
+      }
+      tags.push(m);
+    }
+    if (a.twoFA) tags.push('2FA');
+    if (a.status === 'banned') tags.push('已封禁');
+    else if (a.status === 'limited') tags.push('受限');
+
+    var gameChips = a.games.map(function (g, i) {
+      return '<button class="acct-game is-' + g.status + '" data-action="acct-game" data-id="' + a.id + '" data-idx="' + i + '" title="' + gameStatusLabel(g.status) + '">' +
+        (g.status === 'wish' ? '☆ ' : '') + esc(g.name) + '</button>';
+    }).join('');
+
+    return '<div class="acct-card">' +
+      '<div class="acct-head">' +
+      '<span class="acct-badge" style="--cc:' + coverColor(a.name) + '">' + esc(firstChar(a.name)) + '</span>' +
+      '<span class="acct-title"><b>' + esc(a.name) +
+      (a.nickname ? ' <em>' + esc(a.nickname) + '</em>' : '') + '</b>' +
+      '<i>' + esc([a.platform, a.region].filter(Boolean).join(' · ') || '未设平台') + '</i></span>' +
+      '<span class="acct-money">' + moneyText(a.balance, a.currency) + '</span>' +
+      '</div>' +
+      (tags.length
+        ? '<div class="acct-tags">' + tags.map(function (t) {
+          return '<span class="acct-tag">' + esc(t) + '</span>';
+        }).join('') + '</div>'
+        : '') +
+      (a.games.length
+        ? '<div class="acct-games">' + gameChips + '</div>'
+        : '<p class="acct-none">还没登记游戏</p>') +
+      (a.note ? '<p class="acct-note">' + esc(a.note) + '</p>' : '') +
+      '<div class="acct-ops">' +
+      '<button class="mini-btn" data-action="acct-copy" data-id="' + a.id + '">复制</button>' +
+      '<button class="mini-btn" data-action="acct-quick" data-id="' + a.id + '">' + (quick ? '收起' : '＋ 加游戏') + '</button>' +
+      '<button class="mini-btn" data-action="acct-edit" data-id="' + a.id + '">编辑</button>' +
+      '<button class="mini-btn danger" data-action="acct-del" data-id="' + a.id + '">删除</button>' +
+      '</div>' +
+      (quick
+        ? '<div class="acct-quick">' +
+        '<input class="input" id="acct-quick-input" placeholder="游戏名，逗号分隔可一次加多个">' +
+        '<button class="btn btn-primary btn-sm" data-action="acct-add-game" data-id="' + a.id + '">添加</button>' +
+        '</div>'
+        : '') +
+      '</div>';
+  }
+
+  function membershipAlerts() {
+    var out = [];
+    accounts().forEach(function (a) {
+      if (!a.membershipEnd) return;
+      var d = daysUntil(a.membershipEnd);
+      if (d >= 0 && d <= 30) out.push({ a: a, days: d });
+    });
+    return out.sort(function (x, y) { return x.days - y.days; });
+  }
+
+  function accountsView() {
+    var all = accounts();
+
+    var html = '<header class="page-head">' +
+      '<div class="head-left"><button class="icon-btn" data-action="back" aria-label="返回">' + icon('back', 20) + '</button>' +
+      '<div><p class="eyebrow">游戏账号 · ' + all.length + ' 个</p><h1 class="page-title">账号库</h1></div></div>' +
+      '<div class="head-actions">' +
+      '<button class="icon-btn" data-action="acct-new" aria-label="新增账号">' + icon('plus', 19) + '</button>' +
+      '<button class="icon-btn" data-action="go" data-to="accounts/stats" aria-label="账号统计">' + icon('layers', 19) + '</button>' +
+      '<button class="icon-btn" data-action="settings" aria-label="设置">' + icon('gear', 20) + '</button>' +
+      '</div></header>';
+
+    html += '<p class="fan-hint">按「平台 → 区服 → 账号」归档，点标题可以折叠。</p>';
+
+    var alerts = membershipAlerts();
+    if (alerts.length) {
+      html += '<div class="acct-alert">' + alerts.map(function (x) {
+        return '<div class="acct-alert-row">' +
+          '<span class="acct-alert-name">' + esc(x.a.name) + '</span>' +
+          '<span class="acct-alert-text">' + esc(membershipLabel(x.a.membership) || '会员') +
+          (x.days === 0 ? ' 今天到期' : ' 还有 ' + x.days + ' 天到期') + '</span>' +
+          '</div>';
+      }).join('') + '</div>';
+    }
+
+    if (!all.length) {
+      return html + '<div class="empty"><div class="empty-mark">·</div>' +
+        '<p class="empty-title">还没有登记账号</p>' +
+        '<p class="empty-text">把 Switch、Steam 这些账号记进来，余额和游戏一目了然。</p>' +
+        '<button class="btn btn-primary btn-sm" data-action="acct-new">＋ 新增账号</button></div>';
+    }
+
+    /* 平台 → 区服 → 账号，按填写内容自动归档 */
+    var order = [];
+    var pMap = Object.create(null);
+    all.forEach(function (a) {
+      var p = a.platform || '未设平台';
+      var r = a.region || '未设区服';
+      if (!pMap[p]) {
+        pMap[p] = { platform: p, count: 0, games: 0, rMap: Object.create(null), regions: [] };
+        order.push(pMap[p]);
+      }
+      var pg = pMap[p];
+      pg.count++;
+      pg.games += a.games.length;
+      if (!pg.rMap[r]) {
+        pg.rMap[r] = { region: r, list: [] };
+        pg.regions.push(pg.rMap[r]);
+      }
+      pg.rMap[r].list.push(a);
+    });
+    order.sort(function (x, y) {
+      return y.count - x.count || x.platform.localeCompare(y.platform);
+    });
+    order.forEach(function (pg) {
+      pg.regions.sort(function (x, y) {
+        return y.list.length - x.list.length || x.region.localeCompare(y.region);
+      });
+    });
+
+    var fold = state.ui.acctFold || {};
+    var byCur = {};
+    all.forEach(function (a) {
+      var c = a.currency || 'CNY';
+      byCur[c] = (byCur[c] || 0) + (a.balance || 0);
+    });
+    var moneyParts = Object.keys(byCur).map(function (c) { return moneyText(byCur[c], c); });
+    html += '<div class="acct-sum">' +
+      '<span>共 <b>' + all.length + '</b> 个账号</span>' +
+      '<span>登记 <b>' + all.reduce(function (n, a) { return n + a.games.length; }, 0) + '</b> 款游戏</span>' +
+      '<span>余额 <b>' + moneyParts.join(' · ') + '</b></span></div>';
+
+    html += order.map(function (pg) {
+      var pKey = 'p:' + pg.platform;
+      var pFolded = !!fold[pKey];
+      var head = '<button class="acct-group-head" data-action="acct-fold" data-key="' + esc(pKey) + '">' +
+        '<span class="acct-group-icon" style="--cc:' + coverColor(pg.platform) + '">' + esc(firstChar(pg.platform)) + '</span>' +
+        '<span class="acct-group-name">' + esc(pg.platform) + '</span>' +
+        '<span class="acct-group-n">' + pg.count + ' 个号 · ' + pg.games + ' 款</span>' +
+        '<span class="acct-fold-arrow">' + icon('chevron', 14) + '</span>' +
+        '</button>';
+
+      if (pFolded) return '<section class="acct-group is-folded">' + head + '</section>';
+
+      return '<section class="acct-group">' + head +
+        '<div class="acct-group-body">' + pg.regions.map(function (rg) {
+          var rKey = 'r:' + pg.platform + '|' + rg.region;
+          var rFolded = !!fold[rKey];
+          var sub = '<button class="acct-sub-head" data-action="acct-fold" data-key="' + esc(rKey) + '">' +
+            '<span class="acct-sub-dot"></span>' +
+            '<span class="acct-sub-name">' + esc(rg.region) + '</span>' +
+            '<span class="acct-sub-n">' + rg.list.length + ' 个号</span>' +
+            '<span class="acct-fold-arrow small">' + icon('chevron', 12) + '</span>' +
+            '</button>';
+          if (rFolded) return '<div class="acct-sub is-folded">' + sub + '</div>';
+          return '<div class="acct-sub">' + sub +
+            '<div class="acct-list acct-sublist">' + rg.list.map(acctCardHTML).join('') + '</div></div>';
+        }).join('') + '</div></section>';
+    }).join('');
+
+    return html;
+  }
+
+  function acctStatsData(list) {
+    var byCur = {}, byPlat = Object.create(null), byMonth = {}, byYear = {};
+    var totalGames = 0, wishN = 0, ownedN = 0;
+    list.forEach(function (a) {
+      var c = a.currency || 'CNY';
+      var p = a.platform || '未设平台';
+      byPlat[p] = byPlat[p] || { accounts: 0, games: 0, spent: {} };
+      byPlat[p].accounts++;
+      totalGames += a.games.length;
+      a.games.forEach(function (g) {
+        byPlat[p].games++;
+        if (g.status === 'wish') { wishN++; return; }
+        ownedN++;
+        if (!(g.price > 0)) return;
+        byCur[c] = byCur[c] || { spent: 0, priced: 0 };
+        byCur[c].spent += g.price;
+        byCur[c].priced++;
+        byPlat[p].spent[c] = (byPlat[p].spent[c] || 0) + g.price;
+        if (g.buyDate) {
+          var mk = g.buyDate.slice(0, 7), yk = g.buyDate.slice(0, 4);
+          byMonth[mk] = byMonth[mk] || {};
+          byMonth[mk][c] = (byMonth[mk][c] || 0) + g.price;
+          byYear[yk] = byYear[yk] || {};
+          byYear[yk][c] = (byYear[yk][c] || 0) + g.price;
+        }
+      });
+    });
+    return { byCur: byCur, byPlat: byPlat, byMonth: byMonth, byYear: byYear,
+      totalGames: totalGames, wishN: wishN, ownedN: ownedN };
+  }
+
+  function moneyList(obj) {
+    var keys = Object.keys(obj || {}).sort();
+    if (!keys.length) return '—';
+    return keys.map(function (c) { return moneyText(obj[c], c); }).join(' · ');
+  }
+
+  function acctStatsView() {
+    var list = accounts();
+    var d = acctStatsData(list);
+    var html = '<header class="page-head">' +
+      '<div class="head-left"><button class="icon-btn" data-action="go" data-to="accounts" aria-label="返回账号库">' + icon('back', 20) + '</button>' +
+      '<div><p class="eyebrow">' + list.length + ' 个账号</p><h1 class="page-title">账号统计</h1></div></div>' +
+      '<div class="head-actions">' +
+      '<button class="icon-btn" data-action="acct-export" aria-label="导出清单">' + icon('download', 19) + '</button>' +
+      '</div></header>';
+
+    if (!list.length) {
+      return html + '<div class="empty"><div class="empty-mark">·</div>' +
+        '<p class="empty-title">还没有可统计的账号</p>' +
+        '<p class="empty-text">先登记账号和游戏，这里会算出投入和均价。</p></div>';
+    }
+
+    html += '<div class="stat-grid">' +
+      '<div class="stat"><div class="stat-num">' + list.length + '</div><div class="stat-label">账号</div></div>' +
+      '<div class="stat"><div class="stat-num">' + d.totalGames + '</div><div class="stat-label">游戏</div></div>' +
+      '<div class="stat"><div class="stat-num">' + d.ownedN + '</div><div class="stat-label">已购</div></div>' +
+      '<div class="stat"><div class="stat-num">' + d.wishN + '</div><div class="stat-label">愿望单</div></div>' +
+      '</div>';
+
+    html += '<section class="section"><div class="section-head"><h2 class="section-title">按币种投入</h2>' +
+      '<span class="section-note">只算填了价格的已购游戏</span></div>';
+    var curs = Object.keys(d.byCur).sort();
+    if (!curs.length) {
+      html += '<p class="muted" style="margin:4px 0">还没有填过购入价。点开游戏名可以标价格。</p>';
+    } else {
+      html += curs.map(function (c) {
+        var x = d.byCur[c];
+        var avg = x.priced ? x.spent / x.priced : 0;
+        return '<div class="acct-stat-row">' +
+          '<span class="acct-stat-k">' + c + '</span>' +
+          '<span class="acct-stat-v">' + moneyText(x.spent, c) + '</span>' +
+          '<span class="acct-stat-n">' + x.priced + ' 款 · 均价 ' + moneyText(avg, c) + '</span>' +
+          '</div>';
+      }).join('');
+    }
+    html += '</section>';
+
+    html += '<section class="section"><div class="section-head"><h2 class="section-title">按平台</h2></div>' +
+      Object.keys(d.byPlat).sort(function (a, b) { return d.byPlat[b].games - d.byPlat[a].games; }).map(function (p) {
+        var x = d.byPlat[p];
+        return '<div class="acct-stat-row">' +
+          '<span class="acct-stat-k">' + esc(p) + '</span>' +
+          '<span class="acct-stat-v">' + moneyList(x.spent) + '</span>' +
+          '<span class="acct-stat-n">' + x.accounts + ' 个号 · ' + x.games + ' 款</span>' +
+          '</div>';
+      }).join('') + '</section>';
+
+    var years = Object.keys(d.byYear).sort().reverse();
+    if (years.length) {
+      html += '<section class="section"><div class="section-head"><h2 class="section-title">按年支出</h2></div>' +
+        years.map(function (y) {
+          return '<div class="acct-stat-row">' +
+            '<span class="acct-stat-k">' + y + '</span>' +
+            '<span class="acct-stat-v">' + moneyList(d.byYear[y]) + '</span>' +
+            '</div>';
+        }).join('') + '</section>';
+    }
+
+    var months = Object.keys(d.byMonth).sort().reverse().slice(0, 12);
+    if (months.length) {
+      html += '<section class="section"><div class="section-head"><h2 class="section-title">按月支出</h2>' +
+        '<span class="section-note">最近 12 个有购入记录的月份</span></div>' +
+        months.map(function (m) {
+          return '<div class="acct-stat-row">' +
+            '<span class="acct-stat-k">' + m + '</span>' +
+            '<span class="acct-stat-v">' + moneyList(d.byMonth[m]) + '</span>' +
+            '</div>';
+        }).join('') + '</section>';
+    }
+
+    html += '<p class="fan-hint">愿望单不计入投入和均价。没有购入日期的游戏只进总额，不进年月统计。</p>';
+    return html;
+  }
+
+  function exportAccountsCSV() {
+    var list = accounts();
+    if (!list.length) { toast('还没有账号'); return; }
+    function cell(v) {
+      var t = String(v == null ? '' : v);
+      if (/[",\n]/.test(t)) t = '"' + t.replace(/"/g, '""') + '"';
+      return t;
+    }
+    var rows = [['账号名', '昵称', '平台', '区服', '货币', '余额', '会员', '到期日', '二次验证', '账号状态', '注册日期', '好友码', '邮箱', '游戏数', '游戏清单']];
+    list.forEach(function (a) {
+      rows.push([
+        a.name, a.nickname, a.platform, a.region, a.currency, a.balance,
+        membershipLabel(a.membership), a.membershipEnd, a.twoFA, a.status, a.registeredAt,
+        a.friendCode, a.email, a.games.length,
+        a.games.map(function (g) { return g.name + '(' + gameStatusLabel(g.status) + ')'; }).join(' / ')
+      ]);
+    });
+    var csv = rows.map(function (r) { return r.map(cell).join(','); }).join('\r\n');
+    downloadBlob(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }), 'accounts-' + todayISO() + '.csv');
+    toast('已导出 ' + list.length + ' 个账号');
+  }
+
+  function openAccountEditor(id) {
+    var cur = id ? accounts().filter(function (a) { return a.id === id; })[0] : null;
+    var d = cur ? JSON.parse(JSON.stringify(cur)) : {
+      id: uid(), name: '', nickname: '', email: '', twoFA: '', platform: 'Nintendo Switch',
+      region: '国区', currency: 'CNY', friendCode: '', membership: '', membershipEnd: '',
+      registeredAt: '', status: 'normal', games: [], balance: 0, note: ''
+    };
+    var plats = platformOptions();
+    if (d.platform && plats.indexOf(d.platform) < 0) plats.unshift(d.platform);
+
+    var root = document.getElementById('modal-root');
+    root.innerHTML = '<div class="modal-backdrop">' +
+      '<div class="modal acct-modal" role="dialog" aria-modal="true">' +
+      '<h3 class="modal-title">' + (cur ? '编辑账号' : '新增账号') + '</h3>' +
+      '<p class="modal-desc">一台主机或一个平台一条。</p>' +
+      '<div class="acct-form">' +
+      '<p class="acct-sec">基本信息</p>' +
+      '<label class="field"><span class="field-label">账号名</span>' +
+      '<input class="input" id="acct-name" maxlength="40" placeholder="Switch 1 / Steam 主号" value="' + esc(d.name) + '"></label>' +
+      '<div class="row2">' +
+      '<label class="field"><span class="field-label">昵称 / 玩家 ID</span>' +
+      '<input class="input" id="acct-nickname" maxlength="40" placeholder="游戏内昵称" value="' + esc(d.nickname) + '"></label>' +
+      '<label class="field"><span class="field-label">好友码</span>' +
+      '<input class="input" id="acct-friend" maxlength="40" placeholder="SW-1234-5678-9012" value="' + esc(d.friendCode) + '"></label>' +
+      '</div>' +
+      '<div class="field"><span class="field-label">平台</span>' +
+      '<div class="acct-plat-row">' +
+      '<select class="input" id="acct-platform">' + plats.map(function (x) {
+        return '<option value="' + esc(x) + '"' + (d.platform === x ? ' selected' : '') + '>' + esc(x) + '</option>';
+      }).join('') + '</select>' +
+      '<button class="btn btn-ghost btn-sm" data-acct="newplat" type="button">＋ 平台</button>' +
+      '</div>' +
+      '<div class="acct-newplat hidden" id="acct-newplat">' +
+      '<input class="input" id="acct-newplat-input" maxlength="40" placeholder="新平台名">' +
+      '<button class="btn btn-primary btn-sm" data-acct="addplat" type="button">加入</button>' +
+      '</div></div>' +
+      '<div class="row2">' +
+      '<label class="field"><span class="field-label">区服</span>' +
+      '<input class="input" id="acct-region" list="acct-region-list" maxlength="40" placeholder="国区 / 港区 / 日区" value="' + esc(d.region) + '">' +
+      '<datalist id="acct-region-list">' + REGIONS.map(function (r) {
+        return '<option value="' + esc(r.label) + '"></option>';
+      }).join('') + '</datalist></label>' +
+      '<label class="field"><span class="field-label">货币</span>' +
+      '<select class="input" id="acct-currency">' + CURRENCIES.map(function (c) {
+        return '<option value="' + c.code + '"' + (d.currency === c.code ? ' selected' : '') + '>' +
+          c.code + ' · ' + c.label + '</option>';
+      }).join('') + '</select></label>' +
+      '</div>' +
+      '<label class="field"><span class="field-label">余额</span>' +
+      '<input class="input" id="acct-balance" type="number" min="0" step="0.01" placeholder="0.00" value="' + (d.balance || '') + '"></label>' +
+
+      '<p class="acct-sec">账号安全</p>' +
+      '<label class="field"><span class="field-label">登录邮箱</span>' +
+      '<input class="input" id="acct-email" type="email" maxlength="80" placeholder="只记提示，不要填密码" value="' + esc(d.email) + '"></label>' +
+      '<div class="row2">' +
+      '<label class="field"><span class="field-label">二次验证</span>' +
+      '<select class="input" id="acct-2fa">' +
+      [['', '不记'], ['off', '未开启'], ['email', '邮箱验证'], ['phone', '手机验证'], ['app', '验证器 App']].map(function (x) {
+        return '<option value="' + x[0] + '"' + (d.twoFA === x[0] ? ' selected' : '') + '>' + x[1] + '</option>';
+      }).join('') + '</select></label>' +
+      '<label class="field"><span class="field-label">账号状态</span>' +
+      '<select class="input" id="acct-status">' +
+      [['normal', '正常'], ['limited', '受限'], ['banned', '封禁']].map(function (x) {
+        return '<option value="' + x[0] + '"' + (d.status === x[0] ? ' selected' : '') + '>' + x[1] + '</option>';
+      }).join('') + '</select></label>' +
+      '</div>' +
+      '<label class="field"><span class="field-label">注册日期</span>' +
+      '<input class="input" id="acct-registered" type="date" value="' + esc(d.registeredAt) + '"></label>' +
+
+      '<p class="acct-sec">会员</p>' +
+      '<div class="row2">' +
+      '<label class="field"><span class="field-label">会员类型</span>' +
+      '<select class="input" id="acct-membership">' + MEMBERSHIPS.map(function (m) {
+        return '<option value="' + m.key + '"' + (d.membership === m.key ? ' selected' : '') + '>' + esc(m.label) + '</option>';
+      }).join('') + '</select></label>' +
+      '<label class="field"><span class="field-label">到期日</span>' +
+      '<input class="input" id="acct-mem-end" type="date" value="' + esc(d.membershipEnd) + '"></label>' +
+      '</div>' +
+
+      '<p class="acct-sec">游戏与备注</p>' +
+      '<label class="field"><span class="field-label">游戏清单</span>' +
+      '<textarea class="input" id="acct-games" rows="4" placeholder="一行一个，也支持逗号、顿号、分号、竖线分隔">' +
+      esc(d.games.map(function (g) { return g.name; }).join('\n')) + '</textarea></label>' +
+      '<p class="hint" style="margin:-4px 0 0">想标状态、价格或购入日期，保存后点卡片上的游戏名。</p>' +
+      '<label class="field"><span class="field-label">备注</span>' +
+      '<input class="input" id="acct-note" maxlength="200" placeholder="选填" value="' + esc(d.note) + '"></label>' +
+      '</div>' +
+      '<div class="modal-actions">' +
+      '<button class="btn btn-ghost" data-acct="cancel">取消</button>' +
+      '<button class="btn btn-primary" data-acct="save">保存</button>' +
+      '</div></div></div>';
+
+    function close() { root.innerHTML = ''; }
+    root.querySelector('[data-acct="cancel"]').addEventListener('click', close);
+    var backdrop = root.querySelector('.modal-backdrop');
+    backdrop.addEventListener('click', function (e) { if (e.target === backdrop) close(); });
+
+    var platBox = root.querySelector('#acct-newplat');
+    root.querySelector('[data-acct="newplat"]').addEventListener('click', function () {
+      platBox.classList.toggle('hidden');
+      if (!platBox.classList.contains('hidden')) {
+        var inp = root.querySelector('#acct-newplat-input');
+        if (inp) inp.focus();
+      }
+    });
+    root.querySelector('[data-acct="addplat"]').addEventListener('click', function () {
+      var inp = root.querySelector('#acct-newplat-input');
+      var name = String(inp && inp.value || '').trim().slice(0, 40);
+      if (!name) { toast('先填平台名'); return; }
+      var arr = (state.prefs.platforms || []).slice();
+      if (arr.indexOf(name) < 0 && DEFAULT_PLATFORMS.indexOf(name) < 0) arr.push(name);
+      state.prefs.platforms = arr;
+      savePrefs();
+      var sel = root.querySelector('#acct-platform');
+      var opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      sel.appendChild(opt);
+      sel.value = name;
+      if (inp) inp.value = '';
+      platBox.classList.add('hidden');
+      toast('已加入平台列表');
+    });
+
+    var regionEl = root.querySelector('#acct-region');
+    if (regionEl) {
+      var syncCurrency = function () {
+        var rg = REGIONS.filter(function (x) { return x.label === String(regionEl.value || '').trim(); })[0];
+        if (rg) root.querySelector('#acct-currency').value = rg.currency;
+      };
+      regionEl.addEventListener('input', syncCurrency);
+      regionEl.addEventListener('change', syncCurrency);
+    }
+
+    root.querySelector('[data-acct="save"]').addEventListener('click', function () {
+      var name = String(root.querySelector('#acct-name').value || '').trim();
+      if (!name) { toast('先填账号名'); return; }
+      /* 文本域只负责增删游戏名；已有游戏的状态/价格/购入日期原样保留 */
+      var names = parseGameList(root.querySelector('#acct-games').value);
+      var oldMap = {};
+      (d.games || []).forEach(function (g) { oldMap[g.name] = g; });
+      var games = names.map(function (n) {
+        return oldMap[n] || { name: n, status: 'owned', price: 0, buyDate: '' };
+      });
+      var rec = normalizeAccount({
+        id: d.id,
+        name: name,
+        nickname: root.querySelector('#acct-nickname').value,
+        email: root.querySelector('#acct-email').value,
+        twoFA: root.querySelector('#acct-2fa').value,
+        platform: root.querySelector('#acct-platform').value,
+        region: root.querySelector('#acct-region').value,
+        currency: root.querySelector('#acct-currency').value,
+        friendCode: root.querySelector('#acct-friend').value,
+        membership: root.querySelector('#acct-membership').value,
+        membershipEnd: root.querySelector('#acct-mem-end').value,
+        registeredAt: root.querySelector('#acct-registered').value,
+        status: root.querySelector('#acct-status').value,
+        balance: root.querySelector('#acct-balance').value,
+        games: games,
+        note: root.querySelector('#acct-note').value,
+        updatedAt: Date.now()
+      });
+      if (!rec) { toast('保存失败，检查一下账号名'); return; }
+      var arr = accounts().slice();
+      var idx = -1;
+      for (var i = 0; i < arr.length; i++) if (arr[i].id === rec.id) { idx = i; break; }
+      if (idx >= 0) arr[idx] = rec; else arr.unshift(rec);
+      state.prefs.accounts = arr;
+      savePrefs();
+      close();
+      render({ keepScroll: true });
+      toast(cur ? '已保存' : '已添加');
+    });
+  }
+
+  function openGameEditor(accountId, idx) {
+    var a = accounts().filter(function (x) { return x.id === accountId; })[0];
+    if (!a || !a.games[idx]) return;
+    var g = a.games[idx];
+    var st = g.status;
+    var root = document.getElementById('modal-root');
+    root.innerHTML = '<div class="modal-backdrop">' +
+      '<div class="modal acct-modal" role="dialog" aria-modal="true">' +
+      '<h3 class="modal-title">' + esc(g.name) + '</h3>' +
+      '<p class="modal-desc">' + esc(a.name) + ' · 标记状态和购入信息</p>' +
+      '<div class="acct-form">' +
+      '<div class="field"><span class="field-label">状态</span>' +
+      '<div class="game-status-row">' + GAME_STATUS.map(function (x) {
+        return '<button class="game-status' + (st === x.key ? ' is-on' : '') + '" data-gstat="' + x.key + '" type="button">' + x.label + '</button>';
+      }).join('') + '</div></div>' +
+      '<div class="row2">' +
+      '<label class="field"><span class="field-label">购入价（' + esc(a.currency) + '）</span>' +
+      '<input class="input" id="game-price" type="number" min="0" step="0.01" placeholder="0.00" value="' + (g.price || '') + '"></label>' +
+      '<label class="field"><span class="field-label">购入日期</span>' +
+      '<input class="input" id="game-date" type="date" value="' + esc(g.buyDate) + '"></label>' +
+      '</div>' +
+      '</div>' +
+      '<div class="modal-actions">' +
+      '<button class="btn btn-ghost" data-game="cancel">取消</button>' +
+      '<button class="btn btn-danger" data-game="del">移除</button>' +
+      '<button class="btn btn-primary" data-game="save">保存</button>' +
+      '</div></div></div>';
+
+    function close() { root.innerHTML = ''; }
+    root.querySelector('[data-game="cancel"]').addEventListener('click', close);
+    var backdrop = root.querySelector('.modal-backdrop');
+    backdrop.addEventListener('click', function (e) { if (e.target === backdrop) close(); });
+    root.querySelectorAll('[data-gstat]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        st = btn.dataset.gstat;
+        root.querySelectorAll('[data-gstat]').forEach(function (b) {
+          b.classList.toggle('is-on', b.dataset.gstat === st);
+        });
+      });
+    });
+    root.querySelector('[data-game="save"]').addEventListener('click', function () {
+      var arr = accounts().slice();
+      var hit = arr.filter(function (x) { return x.id === accountId; })[0];
+      if (!hit) return;
+      hit.games[idx] = normalizeGame({
+        name: g.name,
+        status: st,
+        price: root.querySelector('#game-price').value,
+        buyDate: root.querySelector('#game-date').value
+      });
+      hit.updatedAt = Date.now();
+      state.prefs.accounts = arr;
+      savePrefs();
+      close();
+      render({ keepScroll: true });
+      toast('已保存');
+    });
+    root.querySelector('[data-game="del"]').addEventListener('click', function () {
+      var arr = accounts().slice();
+      var hit = arr.filter(function (x) { return x.id === accountId; })[0];
+      if (!hit) return;
+      hit.games.splice(idx, 1);
+      hit.updatedAt = Date.now();
+      state.prefs.accounts = arr;
+      savePrefs();
+      close();
+      render({ keepScroll: true });
+      toast('已移除');
+    });
+  }
+
+  /* ---------------- 收藏册：翻书 ---------------- */
+
+  function bookNarrow() {
+    return (window.innerWidth || document.documentElement.clientWidth || 390) < 720;
+  }
+
+  /* 册子设置：每页张数 / 入册顺序 / 风格 / 音效 / 票根，全在收藏册里切换 */
+  function openBookSettings() {
+    var t = state.book.type || typesOn()[0];
+    var cfg = bookCfg();
+    function seg(key, label, opts) {
+      return '<div class="bk-set-row"><span class="bk-set-label">' + label + '</span>' +
+        '<div class="bk-set-opts">' + opts.map(function (o) {
+          return '<button class="bk-set-opt' + (o[2] ? ' is-on' : '') + '" data-action="bk-set" ' +
+            'data-key="' + key + '" data-value="' + o[0] + '">' + o[1] + '</button>';
+        }).join('') + '</div></div>';
+    }
+    var body = '<div class="bk-settings">' +
+      seg('per', '每页张数', [[1, '1 张', cfg.per === 1], [2, '2 张', cfg.per === 2], [4, '4 张', cfg.per === 4]]) +
+      seg('order', '入册顺序', [['seq', '顺序入册', cfg.order === 'seq'], ['new', '最新优先', cfg.order === 'new']]) +
+      seg('album', '册子风格', [
+        ['grid', '方格黑卡', cfg.album === 'grid'], ['dots', '墨点手账', cfg.album === 'dots'],
+        ['astral', '月相星图', cfg.album === 'astral'], ['velvet', '绿绒牌桌', cfg.album === 'velvet']
+      ]) +
+      seg('sound', '入册音效', [['on', '开启', cfg.sound], ['off', '关闭', !cfg.sound]]) +
+      (isTicketType(t)
+        ? seg('ticket', '本册显示', [
+          ['stub', '纪念票根', cfg.ticket[t] === 'stub'],
+          ['card', '标准卡', cfg.ticket[t] === 'card']
+        ])
+        : '') +
+      '</div>';
+    openModal({
+      title: '册子设置',
+      desc: TYPES[t].label + ' · 只影响收藏册的翻阅方式',
+      body: body,
+      actions: [{ label: '完成', value: null, variant: 'primary' }]
+    });
+  }
+
+  function bookCard(r) {
+    var cfg = bookCfg();
+    if (isTicketType(r.type) && cfg.ticket[r.type] === 'stub') {
+      return '<div class="bk-item is-tk" data-action="record-card" data-id="' + r.id + '">' +
+        ticketHTML(r, 'mini') + '</div>';
+    }
+    return '<div class="bk-item" data-action="record-card" data-id="' + r.id + '">' +
+      '<div class="bk-cover" style="--cc:' + coverColor(r.title) + '">' + coverInner(r) + '</div>' +
+      '<div class="bk-info">' +
+      '<b>' + esc(r.title) + '</b>' +
+      '<span>' + esc(cardSub(r)) + '</span>' +
+      '<i>' + (doneISO(r) || '—') + '</i>' +
+      '</div></div>';
+  }
+
+  function bookPageHTML(list, pageNo, per) {
+    var start = pageNo * per;
+    var slice = list.slice(start, start + per);
+    var body;
+    if (!slice.length) {
+      body = '<div class="bk-blank"><span>' + (pageNo === 0 ? '这一册还空着' : '') + '</span></div>';
+    } else {
+      body = '<div class="bk-cards per-' + per + '">' + slice.map(bookCard).join('') + '</div>';
+    }
+    return '<div class="bk-inner">' + body +
+      '<span class="bk-folio">' + (slice.length ? (start + 1) + '–' + (start + slice.length) : '') + '</span></div>';
+  }
+
+  function bookView(type) {
+    if (TYPE_KEYS.indexOf(type) < 0) type = typesOn()[0];
+    if (state.book.type !== type) {
+      state.book.type = type;
+      var pos = (state.prefs.book && state.prefs.book.pos) || {};
+      state.book.page = Number(pos[type]) || 0;
+    }
+    var cfg = bookCfg();
+    var ticketMode = isTicketType(type) && cfg.ticket[type] === 'stub';
+    var per = ticketMode ? 1 : cfg.per;
+    var single = bookNarrow();
+    var perView = single ? per : per * 2;
+    var list = bookList(type);
+    var total = Math.max(1, Math.ceil(list.length / perView));
+    var page = Math.min(Math.max(0, state.book.page || 0), total - 1);
+    state.book.page = page;
+
+    var html = '<header class="page-head bk-head">' +
+      '<div class="head-left"><button class="icon-btn" data-action="go" data-to="book" aria-label="返回收藏册">' + icon('back', 20) + '</button>' +
+      '<div><p class="eyebrow">' + list.length + ' 张 · 第 ' + (page + 1) + ' / ' + total + ' 翻</p>' +
+      '<h1 class="page-title">' + TYPES[type].label + '</h1></div></div>' +
+      '<div class="head-actions">' +
+      '<button class="icon-btn" data-action="bk-settings" aria-label="册子设置">' + icon('gear', 18) + '</button>' +
+      (type === 'game' ? '<button class="icon-btn" data-action="go" data-to="accounts" aria-label="游戏账号库">' + icon('game', 18) + '</button>' : '') +
+      '<button class="icon-btn" data-action="yb-open" data-value="' + type + '" aria-label="年度档案">' + icon('stamp', 19) + '</button>' +
+      '</div></header>';
+
+    html += '<div class="bk-bar"><span>' + (cfg.order === 'new' ? '最新优先' : '顺序入册') +
+      ' · 每页 ' + per + ' 张' + (single ? '' : ' · 双页') + '</span>' +
+      '<span>' + (isTicketType(type) && cfg.ticket[type] === 'stub' ? '票根模式' : '卡片模式') + '</span></div>';
+
+    if (!list.length) {
+      html += '<div class="empty"><div class="empty-mark">·</div>' +
+        '<p class="empty-title">这一册还没有内容</p>' +
+        '<p class="empty-text">记一条' + TYPES[type].label + '，它就会入册。</p>' +
+        '<button class="btn btn-primary btn-sm" data-action="new">＋ 记录一条</button></div>';
+      return html;
+    }
+
+    html += '<div class="bk' + (single ? ' is-single' : '') + '" id="bk" data-album="' + cfg.album + '">' +
+      '<div class="bk-spread">' +
+      '<div class="bk-page left">' + bookPageHTML(list, page * perView, per) + '</div>' +
+      (single ? '' : '<div class="bk-page right">' + bookPageHTML(list, page * perView + per, per) + '</div>') +
+      '<div class="bk-leaf"></div>' +
+      '</div>' +
+      '<button class="bk-mark" data-action="book-jump" aria-label="快速翻阅">' +
+      '<span>' + (page >= total - 1 && total > 1 ? '开头' : '末尾') + '</span></button>' +
+      '<button class="bk-nav prev" data-action="book-prev" aria-label="上一页"' + (page === 0 ? ' disabled' : '') + '>' +
+      icon('chevron-left', 22) + '</button>' +
+      '<button class="bk-nav next" data-action="book-next" aria-label="下一页"' + (page >= total - 1 ? ' disabled' : '') + '>' +
+      icon('chevron-right', 22) + '</button>' +
+      '</div>';
+
+    html += '<div class="book-ins" id="book-ins"></div>';
+    return html;
+  }
+
+  var bookInsTimer = null;
+
+  function bookFlip(dir) {
+    var el = document.getElementById('bk');
+    if (!el || el.dataset.flipping) return;
+    var cfg = bookCfg();
+    var ticketMode = isTicketType(state.book.type) && cfg.ticket[state.book.type] === 'stub';
+    var per = ticketMode ? 1 : cfg.per;
+    var single = bookNarrow();
+    var perView = single ? per : per * 2;
+    var list = bookList(state.book.type);
+    var total = Math.max(1, Math.ceil(list.length / perView));
+    var i = state.book.page;
+    var target = i + dir;
+    if (target < 0 || target >= total) return;
+
+    var leaf = el.querySelector('.bk-leaf');
+    if (!leaf) { state.book.page = target; render({ keepScroll: true }); return; }
+
+    var front, back;
+    if (single) {
+      /* 单页模式：先铺好目标页，再让当前页翻过去 */
+      var leftEl = el.querySelector('.bk-page.left');
+      if (leftEl) leftEl.innerHTML = bookPageHTML(list, target * perView, per);
+      if (dir > 0) {
+        front = bookPageHTML(list, i * perView, per);
+        back = bookPageHTML(list, target * perView, per);
+        leaf.className = 'bk-leaf is-next';
+      } else {
+        front = bookPageHTML(list, target * perView, per);
+        back = bookPageHTML(list, i * perView, per);
+        leaf.className = 'bk-leaf is-prev';
+      }
+    } else if (dir > 0) {
+      front = bookPageHTML(list, i * perView + per, per);
+      back = bookPageHTML(list, (i + 1) * perView, per);
+      leaf.className = 'bk-leaf is-next';
+    } else {
+      front = bookPageHTML(list, (i - 1) * perView + per, per);
+      back = bookPageHTML(list, i * perView, per);
+      leaf.className = 'bk-leaf is-prev';
+    }
+    leaf.innerHTML = '<div class="leaf-face front">' + front + '</div>' +
+      '<div class="leaf-face back">' + back + '</div>';
+    el.dataset.flipping = '1';
+    requestAnimationFrame(function () { leaf.classList.add('go'); });
+    playFlipSound();
+    setTimeout(function () {
+      state.book.page = target;
+      var pos = (state.prefs.book && state.prefs.book.pos) || {};
+      pos[state.book.type] = target;
+      saveBookCfg({ pos: pos });
+      render({ keepScroll: true });
+    }, 640);
+  }
+
+  /* ---------------- 声音（WebAudio 合成，无外部资源） ---------------- */
+
+  var audioCtx = null;
+
+  function tone(freq, dur, gain, type, delay) {
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!audioCtx) audioCtx = new AC();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var t0 = audioCtx.currentTime + (delay || 0);
+      var o = audioCtx.createOscillator();
+      var g = audioCtx.createGain();
+      o.type = type || 'triangle';
+      o.frequency.setValueAtTime(freq, t0);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(gain, t0 + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(t0); o.stop(t0 + dur + 0.02);
+    } catch (e) { /* 静默 */ }
+  }
+
+  function playFlipSound() {
+    if (!bookCfg().sound) return;
+    tone(760, 0.05, 0.035, 'triangle', 0);
+    tone(420, 0.07, 0.028, 'triangle', 0.05);
+  }
+
+  function playSettleSound() {
+    if (!bookCfg().sound) return;
+    tone(150, 0.16, 0.09, 'sine', 0);
+    tone(1500, 0.04, 0.03, 'square', 0.02);
+  }
+
+  /* ---------------- 新卡入册演出 ---------------- */
+
+  var bookInsPlaying = false;
+
+  function bookMaybeInsert() {
+    if (state.route.name !== 'book' || !state.route.id) return;
+    if (bookInsPlaying) return;
+    var r = bookPending();
+    if (!r) return;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      markBookSeen(r.id);
+      return;
+    }
+    var host = document.getElementById('book-ins');
+    if (!host) return;
+    var tier = r.rating >= 9 ? 3 : (r.rating > 8 ? 2 : 1);
+    bookInsPlaying = true;
+    host.className = 'book-ins is-on tier-' + tier;
+    host.innerHTML = '<div class="ins-veil"></div>' +
+      '<div class="ins-stage">' +
+      '<div class="ins-slot"></div>' +
+      '<div class="ins-card" style="--cc:' + coverColor(r.title) + '">' + coverInner(r) + '</div>' +
+      (tier === 1 ? '<span class="ins-zap z1">✦</span><span class="ins-zap z2">✦</span>' : '') +
+      '<span class="ins-cap">' + esc(r.title) + ' · 已入册</span>' +
+      '</div>';
+    clearTimeout(bookInsTimer);
+    bookInsTimer = setTimeout(function () {
+      host.className = 'book-ins';
+      host.innerHTML = '';
+      bookInsPlaying = false;
+      /* 中途离开就不算看过，下次进来重播 */
+      if (state.route.name === 'book' && state.route.id) markBookSeen(r.id);
+    }, 2600);
+    setTimeout(playSettleSound, 1500);
+  }
+
+  /* ---------------- 年度档案（年份跨页） ---------------- */
+
+  function ybGroups(type) {
+    var t = type || state.archive.type || '';
+    var map = {};
+    state.records.forEach(function (r) {
+      if (t && r.type !== t) return;
+      var y = yearOf(r);
+      (map[y] = map[y] || []).push(r);
+    });
+    return Object.keys(map).sort(function (a, b) {
+      if (a === 'earlier') return -1;
+      if (b === 'earlier') return 1;
+      return Number(b) - Number(a);
+    }).map(function (k) { return { key: k, list: map[k] }; });
+  }
+
+  function ybStats(list) {
+    var done = list.filter(function (r) { return r.status === 'done'; });
+    var hours = list.reduce(function (a, r) { return a + (r.hours || 0); }, 0);
+    var rated = list.filter(function (r) { return r.rating > 0; });
+    var avg = rated.length ? rated.reduce(function (a, r) { return a + r.rating; }, 0) / rated.length : 0;
+    var types = {};
+    list.forEach(function (r) { types[r.type] = (types[r.type] || 0) + 1; });
+    var typeN = Object.keys(types).length;
+    var topType = Object.keys(types).sort(function (a, b) { return types[b] - types[a]; })[0] || '';
+    var months = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    list.forEach(function (r) {
+      var d = doneISO(r) || ymd(new Date(r.createdAt));
+      var m = Number(d.slice(5, 7)) - 1;
+      if (m >= 0 && m < 12) months[m]++;
+    });
+    var topM = 0;
+    months.forEach(function (n, i) { if (n > months[topM]) topM = i; });
+    var best = list.filter(function (r) { return r.rating > 0; })
+      .sort(function (a, b) { return b.rating - a.rating || (b.hours || 0) - (a.hours || 0); })[0] || list[0];
+    var longest = list.slice().sort(function (a, b) { return (b.hours || 0) - (a.hours || 0); })[0];
+    return {
+      n: list.length, done: done.length, hours: hours, avg: avg,
+      typeN: typeN, topType: topType, months: months, topM: topM,
+      topMN: months[topM], best: best, longest: longest,
+      rate: list.length ? Math.round(done.length / list.length * 100) : 0
+    };
+  }
+
+  function ybStampCands(list) {
+    var st = ybStats(list);
+    var out = [
+      { k: 'done', label: 'COMPLETED', big: String(st.done), unit: '部完成', color: '#C8102E' },
+      { k: 'hours', label: 'TIME SPENT', big: fmtHours(st.hours), unit: '小时', color: '#1A1A1A' },
+      { k: 'rate', label: 'FINISH RATE', big: st.rate + '%', unit: '完成率', color: '#1F5FBF' },
+      { k: 'types', label: 'VARIETY', big: String(st.typeN), unit: '种类型', color: '#0E7C66' },
+      { k: 'month', label: 'BUSIEST', big: (st.topM + 1) + '月', unit: st.topMN + ' 部', color: '#B26A00' }
+    ];
+    if (st.best) out.push({ k: 'best', label: 'HIGHEST', big: ratingText(st.best.rating), unit: st.best.title, color: '#6B4FBB' });
+    if (st.longest && st.longest.hours) out.push({ k: 'long', label: 'LONGEST', big: fmtHours(st.longest.hours), unit: st.longest.title, color: '#8A3B12' });
+    return out;
+  }
+
+  function ybStampSet(yearKey, list) {
+    var cands = ybStampCands(list);
+    var sk = (state.archive.type || '') + ':' + yearKey;
+    var off = Number((state.prefs.ybStamp || {})[sk]) || 0;
+    var out = [];
+    for (var i = 0; i < 3 && i < cands.length; i++) out.push(cands[(off + i) % cands.length]);
+    return out;
+  }
+
+  function ybYearHTML(g, idx, totalYears) {
+    var st = ybStats(g.list);
+    var stamps = ybStampSet(g.key, g.list);
+    var label = g.key === 'earlier' ? '更早' : g.key;
+
+    var left = '<div class="yb-left">' +
+      (g.key !== 'earlier' ? '<span class="yb-redstamp">YEAR<br>REVIEW</span>' : '') +
+      '<p class="yb-kicker">YEAR IN REVIEW</p>' +
+      '<div class="yb-yearnum">' + esc(label) + '</div>' +
+      '<div class="yb-statgrid">' +
+      '<div><b>' + st.n + '</b><span>收录</span></div>' +
+      '<div><b>' + st.done + '</b><span>完成</span></div>' +
+      '<div><b>' + fmtHours(st.hours) + '</b><span>小时</span></div>' +
+      '<div><b>' + ratingText(st.avg) + '</b><span>均分</span></div>' +
+      '</div>' +
+      '<div class="yb-stamps">' + stamps.map(function (s, i) {
+        return '<button class="yb-seal s' + i + '" data-action="yb-stamp" data-value="' + g.key + '" ' +
+          'style="--sc:' + s.color + '" title="换一枚">' +
+          '<span class="seal-in">' +
+          '<b>' + esc(s.big) + '</b>' +
+          '<i>' + esc(s.unit) + '</i>' +
+          '<em>' + esc(s.label) + '</em>' +
+          '</span></button>';
+      }).join('') + '</div>' +
+      '<p class="yb-hint">点邮票换一枚 · 第 1 名票根盖年度红章</p>' +
+      '</div>';
+
+    var favs = g.list.filter(function (r) { return r.rating > 0; })
+      .sort(function (a, b) { return b.rating - a.rating || (b.hours || 0) - (a.hours || 0); })
+      .slice(0, 3);
+
+    var right = '<div class="yb-right">' +
+      '<p class="yb-kicker">FAVORITES OF THE YEAR</p>' +
+      (favs.length
+        ? '<div class="yb-favs">' + favs.map(function (r, i) {
+          return '<button class="yb-fav r' + (i + 1) + '" data-action="record-card" data-id="' + r.id + '">' +
+            '<span class="yb-fav-rank">0' + (i + 1) + '</span>' +
+            '<span class="yb-fav-art" style="--cc:' + coverColor(r.title) + '">' + coverInner(r) + '</span>' +
+            '<span class="yb-fav-main"><b>' + esc(r.title) + '</b>' +
+            '<i>' + TYPES[r.type].label + ' · ' + (doneISO(r) || '—') + '</i>' +
+            '<span class="yb-fav-foot">' +
+            '<em>' + ratingText(r.rating) + '</em>' +
+            '<span class="yb-pips lv' + Math.min(5, Math.max(1, Math.ceil((r.rating || 0) / 2))) +
+            (r.rating >= 9.5 ? ' is-shiny' : '') + '">' +
+            new Array(Math.min(5, Math.max(1, Math.ceil((r.rating || 0) / 2))) + 1).join('<i></i>') +
+            '</span>' +
+            (!ticketStill(r) ? '<span class="yb-nocover">无封面</span>' : '') +
+            '</span></span>' +
+            (i === 0 ? '<span class="yb-no1">FAVORITE OF THE YEAR · No.1</span>' : '') +
+            '</button>';
+        }).join('') + '</div>'
+        : '<p class="yb-empty">这一年还没有打分的作品。</p>') +
+      '</div>';
+
+    var months = '<section class="yb-sheet">' +
+      '<p class="yb-kicker">MONTH BY MONTH · 月份足迹</p>' +
+      '<div class="yb-months">' + st.months.map(function (n, i) {
+        return '<button class="yb-month' + (n ? ' has' : '') + (state.ui.ybMonth === i + 1 ? ' is-on' : '') +
+          '" data-action="yb-month" data-value="' + (i + 1) + '">' +
+          '<b>' + (i + 1) + '</b>' +
+          '<span class="yb-dots">' + new Array(Math.min(n, 5) + 1).join('<i></i>') + '</span>' +
+          '<em>' + (n ? n : '') + '</em></button>';
+      }).join('') + '</div>' +
+      (function () {
+        if (!state.ui.ybMonth) return '<p class="yb-hint">点一个月，展开当月入册的全部。</p>';
+        var m = state.ui.ybMonth;
+        var items = g.list.filter(function (r) {
+          var d = doneISO(r) || ymd(new Date(r.createdAt));
+          return Number(d.slice(5, 7)) === m;
+        });
+        return '<div class="yb-monthlist"><p class="yb-sub">' + m + ' 月 · ' + items.length + ' 条</p>' +
+          (items.length ? items.map(function (r) {
+            return '<button class="yb-row" data-action="record-card" data-id="' + r.id + '">' +
+              '<span class="yb-row-art" style="--cc:' + coverColor(r.title) + '">' + coverInner(r) + '</span>' +
+              '<span class="yb-row-main"><b>' + esc(r.title) + '</b>' +
+              '<i>' + TYPES[r.type].label + ' · ' + (doneISO(r) || '—') + '</i></span>' +
+              '<em>' + (r.rating ? ratingText(r.rating) : '') + '</em></button>';
+          }).join('') : '<p class="yb-empty">这个月没有记录。</p>') + '</div>';
+      })() +
+      '</section>';
+
+    var IDX = 24;
+    var sortedIdx = g.list.slice().sort(function (a, b) {
+      return (doneISO(b) || '').localeCompare(doneISO(a) || '');
+    });
+    var idxMax = Math.max(1, Math.ceil(sortedIdx.length / IDX));
+    var idxPage = Math.min(Math.max(1, Number(state.ui.ybIndex) || 1), idxMax);
+    var idxSlice = sortedIdx.slice((idxPage - 1) * IDX, idxPage * IDX);
+    var index = '<section class="yb-sheet">' +
+      '<div class="yb-indexhead"><p class="yb-kicker">INDEX · 本年目录</p>' +
+      (idxMax > 1
+        ? '<div class="yb-pager">' +
+        '<button data-action="yb-idx" data-value="' + (idxPage - 1) + '"' + (idxPage <= 1 ? ' disabled' : '') + '>' + icon('chevron-left', 13) + '</button>' +
+        '<span>' + idxPage + ' / ' + idxMax + '</span>' +
+        '<button data-action="yb-idx" data-value="' + (idxPage + 1) + '"' + (idxPage >= idxMax ? ' disabled' : '') + '>' + icon('chevron-right', 13) + '</button>' +
+        '</div>' : '') +
+      '</div>' +
+      '<div class="yb-index">' + idxSlice.map(function (r, i) {
+        return '<button class="yb-row" data-action="record-card" data-id="' + r.id + '">' +
+          '<span class="yb-row-n">' + ((idxPage - 1) * IDX + i + 1) + '</span>' +
+          '<span class="yb-row-main"><b>' + esc(r.title) + '</b>' +
+          '<i>' + TYPES[r.type].label + ' · ' + esc(r.creator || '—') + '</i></span>' +
+          '<span class="yb-row-date">' + (doneISO(r) || '—') + '</span>' +
+          '<em>' + (r.rating ? ratingText(r.rating) : '') + '</em></button>';
+      }).join('') + '</div></section>';
+
+    return '<div class="yb-year" data-year="' + g.key + '">' +
+      '<div class="yb-tabs">' +
+      (idx > 0 ? '<button class="yb-tab-arrow" data-action="yb-year" data-value="' + ybGroups()[idx - 1].key + '" aria-label="上一年">' + icon('chevron-left', 16) + '</button>' : '') +
+      ybGroups().map(function (x, i) {
+        return '<button class="yb-tab' + (i === idx ? ' is-on' : '') + '" data-action="yb-year" data-value="' + x.key + '">' +
+          (x.key === 'earlier' ? '更早' : x.key) + '</button>';
+      }).join('') +
+      (idx < totalYears - 1 ? '<button class="yb-tab-arrow" data-action="yb-year" data-value="' + ybGroups()[idx + 1].key + '" aria-label="下一年">' + icon('chevron-right', 16) + '</button>' : '') +
+      '</div>' +
+      months +
+      '<section class="yb-sheet yb-spread is-live">' + left + right + '</section>' +
+      index +
+      '</div>';
+  }
+
+  /* 本年报告卡：由年度档案生成，可保存成图片 */
+  function ybReportHTML(t, yearKey) {
+    if (!/^\d{4}$/.test(String(yearKey))) return '';   /* 「更早」组不生成年份页/报告卡 */
+    var rs = state.report;
+    var active = !!(rs.data && String(rs.year) === String(yearKey) && rs.type === t);
+    var html = '<section class="yb-sheet yb-report">' +
+      '<div class="yb-indexhead"><p class="yb-kicker">REPORT CARD · 本年报告卡</p>' +
+      '<button class="btn btn-ghost btn-sm" data-action="yb-report">' +
+      (active ? '重新生成' : '生成') + '</button></div>';
+    if (active) {
+      html += '<div class="report-wrap">' + reportCardHTML(rs.data) + '</div>' +
+        '<div class="yb-report-ops"><button class="btn btn-primary btn-sm" data-action="yb-report-save">' +
+        icon('download', 14) + ' 保存图片</button></div>';
+    } else {
+      html += '<p class="yb-hint">生成 ' + esc(String(yearKey)) + ' 年「' + TYPES[t].label +
+        '」的总结卡，可保存成图片。</p>';
+    }
+    return html + '</section>';
+  }
+
+  function saveReportCard() {
+    var d = state.report.data;
+    if (!d) return;
+    toast('正在生成图片…');
+    makePosterCanvas().then(function (cv) {
+      cv.toBlob(function (blob) {
+        if (!blob) { toast('生成失败'); return; }
+        downloadBlob(blob, 'cimeibu-' + d.year + '-' + (d.types || 'report') + '-' + todayISO() + '.png');
+        toast('报告卡已保存');
+      }, 'image/png');
+    }).catch(function () {
+      toast('生成失败，请稍后再试');
+    });
+  }
+
+  function yearbookView(type) {
+    var t = TYPE_KEYS.indexOf(type) >= 0 ? type
+      : (TYPE_KEYS.indexOf(state.archive.type) >= 0 ? state.archive.type : typesOn()[0]);
+    state.archive.type = t;
+    var groups = ybGroups(t);
+
+    var html = '<header class="page-head">' +
+      '<div class="head-left"><button class="icon-btn" data-action="back" aria-label="返回">' + icon('back', 20) + '</button>' +
+      '<div><p class="eyebrow">' + TYPES[t].label + ' · ' + groups.length + ' 个年份</p>' +
+      '<h1 class="page-title">年度档案</h1></div></div>' +
+      '<div class="head-actions">' +
+      '<button class="icon-btn" data-action="settings" aria-label="设置">' + icon('gear', 20) + '</button>' +
+      '</div></header>';
+
+    if (!groups.length) {
+      return html + '<div class="empty"><div class="empty-mark">·</div>' +
+        '<p class="empty-title">' + TYPES[t].label + '还没有可归档的内容</p>' +
+        '<p class="empty-text">记几条' + TYPES[t].label + '，这里会按完成年份排成一本年鉴。</p></div>';
+    }
+
+    var cur = String(state.archive.year || '');
+    var idx = 0;
+    for (var i = 0; i < groups.length; i++) if (groups[i].key === cur) idx = i;
+    state.archive.year = groups[idx].key;
+
+    html += '<p class="fan-hint">只统计「' + TYPES[t].label + '」。每年四页：月份足迹 → 年份与年度最爱 → 本年目录；年份标签可直达。</p>';
+    html += ybYearHTML(groups[idx], idx, groups.length);
+    html += ybReportHTML(t, groups[idx].key);
+    return html;
+  }
+
   function homeView() {
     var recs = state.records;
     var q = state.search.trim();
@@ -2177,7 +3978,7 @@
 
     var html = pageHead(
       now.getFullYear() + '年' + (now.getMonth() + 1) + '月' + now.getDate() + '日 · 周' + '日一二三四五六'[now.getDay()],
-      '次元簿'
+      '次元簿', 'home'
     );
 
     html += '<div class="search">' + icon('search', 18) +
@@ -2214,12 +4015,6 @@
       statCell(ratingText(avg), '平均评分', '') +
       '</div></section>';
 
-    /* 记录天数 + 徽章 */
-    html += daysStripHTML();
-
-    /* 年度档案 */
-    html += yearStackHTML();
-
     /* 年度目标 */
     var goalHTML = goalCardHTML(recs);
     if (goalHTML) html += goalHTML;
@@ -2231,7 +4026,7 @@
       var rest = doing.slice(1);
       html += '<section class="section"><div class="section-head"><h2 class="section-title">正在继续</h2>' +
         '<div class="head-right"><span class="section-note">' + doing.length + ' 条进行中</span>' +
-        '<button class="link-btn" data-action="ics">' + icon('calendar', 14) + ' 追更日历</button></div></div>' +
+        '</div></div>' +
         watchingCard(featured) +
         (rest.length ? '<div class="rail" style="margin-top:12px">' + rest.map(railCard).join('') + '</div>' : '') +
         '</section>';
@@ -2240,10 +4035,7 @@
     /* 更多入口 */
     var moreItems = [
       { to: 'week', ic: 'calendar', label: '本周追更', note: weekSchedule().reduce(function (a2, l) { return a2 + l.length; }, 0) + ' 部' },
-      { to: 'calendar', ic: 'calendar', label: '记录月历', note: '按天看' },
-      { to: 'tags', ic: 'list', label: '题材云', note: tagCounts().length + ' 个' },
       { to: 'authors', ic: 'user', label: '创作者', note: '' },
-      { to: 'archive', ic: 'archive', label: '年度档案', note: '' },
       { to: 'quotes', ic: 'quote', label: '摘抄库', note: allQuotes().length + ' 条' }
     ];
     html += '<section class="section"><div class="section-head"><h2 class="section-title">翻一翻</h2>' +
@@ -2297,69 +4089,8 @@
 
   /* ---------------- 记录天数 / 年度档案 / 徽章 ---------------- */
 
-  function daysStripHTML() {
-    var days = recordDayCount();
-    if (!days) return '';
-    var got = badgeList().filter(function (b) { return b.got; }).length;
-    return '<button class="days-strip" data-action="go" data-to="badges">' +
-      '<span class="days-main">' + icon('calendar', 15) +
-      '记录第 <b>' + days + '</b> 天</span>' +
-      '<span class="days-side">徽章 <b>' + got + '</b> / ' + BADGES.length + icon('chevron', 13) + '</span>' +
-      '</button>';
-  }
 
-  function yearStackHTML() {
-    var recs = state.records;
-    if (!recs.length) return '';
 
-    var map = {};
-    recs.forEach(function (r) {
-      var y = String(new Date(r.createdAt).getFullYear());
-      (map[y] = map[y] || []).push(r);
-    });
-
-    var curY = new Date().getFullYear();
-    var years = Object.keys(map).filter(function (y) {
-      return Number(y) <= curY;
-    }).sort(function (a, b) { return Number(b) - Number(a); });
-    if (years.indexOf(String(curY)) < 0) years.unshift(String(curY));
-
-    var cards = years.map(function (y) {
-      return yearCardHTML(y, map[y] || [], y === String(curY), false);
-    });
-    cards.push(yearCardHTML(String(curY + 1), [], false, true));
-
-    return '<section class="section"><div class="section-head">' +
-      '<h2 class="section-title">年度档案</h2>' +
-      '<div class="head-right"><span class="section-note">' + years.length + ' 个年度</span>' +
-      '<button class="link-btn" data-action="go" data-to="archive">全部归档</button></div></div>' +
-      '<div class="ystack">' + cards.join('') + '</div></section>';
-  }
-
-  function yearCardHTML(year, list, isCurrent, isFuture) {
-    if (isFuture || !list.length) {
-      return '<div class="ycard is-future">' +
-        '<div class="ycard-art"><span class="ycard-lock">' +
-        (isFuture ? '尚未开启' : '等待第一条') + '</span></div>' +
-        '<div class="ycard-foot"><span class="ycard-year">' + year + '</span></div>' +
-        '</div>';
-    }
-
-    var covers = list.slice().sort(function (a, b) { return b.updatedAt - a.updatedAt; }).slice(0, 3);
-    var art = '<div class="ycard-art">' + covers.map(function (r, i) {
-      /* 只有最前面那张显示首字占位，后面几张叠成色块，避免几个字叠在一起糊成一团 */
-      var inner = (i === 0 || r.cover) ? coverInner(r) : '';
-      return '<span class="ycard-cov c' + i + '" style="--cc:' + coverColor(r.title) + '">' +
-        inner + '</span>';
-    }).join('') + '</div>';
-
-    return '<div class="ycard' + (isCurrent ? ' is-current' : '') + '" data-action="open-year" data-value="' + year + '" role="button" tabindex="0">' +
-      art +
-      '<span class="ycard-seal"><b>' + list.length + '</b><i>ARCHIVED</i></span>' +
-      '<div class="ycard-foot"><span class="ycard-year">' + year + '</span>' +
-      (isCurrent ? '<em class="ycard-now">今年</em>' : '') + '</div>' +
-      '</div>';
-  }
 
   var TYPE_BADGE_NAME = {
     novel: ['初读', '书虫', '藏书家'],
@@ -2952,31 +4683,9 @@
     return true;
   }
 
-  function listCount(l) {
-    if (l.kind === 'manual') {
-      return l.ids.filter(function (id) {
-        return state.records.some(function (r) { return r.id === id; });
-      }).length;
-    }
-    return state.records.filter(function (r) { return matchList(r, l); }).length;
-  }
 
   /* 当前列表（不叠加状态/题材等筛选）里的类型分布，用于类型 chip 上的计数 */
-  function typeCountMap() {
-    var map = emptyTypeCounts();
-    var list = activeList();
-    state.records.forEach(function (r) {
-      if (list && !matchList(r, list)) return;
-      if (map[r.type] != null) map[r.type]++;
-    });
-    return map;
-  }
 
-  function typeBaseCount() {
-    var list = activeList();
-    if (!list) return state.records.length;
-    return state.records.filter(function (r) { return matchList(r, list); }).length;
-  }
 
   function sortRecords(arr, mode) {
     var copy = arr.slice();
@@ -2993,219 +4702,9 @@
     return copy;
   }
 
-  function libraryRecords() {
-    var list = activeList();
-    if (list && list.kind === 'manual') {
-      var map = {};
-      state.records.forEach(function (r) { map[r.id] = r; });
-      return list.ids.map(function (id) { return map[id]; })
-        .filter(function (r) { return r && matchFilters(r); });
-    }
-    var arr = state.records.filter(function (r) { return matchFilters(r) && matchList(r, list); });
-    return sortRecords(arr, state.filters.sort);
-  }
 
-  function libraryView() {
-    var f = state.filters;
-    var list = activeList();
-    var rows = libraryRecords();
-    var tags = tagCounts();
-    var years = yearOptions();
-    var selecting = state.ui.selectMode;
-    var selCount = Object.keys(state.ui.selected).filter(function (k) { return state.ui.selected[k]; }).length;
-    var VIEWS = ['grid', 'wall', 'board', 'list'];
-    var viewIdx = VIEWS.indexOf(state.ui.view);
-    var nextView = VIEWS[(viewIdx + 1) % VIEWS.length];
-    var viewLabel = { grid: '封面网格', wall: '封面墙', board: '状态看板', list: '紧凑列表' };
-    var viewIcon = { grid: 'grid', wall: 'wall', board: 'board', list: 'list' };
-
-    var html = '<header class="page-head">' +
-      '<div><p class="eyebrow">共 ' + state.records.length + ' 条' +
-      (list ? ' · ' + esc(list.name) : '') + '</p><h1 class="page-title">收藏</h1></div>' +
-      '<div class="head-actions">' +
-      (state.records.length
-        ? '<button class="icon-btn" data-action="toggle-view" aria-label="切换到' + viewLabel[nextView] + '">' +
-        icon(viewIcon[nextView], 19) + '</button>' : '') +
-      (state.records.length && !selecting
-        ? '<button class="icon-btn" data-action="select-mode" aria-label="批量选择">' + icon('check-square', 19) + '</button>' : '') +
-      '<button class="icon-btn" data-action="settings" aria-label="设置">' + icon('gear', 20) + '</button>' +
-      '</div></header>';
-
-    /* 搜索 */
-    if (state.records.length) {
-      html += '<div class="search lib-search">' + icon('search', 18) +
-        '<input id="lib-search" type="search" placeholder="搜标题、创作者、出版社、标签…" autocomplete="off" value="' + esc(state.libQ || '') + '">' +
-        '<button class="search-clear" data-action="clear-lib-search" aria-label="清空搜索">' + icon('close', 15) + '</button>' +
-        '</div>';
-    }
-
-    /* 列表 chips */
-    html += '<div class="list-bar">' +
-      '<button class="list-chip ' + (state.ui.listId === 'all' ? 'is-on' : '') + '" data-action="pick-list" data-id="all">全部</button>' +
-      state.lists.map(function (l) {
-        return '<button class="list-chip ' + (state.ui.listId === l.id ? 'is-on' : '') + '" data-action="pick-list" data-id="' + l.id + '">' +
-          (l.kind === 'manual' ? icon('list', 12) : icon('sparkle', 12)) +
-          '<span>' + esc(l.name) + '</span><i class="list-count">' + listCount(l) + '</i></button>';
-      }).join('') +
-      '<button class="list-chip add" data-action="new-list">＋ 列表</button>' +
-      (list ? '<button class="list-chip icon" data-action="edit-list" data-id="' + list.id + '" aria-label="编辑列表">' + icon('gear', 12) + '</button>' : '') +
-      '</div>';
-
-    /* 类型 tab：11 种类型分开展示 */
-    var tc = typeCountMap();
-    var baseN = typeBaseCount();
-    var isAll = f.type === 'all';
-    html += '<div class="type-tabs">' +
-      ['all'].concat(typesOn()).map(function (k) {
-        var n = k === 'all' ? baseN : (tc[k] || 0);
-        return '<button class="type-tab ' + (f.type === k ? 'is-active' : '') + (n ? '' : ' is-empty') +
-          '" data-action="filter-type" data-value="' + k + '">' +
-          (k === 'all' ? '' : icon(k, 13)) +
-          '<span>' + (k === 'all' ? '全部' : TYPES[k].label) + '</span><i>' + n + '</i></button>';
-      }).join('') + '</div>';
-
-    /* 选中某个类型才出状态筛选 */
-    if (!isAll) {
-      html += '<div class="seg">' +
-        ['all'].concat(STATUS_KEYS).map(function (k) {
-          var label = k === 'all' ? '全部' : statusLabel(f.type, k);
-          return '<button data-action="filter-status" data-value="' + k + '" class="' + (f.status === k ? 'is-active' : '') + '">' + label + '</button>';
-        }).join('') + '</div>';
-    }
-
-    var hasMeta = false;
-    if (f.meta) {
-      for (var mk in f.meta) {
-        if (f.meta.hasOwnProperty(mk) && f.meta[mk] && f.meta[mk] !== 'all') hasMeta = true;
-      }
-    }
-
-    html += '<div class="filters">' +
-      (isAll ? '' : typeMetaFilters(f.type, f)) +
-      '<select class="select" data-filter="tag" aria-label="按题材筛选">' +
-      '<option value="all">题材：全部</option>' +
-      tags.map(function (t) {
-        return '<option value="' + esc(t[0]) + '"' + (f.tag === t[0] ? ' selected' : '') + '>' + esc(t[0]) + '（' + t[1] + '）</option>';
-      }).join('') + '</select>' +
-      '<select class="select" data-filter="year" aria-label="按年份筛选">' +
-      '<option value="all">年份：全部</option>' +
-      years.map(function (y) {
-        return '<option value="' + esc(y) + '"' + (f.year === y ? ' selected' : '') + '>' + esc(y) + ' 年</option>';
-      }).join('') + '</select>' +
-      (isAll ? '' : '<select class="select" data-filter="release" aria-label="按发布状态筛选">' +
-        (function () {
-          var v = formOf(f.type).verb;
-          return '<option value="all"' + (f.release === 'all' ? ' selected' : '') + '>' + v + '：全部</option>' +
-            '<option value="released"' + (f.release === 'released' ? ' selected' : '') + '>已' + v + '</option>' +
-            '<option value="unreleased"' + (f.release === 'unreleased' ? ' selected' : '') + '>未' + v + '</option>';
-        })() +
-        '</select>') +
-      '<select class="select" data-filter="rating" aria-label="按评分筛选">' +
-      [['all', '评分：全部'], ['high', '9 分以上'], ['8', '8 – 8.9'], ['7', '7 – 7.9'],
-      ['6', '6 – 6.9'], ['low', '6 分以下'], ['none', '未评分']].map(function (o) {
-        return '<option value="' + o[0] + '"' + (f.rating === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
-      }).join('') +
-      '</select>' +
-      (!list || list.kind !== 'manual'
-        ? '<select class="select" data-filter="sort" aria-label="排序">' +
-        [['updated', '最近更新'], ['created-desc', '最近添加'], ['created-asc', '最早添加'],
-        ['release-desc', '发布：新→旧'], ['release-asc', '发布：旧→新'],
-        ['rating', '评分最高'], ['hours', '投入最多']].map(function (o) {
-          return '<option value="' + o[0] + '"' + (f.sort === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
-        }).join('') + '</select>' : '') +
-      '<button class="btn btn-ghost btn-sm" data-action="save-view">存为视图</button>' +
-      ((f.tag !== 'all' || f.year !== 'all' || f.status !== 'all' || f.type !== 'all' || f.release !== 'all' || f.rating !== 'all' || hasMeta)
-        ? '<button class="btn btn-ghost btn-sm" data-action="clear-filters">清除</button>' : '') +
-      '</div>';
-
-    if (selecting) {
-      html += '<div class="select-note">选择模式下点击卡片多选 · 已选 ' + selCount + ' 项</div>';
-    }
-
-    /* 记录多的时候先渲染一批，避免手机上一屏几百张卡 */
-    var PAGE = 60;
-    var sig = [f.type, f.status, f.tag, f.year, f.release, f.rating, f.sort,
-      state.ui.listId, state.libQ || ''].join('|');
-    if (state.ui.limitSig !== sig) { state.ui.limitSig = sig; state.ui.limit = PAGE; }
-    var limit = state.ui.limit || PAGE;
-    var shown = rows;
-    var hasMore = false;
-    if (!selecting && !isAll && state.ui.view !== 'board' && rows.length > limit) {
-      shown = rows.slice(0, limit);
-      hasMore = true;
-    }
-
-    if (!rows.length) {
-      if (!state.records.length) html += emptyLibrary();
-      else if (list && list.kind === 'manual') {
-        html += '<div class="empty"><div class="empty-mark">·</div>' +
-          '<p class="empty-title">这个列表还是空的</p>' +
-          '<p class="empty-text">把想放在一起的作品挑进来。</p>' +
-          '<button class="btn btn-primary btn-sm" data-action="list-pick">＋ 添加作品</button></div>';
-      } else {
-        html += '<div class="empty"><div class="empty-mark">·</div>' +
-          '<p class="empty-title">这个条件下还没有作品</p>' +
-          '<p class="empty-text">换个筛选，或者补一条新的。</p>' +
-          '<button class="btn btn-ghost btn-sm" data-action="clear-filters">清除筛选</button></div>';
-      }
-    } else if (isAll) {
-      html += typeSectionsHTML(rows);
-    } else if (state.ui.view === 'wall') {
-      html += '<div class="wall-cards">' + shown.map(wallCard).join('') + '</div>';
-    } else if (state.ui.view === 'board') {
-      html += boardHTML(rows);
-    } else if (state.ui.view === 'list') {
-      html += listRowsHTML(shown);
-    } else {
-      html += '<div class="grid-cards' + (state.ui.sortMode ? ' is-sorting' : '') + '">' +
-        shown.map(posterCard).join('') + '</div>';
-      if (list && list.kind === 'manual') {
-        html += '<div class="list-tools">' +
-          '<button class="btn btn-ghost btn-sm" data-action="toggle-sort">' + (state.ui.sortMode ? '完成排序' : '拖动排序') + '</button>' +
-          '<button class="btn btn-ghost btn-sm" data-action="list-pick">添加作品</button>' +
-          '</div>';
-      }
-    }
-
-    if (hasMore) {
-      html += '<button class="btn btn-ghost load-more" data-action="load-more">加载更多（还有 ' +
-        (rows.length - shown.length) + ' 条）</button>';
-    }
-
-    html += '<p class="lib-empty hidden" id="lib-empty">没有匹配的记录，换个词试试</p>';
-
-    if (selecting) {
-      html += '<div class="select-bar">' +
-        '<span class="select-count">已选 <b>' + selCount + '</b></span>' +
-        '<button class="btn btn-ghost btn-sm" data-action="select-all">全选</button>' +
-        '<button class="btn btn-ghost btn-sm" data-action="bulk-status">状态</button>' +
-        '<button class="btn btn-ghost btn-sm" data-action="bulk-rating">评分</button>' +
-        '<button class="btn btn-ghost btn-sm" data-action="bulk-tag">标签</button>' +
-        '<button class="btn btn-ghost btn-sm danger" data-action="bulk-delete">删除</button>' +
-        '<button class="btn btn-primary btn-sm" data-action="exit-select">完成</button>' +
-        '</div>';
-    }
-    return html;
-  }
 
   /* 全部视图：按类型分区，每类一排封面 */
-  function typeSectionsHTML(rows) {
-    var groups = {};
-    TYPE_KEYS.forEach(function (k) { groups[k] = []; });
-    rows.forEach(function (r) { (groups[r.type] || groups.novel).push(r); });
-
-    var out = '';
-    typesOn().forEach(function (k) {
-      var list = groups[k];
-      if (!list.length) return;
-      out += '<section class="section"><div class="section-head">' +
-        '<h2 class="section-title">' + TYPES[k].label + '</h2>' +
-        '<div class="head-right"><span class="section-note">' + list.length + ' 条</span>' +
-        '<button class="link-btn" data-action="filter-type" data-value="' + k + '">查看全部</button></div></div>' +
-        '<div class="type-rail">' + list.slice(0, 8).map(posterCard).join('') + '</div></section>';
-    });
-    return out;
-  }
 
   /* 各类型自己的筛选项（取自专属字段里的选项型字段） */
   var TYPE_FILTERS = {
@@ -3289,86 +4788,12 @@
     return fieldOptions(key, false);
   }
 
-  function typeMetaFilters(type, f) {
-    var defs = TYPE_FILTERS[type] || [];
-    var fields = EXTRA_FIELDS[type] || [];
-    return defs.map(function (d) {
-      var fd = null;
-      for (var i = 0; i < fields.length; i++) {
-        if (fields[i].key === d.key) { fd = fields[i]; break; }
-      }
-      if (!fd || !fd.options) return '';
-      var opts = usedOptions(d.key);
-      if (!opts.length) return '';
-      var cur = (f.meta && f.meta[d.key]) || 'all';
-      if (cur !== 'all' && opts.indexOf(cur) < 0) opts.push(cur);
-      return '<select class="select" data-filter="meta" data-key="' + d.key + '" aria-label="按' + esc(fd.label) + '筛选">' +
-        '<option value="all">' + esc(d.label) + '：全部</option>' +
-        opts.map(function (o) {
-          return '<option value="' + esc(o) + '"' + (cur === o ? ' selected' : '') + '>' + esc(o) + '</option>';
-        }).join('') + '</select>';
-    }).join('');
-  }
 
-  function wallCard(r) {
-    var selecting = state.ui.selectMode;
-    var checked = !!state.ui.selected[r.id];
-    return '<div class="wcard' + (selecting ? ' is-selecting' : '') + (checked ? ' is-checked' : '') + '" ' +
-      (selecting ? 'data-action="toggle-select"' : 'data-action="open"') + ' data-id="' + r.id +
-      '" data-hay="' + esc(haystack(r)) + '" role="button" tabindex="0" ' +
-      'style="--cc:' + coverColor(r.title) + '">' +
-      coverInner(r) +
-      '<span class="wcard-tip">' + esc(r.title) + '</span>' +
-      (r.rating ? '<span class="wcard-rate">' + ratingBadge(r.rating) + '</span>' : '') +
-      (selecting ? '<span class="pcard-check">' + (checked ? icon('check', 13) : '') + '</span>' : '') +
-      '</div>';
-  }
 
   /* ---------------- 看板视图（按状态分列） ---------------- */
 
-  function boardHTML(rows) {
-    var groups = {};
-    STATUS_KEYS.forEach(function (k) { groups[k] = []; });
-    rows.forEach(function (r) {
-      (groups[r.status] || groups.wish).push(r);
-    });
 
-    var bt = state.filters.type !== 'all' ? state.filters.type : '';
-    return '<div class="board">' + STATUS_KEYS.map(function (k) {
-      var list = groups[k];
-      return '<section class="board-col" data-s="' + k + '">' +
-        '<header class="board-head"><span class="sdot" data-s="' + k + '"></span>' +
-        '<span class="board-name">' + statusLabel(bt, k) + '</span>' +
-        '<i class="board-n">' + list.length + '</i></header>' +
-        '<div class="board-cards">' +
-        (list.length ? list.map(boardCard).join('') : '<p class="board-empty">还没有</p>') +
-        '</div></section>';
-    }).join('') + '</div>';
-  }
 
-  function boardCard(r) {
-    var selecting = state.ui.selectMode;
-    var checked = !!state.ui.selected[r.id];
-    return '<div class="bcard' + (checked ? ' is-checked' : '') + '" data-action="' +
-      (selecting ? 'toggle-select' : 'open') + '" data-id="' + r.id + '" data-hay="' + esc(haystack(r)) + '" role="button" tabindex="0">' +
-      '<span class="bcard-cover" style="--cc:' + coverColor(r.title) + '">' + coverInner(r) + '</span>' +
-      '<span class="bcard-main">' +
-      '<span class="bcard-title">' + esc(r.title) + '</span>' +
-      '<span class="bcard-sub">' + esc(progressText(r)) + '</span>' +
-      '</span>' +
-      (r.rating ? '<span class="bcard-rate">' + ratingBadge(r.rating) + '</span>' : '') +
-      '</div>';
-  }
-
-  function emptyLibrary() {
-    return '<div class="empty">' +
-      '<div class="empty-mark">次</div>' +
-      '<p class="empty-title">书架还空着</p>' +
-      '<p class="empty-text">记录第一条，之后的每一次回顾都会从这里开始。</p>' +
-      '<button class="btn btn-primary" data-action="new">＋ 记录一条</button>' +
-      '<div style="margin-top:14px"><button class="btn btn-ghost btn-sm" data-action="seed-demo">填充示例数据看看</button></div>' +
-      '</div>';
-  }
 
   function metaLabel(key) {
     for (var t in EXTRA_FIELDS) {
@@ -3421,26 +4846,6 @@
     return bits.filter(Boolean).join(' ').toLowerCase();
   }
 
-  function posterCard(r) {
-    var selecting = state.ui.selectMode;
-    var checked = !!state.ui.selected[r.id];
-    return '<div class="pcard' + (selecting ? ' is-selecting' : '') + (checked ? ' is-checked' : '') + '" ' +
-      (selecting ? 'data-action="toggle-select"' : 'data-action="open"') + ' data-id="' + r.id +
-      '" data-hay="' + esc(haystack(r)) + '" role="button" tabindex="0">' +
-      '<div class="pcard-cover" style="--cc:' + coverColor(r.title) + '">' +
-      coverInner(r) +
-      '<span class="pcard-type">' + TYPES[r.type].label + '</span>' +
-      (selecting ? '<span class="pcard-check">' + (checked ? icon('check', 13) : '') + '</span>' : '') +
-      '</div>' +
-      '<div class="pcard-body">' +
-      '<h3 class="pcard-title">' + esc(r.title) + '</h3>' +
-      (cardSub(r) ? '<p class="pcard-sub">' + esc(cardSub(r)) + '</p>' : '') +
-      '<div class="pcard-meta">' +
-      '<span class="sdot" data-s="' + r.status + '"></span>' +
-      '<span>' + statusLabelFor(r) + '</span>' +
-      '<span class="pcard-rating">' + (r.rating ? ratingBadge(r.rating) : '') + '</span>' +
-      '</div></div></div>';
-  }
 
   /* ---------------- 列表（智能 / 手动） ---------------- */
 
@@ -3586,80 +4991,7 @@
     draw();
   }
 
-  function saveCurrentView() {
-    var f = state.filters;
-    var name = '视图 ' + (state.lists.length + 1);
-    openModal({
-      title: '存为视图',
-      desc: '把当前的状态、类型、题材、年份、发布条件保存成一个命名视图。',
-      body: '<input class="input" id="modal-input" value="' + esc(name) + '" maxlength="30">',
-      actions: [{ label: '取消', value: null, variant: 'ghost' }, { label: '保存', collect: true, variant: 'primary' }]
-    }).then(function (val) {
-      var n = String(val || '').trim();
-      if (!n) return;
-      var item = normalizeList({
-        name: n, kind: 'smart',
-        rules: {
-          status: f.status, type: f.type, year: f.year, minRating: 0,
-          tags: f.tag !== 'all' ? [f.tag] : []
-        },
-        ids: []
-      });
-      state.lists.push(item);
-      state.ui.listId = item.id;
-      save();
-      toast('已保存视图');
-      render();
-    });
-  }
 
-  function openListPicker() {
-    var list = activeList();
-    if (!list || list.kind !== 'manual') return;
-    var root = document.getElementById('modal-root');
-    var picked = {};
-    list.ids.forEach(function (id) { picked[id] = true; });
-
-    function close() { root.innerHTML = ''; document.removeEventListener('keydown', onKey); }
-    function onKey(e) { if (e.key === 'Escape') close(); }
-    document.addEventListener('keydown', onKey);
-
-    var items = state.records.slice().sort(function (a, b) { return b.updatedAt - a.updatedAt; });
-    root.innerHTML = '<div class="modal-backdrop"><div class="modal modal-wide">' +
-      '<h3 class="modal-title">添加到「' + esc(list.name) + '」</h3>' +
-      '<p class="modal-desc">勾选要放进这个列表的作品。</p>' +
-      '<input class="input" id="pick-search" placeholder="搜索标题…" style="margin-bottom:10px">' +
-      '<div class="bulk-list" id="pick-list">' + items.map(function (r) {
-        return '<label class="bulk-item" data-title="' + esc(r.title.toLowerCase()) + '">' +
-          '<input type="checkbox" data-pick="' + r.id + '"' + (picked[r.id] ? ' checked' : '') + '>' +
-          '<span class="bulk-main"><strong>' + esc(r.title) + '</strong>' +
-          '<em>' + TYPES[r.type].label + ' · ' + statusLabelFor(r) + (r.creator ? ' · ' + esc(r.creator) : '') + '</em></span>' +
-          '</label>';
-      }).join('') + '</div>' +
-      '<div class="modal-actions"><button class="btn btn-ghost" data-l="cancel">取消</button>' +
-      '<button class="btn btn-primary" data-l="ok">保存</button></div></div></div>';
-
-    root.querySelector('[data-l="cancel"]').addEventListener('click', close);
-    root.querySelector('[data-l="ok"]').addEventListener('click', function () {
-      var ids = [];
-      root.querySelectorAll('[data-pick]').forEach(function (el) {
-        if (el.checked) ids.push(el.dataset.pick);
-      });
-      list.ids = ids;
-      save();
-      close();
-      toast('列表已更新');
-      render();
-    });
-
-    var search = root.querySelector('#pick-search');
-    search.addEventListener('input', function () {
-      var q = search.value.trim().toLowerCase();
-      root.querySelectorAll('#pick-list .bulk-item').forEach(function (el) {
-        el.classList.toggle('hidden', !!q && el.dataset.title.indexOf(q) < 0);
-      });
-    });
-  }
 
   function enableDragSort() {
     var grid = document.querySelector('.grid-cards.is-sorting');
@@ -3829,27 +5161,6 @@
     });
   }
 
-  function bulkDelete() {
-    var ids = selectedIds();
-    if (!ids.length) { toast('先选几条记录'); return; }
-    openModal({
-      title: '删除 ' + ids.length + ' 条记录？',
-      desc: '这些记录会移到回收站，' + TRASH_DAYS + ' 天内可以恢复。',
-      actions: [{ label: '取消', value: null, variant: 'ghost' }, { label: '移到回收站', value: 'ok', variant: 'danger' }]
-    }).then(function (v) {
-      if (v !== 'ok') return;
-      var moved = state.records.filter(function (r) { return ids.indexOf(r.id) >= 0; });
-      state.records = state.records.filter(function (r) { return ids.indexOf(r.id) < 0; });
-      trashAdd(moved);
-      state.lists.forEach(function (l) {
-        l.ids = l.ids.filter(function (id) { return ids.indexOf(id) < 0; });
-      });
-      save();
-      exitSelect();
-      toast('已删除 ' + ids.length + ' 条');
-      render();
-    });
-  }
 
   function exitSelect() {
     state.ui.selectMode = false;
@@ -3861,12 +5172,12 @@
   function initDraft(id) {
     if (id) {
       var r = state.records.filter(function (x) { return x.id === id; })[0];
-      if (!r) { location.hash = '#/library'; return; }
+      if (!r) { location.hash = '#/book'; return; }
       state.draft = JSON.parse(JSON.stringify(r));
       try {
         state.readonly = sessionStorage.getItem('shilu.ro.v1') === String(id);
       } catch (e) { state.readonly = false; }
-      tryRestoreStash(id);
+      if (!state.readonly) tryRestoreStash(id);
     } else {
       state.draft = {
         id: '', type: 'novel', title: '', originalTitle: '', aliases: [],
@@ -4031,17 +5342,6 @@
     html += scoreField
       ? '<div class="row2">' + scoreField + recField + '</div>'
       : recField;
-    html += '<label class="field"><span class="field-label">分类</span>' +
-      '<select class="input" data-field="category">' +
-      '<option value="">不分类</option>' +
-      (function () {
-        var opts = state.categories.slice();
-        if (d.category && opts.indexOf(d.category) < 0) opts.push(d.category);
-        return opts.map(function (c) {
-          return '<option value="' + esc(c) + '"' + (d.category === c ? ' selected' : '') + '>' + esc(c) + '</option>';
-        }).join('');
-      })() + '</select></label>';
-
     /* 标签 */
     var custom = d.tags.filter(function (t) { return PRESET_TAGS.indexOf(t) < 0; });
     html += '<div class="field"><span class="field-label">题材标签</span>' +
@@ -4098,16 +5398,6 @@
     if (!isNew && d.logs && d.logs.length) {
       html += '<section class="block"><p class="block-title">操作历史</p>' +
         '<div class="log-list">' + logListHTML(d.logs) + '</div></section>';
-    }
-
-    /* ISBN 查询（只有书刊类需要） */
-    if (['novel', 'comic', 'magazine'].indexOf(type) >= 0) {
-      html += '<section class="block"><p class="block-title">按 ISBN 自动填</p>' +
-        '<div class="isbn-row">' +
-        '<input class="input" id="isbn-input" placeholder="978…（10 或 13 位）" inputmode="numeric">' +
-        '<button class="btn btn-ghost btn-sm" data-action="isbn">查询</button>' +
-        '</div>' +
-        '<p class="hint">联网查书名、作者、出版社、页数；已经填过的字段不会被覆盖。</p></section>';
     }
 
     /* 封面与相册 */
@@ -4456,6 +5746,21 @@
 
   var META_GROUPS = { pub: '作品信息', prod: '制作信息', mine: '我的信息' };
 
+  /* 每类常填的字段直接显示，其余收进「更多信息」。数据字段一个不少，只是默认折叠。 */
+  var CORE_META = {
+    novel: ['publisher', 'series', 'translator', 'pages', 'binding', 'price', 'isbn', 'language', 'format'],
+    comic: ['magazineName', 'publisher', 'volumes', 'epCount', 'binding', 'isbn', 'translator', 'language', 'serialStatus'],
+    anime: ['studio', 'originalWork', 'season', 'airWeekday', 'epCount', 'runtime', 'platform', 'composer', 'cast', 'ageRating'],
+    tv: ['channel', 'seasons', 'epCount', 'runtime', 'country', 'language', 'screenwriter', 'platform', 'cast'],
+    movie: ['runtime', 'country', 'language', 'ageRating', 'premiere', 'screeningFormat', 'cinema', 'watchPlace', 'composer', 'cast'],
+    variety: ['channel', 'epCount', 'runtime', 'seasonNo', 'airTime', 'showFormat', 'chiefDirector', 'cast'],
+    drama: ['epCount', 'runtime', 'updateCycle', 'originalWork', 'platform', 'cv', 'composer', 'themeSong'],
+    stage: ['venue', 'shows', 'runtime', 'playType', 'seat', 'ticketPrice', 'screenwriter', 'composer', 'cast'],
+    game: ['platform', 'gameType', 'franchise', 'mcScore', 'playTime', 'completion', 'publisher', 'ageRating', 'chineseSupport'],
+    music: ['albumType', 'genre', 'tracks', 'medium', 'publisher', 'releaseCountry', 'composer', 'platform', 'version'],
+    magazine: ['serialStatus', 'issn', 'organizer', 'pages', 'issueCount', 'subPrice', 'subscribeFrom', 'language']
+  };
+
   function extrasFieldsHTML(d) {
     var raw = EXTRA_FIELDS[d.type] || [];
     if (!raw.length) return '';
@@ -4463,50 +5768,67 @@
     var bucket = { pub: [], prod: [], mine: [] };
     raw.forEach(function (f) { (bucket[f.g] || bucket.pub).push(f); });
     var list = bucket.pub.concat(bucket.prod, bucket.mine);
+    var coreKeys = CORE_META[d.type] || [];
+    var core = list.filter(function (f) { return coreKeys.indexOf(f.key) >= 0; });
+    var rest = list.filter(function (f) { return coreKeys.indexOf(f.key) < 0; });
     var m = d.meta || (d.meta = {});
-    var body = '';
-    var pairs = [];
-    var curG = '';
 
-    function flush() {
-      for (var i = 0; i < pairs.length; i += 2) {
-        body += '<div class="row2">' + pairs[i] + (pairs[i + 1] || '<span></span>') + '</div>';
+    function renderFields(fields) {
+      var body = '';
+      var pairs = [];
+      var curG = '';
+      function flush() {
+        for (var i = 0; i < pairs.length; i += 2) {
+          body += '<div class="row2">' + pairs[i] + (pairs[i + 1] || '<span></span>') + '</div>';
+        }
+        pairs = [];
       }
-      pairs = [];
+      fields.forEach(function (f) {
+        var val = m[f.key] == null ? '' : String(m[f.key]);
+        /* 详情页只显示填过的，避免一屏空输入框 */
+        if (state.readonly && !val) return;
+
+        var g = f.g || 'pub';
+        if (g !== curG) {
+          flush();
+          body += '<p class="meta-group">' + esc(META_GROUPS[g] || '') + '</p>';
+          curG = g;
+        }
+
+        var input;
+        if (f.options) {
+          var opts = fieldOptions(f.key, true);
+          if (val && opts.indexOf(val) < 0) opts.unshift(val);
+          input = '<select class="input" data-field="meta.' + f.key + '">' +
+            '<option value="">不指定</option>' +
+            opts.map(function (o) {
+              return '<option value="' + esc(o) + '"' + (val === o ? ' selected' : '') + '>' + esc(o) + '</option>';
+            }).join('') + '</select>';
+        } else if (f.date) {
+          input = '<input class="input" type="date" data-field="meta.' + f.key + '" value="' + esc(val) + '">';
+        } else {
+          input = '<input class="input" ' + (f.numeric ? 'type="number" min="0" ' : '') +
+            'data-field="meta.' + f.key + '" value="' + esc(val) + '" placeholder="' + esc(f.placeholder || '选填') + '">';
+        }
+
+        var cell = '<label class="field"><span class="field-label">' + esc(f.label) + '</span>' + input + '</label>';
+        if (f.wide) { flush(); body += cell; } else { pairs.push(cell); }
+      });
+      flush();
+      return body;
     }
 
-    list.forEach(function (f) {
-      var val = m[f.key] == null ? '' : String(m[f.key]);
-      /* 详情页只显示填过的，避免一屏空输入框 */
-      if (state.readonly && !val) return;
-
-      var g = f.g || 'pub';
-      if (g !== curG) {
-        flush();
-        body += '<p class="meta-group">' + esc(META_GROUPS[g] || '') + '</p>';
-        curG = g;
+    var body = renderFields(core);
+    if (rest.length) {
+      var used = rest.filter(function (f) { return !!m[f.key]; }).length;
+      /* 只读态且一个都没填，就不出现空的折叠块 */
+      if (!state.readonly || used) {
+        body += '<details class="more-fields"' + (used ? ' open' : '') + '>' +
+          '<summary>更多信息 <i>' + rest.length + ' 项' + (used ? ' · 已填 ' + used : '') + '</i></summary>' +
+          '<div class="more-fields-body">' + renderFields(rest) + '</div>' +
+          '</details>';
       }
-
-      var input;
-      if (f.options) {
-        var opts = fieldOptions(f.key, true);
-        if (val && opts.indexOf(val) < 0) opts.unshift(val);
-        input = '<select class="input" data-field="meta.' + f.key + '">' +
-          '<option value="">不指定</option>' +
-          opts.map(function (o) {
-            return '<option value="' + esc(o) + '"' + (val === o ? ' selected' : '') + '>' + esc(o) + '</option>';
-          }).join('') + '</select>';
-      } else if (f.date) {
-        input = '<input class="input" type="date" data-field="meta.' + f.key + '" value="' + esc(val) + '">';
-      } else {
-        input = '<input class="input" ' + (f.numeric ? 'type="number" min="0" ' : '') +
-          'data-field="meta.' + f.key + '" value="' + esc(val) + '" placeholder="' + esc(f.placeholder || '选填') + '">';
-      }
-
-      var cell = '<label class="field"><span class="field-label">' + esc(f.label) + '</span>' + input + '</label>';
-      if (f.wide) { flush(); body += cell; } else { pairs.push(cell); }
-    });
-    flush();
+    }
 
     if (!body) return customFieldsHTML(d);
     return '<section class="block"><p class="block-title">' + TYPES[d.type].label + '信息</p>' +
@@ -4566,6 +5888,7 @@
   }
 
   function saveDraft() {
+    if (state.readonly) return;
     var d = state.draft;
     if (!d) return;
     var title = String(d.title || '').trim();
@@ -4677,8 +6000,9 @@
     }
     save();
     state.draft = null;
+    if (prev) purgeImages([prev]);
     toast(isNew ? '已收录「' + rec.title + '」' : '已保存');
-    location.hash = state.returnTo || '#/library';
+    location.hash = state.returnTo || '#/book';
   }
 
   /* ---------------- 时间线 ---------------- */
@@ -4893,6 +6217,15 @@
       }
     });
 
+    /* 会员到期日单独标在日历上，不受类型筛选影响 */
+    var memMap = {};
+    accounts().forEach(function (a) {
+      if (!a.membershipEnd) return;
+      if (a.membershipEnd.slice(0, 7) !== y + '-' + pad(m + 1)) return;
+      var mk = Number(a.membershipEnd.slice(8, 10));
+      (memMap[mk] = memMap[mk] || []).push(a);
+    });
+
     var selected = t.selected;
     if (!selected || selected.indexOf(y + '-' + pad(m + 1)) !== 0) {
       var dayKeys = Object.keys(map).map(Number).sort(function (a, b) { return b - a; });
@@ -4911,12 +6244,21 @@
       if (map[d]) cls += ' has-rec';
       if (ds === todayStr) cls += ' is-today';
       if (ds === selected) cls += ' is-selected';
-      cells += '<button class="' + cls + '" data-action="cal-day" data-date="' + ds + '">' + d + '</button>';
+      cells += '<button class="' + cls + '" data-action="cal-day" data-date="' + ds + '">' +
+        '<span class="cal-num">' + d + '</span>' +
+        (map[d]
+          ? '<span class="cal-covers">' + map[d].slice(0, 2).map(function (r) {
+            return '<span class="cal-cv" style="--cc:' + coverColor(r.title) + '">' + coverInner(r) + '</span>';
+          }).join('') +
+          (map[d].length > 2 ? '<i class="cal-more">+' + (map[d].length - 2) + '</i>' : '') + '</span>'
+          : '') +
+        (memMap[d] ? '<span class="cal-mem" aria-label="会员到期"></span>' : '') + '</button>';
     }
 
     var selList = selected ? pool.filter(function (r) {
       return ymd(new Date(r.createdAt)) === selected;
     }) : [];
+    var selMem = selected ? (memMap[Number(selected.slice(8, 10))] || []) : [];
 
     return '<div class="seg seg-type cal-filter">' +
       ['all'].concat(TYPE_KEYS).map(function (k) {
@@ -4933,12 +6275,17 @@
       ['日', '一', '二', '三', '四', '五', '六'].map(function (w) { return '<div class="cal-wd">' + w + '</div>'; }).join('') +
       cells +
       '</div>' +
-      '<div class="cal-foot"><span>' + Object.keys(map).reduce(function (s, k) { return s + map[k].length; }, 0) + ' 条记录</span>' +
-      '<button class="link-btn" data-action="cal-export">' + icon('download', 13) + ' 导出本月日历</button></div>' +
+      '<div class="cal-foot"><span>' + Object.keys(map).reduce(function (s, k) { return s + map[k].length; }, 0) + ' 条记录</span></div>' +
       '</div>' +
       '<div class="day-panel">' +
       (selected
         ? '<h3 class="day-title">' + selected.split('-')[0] + ' 年 ' + Number(selected.split('-')[1]) + ' 月 ' + Number(selected.split('-')[2]) + ' 日</h3>' +
+        (selMem.length
+          ? '<div class="cal-mem-row">' + selMem.map(function (a) {
+            return '<span class="cal-mem-item">' + esc(a.name) + ' · ' +
+              esc(membershipLabel(a.membership) || '会员') + ' 到期</span>';
+          }).join('') + '</div>'
+          : '') +
         (selList.length
           ? '<div class="tl-list">' + selList.map(timelineItem).join('') + '</div>'
           : '<p class="day-empty">这一天没有记录。</p>')
@@ -4946,44 +6293,6 @@
       '</div>';
   }
 
-  function exportMonthICS() {
-    var y = state.timeline.y, m = state.timeline.m;
-    var list = state.records.filter(function (r) {
-      var d = new Date(r.createdAt);
-      if (d.getFullYear() !== y || d.getMonth() !== m) return false;
-      if (state.timeline.type !== 'all' && r.type !== state.timeline.type) return false;
-      return true;
-    });
-    if (!list.length) { toast('这个月没有可导出的记录'); return; }
-
-    var lines = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//ShiLu//Diary//CN',
-      'CALSCALE:GREGORIAN',
-      'METHOD:PUBLISH',
-      'X-WR-CALNAME:' + icsEscape('次元簿 · ' + y + ' 年 ' + (m + 1) + ' 月')
-    ];
-    list.forEach(function (r) {
-      var d = new Date(r.createdAt);
-      var ds = d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate());
-      var nd = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
-      var next = nd.getFullYear() + pad(nd.getMonth() + 1) + pad(nd.getDate());
-      lines.push('BEGIN:VEVENT');
-      lines.push('UID:' + r.id + '-diary@shilu.local');
-      lines.push('DTSTAMP:' + icsUTC(new Date()));
-      lines.push('DTSTART;VALUE=DATE:' + ds);
-      lines.push('DTEND;VALUE=DATE:' + next);
-      lines.push('SUMMARY:' + icsEscape('《' + r.title + '》' + (r.status === 'done' ? '已完成' : '收录')));
-      lines.push('DESCRIPTION:' + icsEscape([TYPES[r.type].label, r.creator, r.rating ? ratingText(r.rating) + ' 分' : ''].filter(Boolean).join(' · ')));
-      lines.push('END:VEVENT');
-    });
-    lines.push('END:VCALENDAR');
-
-    var blob = new Blob([lines.map(foldICS).join('\r\n') + '\r\n'], { type: 'text/calendar;charset=utf-8' });
-    downloadBlob(blob, 'shilu-' + y + '-' + pad(m + 1) + '.ics');
-    toast('已导出 ' + list.length + ' 条记录');
-  }
 
   /* ---------------- 数据 ---------------- */
 
@@ -5395,16 +6704,6 @@
     /* 细分洞察 */
     html += insightHTML(recs);
 
-    /* 报告 */
-    html += reportSection();
-
-    /* 更多回顾 */
-    html += '<div class="more-row">' +
-      '<button class="more-btn" data-action="go" data-to="quotes">' + icon('quote', 18) + '<span>摘抄库</span></button>' +
-      '<button class="more-btn" data-action="go" data-to="authors">' + icon('user', 18) + '<span>创作者</span></button>' +
-      '<button class="more-btn" data-action="go" data-to="archive">' + icon('archive', 18) + '<span>归档</span></button>' +
-      '<button class="more-btn" data-action="go" data-to="badges">' + icon('trophy', 18) + '<span>徽章</span></button>' +
-      '</div>';
     return html;
   }
 
@@ -5436,51 +6735,18 @@
       }).join('') + '</div></div>';
   }
 
-  function reportSection() {
-    var rs = state.report;
-    var years = createdYears();
-    var curY = new Date().getFullYear();
-    if (years.indexOf(String(curY)) < 0) years.unshift(String(curY));
-    if (!rs.year) rs.year = curY;
-
-    var html = '<div class="chart-card"><div class="chart-head"><h3 class="chart-title">生成一份报告</h3>' +
-      '<span class="chart-note">可保存为图片</span></div>' +
-      '<div class="report-form">' +
-      '<select class="select" data-report="year">' + years.map(function (y) {
-        return '<option value="' + y + '"' + (String(rs.year) === String(y) ? ' selected' : '') + '>' + y + ' 年</option>';
-      }).join('') + '</select>' +
-      '<select class="select" data-report="month">' +
-      '<option value="all"' + (rs.month === 'all' ? ' selected' : '') + '>全年</option>' +
-      Array.apply(null, { length: 12 }).map(function (_, i) {
-        var m = i + 1;
-        return '<option value="' + m + '"' + (String(rs.month) === String(m) ? ' selected' : '') + '>' + m + ' 月</option>';
-      }).join('') + '</select>' +
-      '<select class="select" data-report="type">' +
-      '<option value="all"' + (rs.type === 'all' ? ' selected' : '') + '>全部类型</option>' +
-      TYPE_KEYS.map(function (k) {
-        return '<option value="' + k + '"' + (rs.type === k ? ' selected' : '') + '>' + TYPES[k].label + '</option>';
-      }).join('') + '</select>' +
-      '<button class="btn btn-primary btn-sm" data-action="gen-report">生成报告</button>' +
-      '</div></div>';
-
-    if (rs.data) {
-      html += '<div class="report-wrap">' + reportCardHTML(rs.data);
-      html += '<div class="poster-actions">' +
-        '<button class="btn btn-ghost btn-sm" data-action="save-poster">' + icon('download', 15) + ' 保存图片</button>' +
-        '<button class="btn btn-ghost btn-sm" data-action="share-poster">' + icon('share', 15) + ' 分享</button>' +
-        '</div></div>';
-    }
-    return html;
-  }
 
   function buildReport(year, month, type) {
+    /* 与年度档案同口径：按完成日期归档，没填完成日期的按收录日 */
     var list = state.records.filter(function (r) {
-      var d = new Date(r.createdAt);
-      if (d.getFullYear() !== Number(year)) return false;
-      if (month !== 'all' && d.getMonth() + 1 !== Number(month)) return false;
       if (type !== 'all' && r.type !== type) return false;
+      var d = doneISO(r) || ymd(new Date(r.createdAt));
+      if (d.slice(0, 4) !== String(year)) return false;
+      if (month !== 'all' && Number(d.slice(5, 7)) !== Number(month)) return false;
       return true;
-    }).sort(function (a, b) { return a.createdAt - b.createdAt; });
+    }).sort(function (a, b) {
+      return (doneISO(a) || ymd(new Date(a.createdAt))).localeCompare(doneISO(b) || ymd(new Date(b.createdAt)));
+    });
 
     var done = list.filter(function (r) { return r.status === 'done'; });
     var hours = list.reduce(function (s, r) { return s + (r.hours || 0); }, 0);
@@ -5793,182 +7059,8 @@
     return 'shilu-' + d.year + (d.month === 'all' ? '-year' : '-' + pad(Number(d.month))) + '-' + todayISO() + '.png';
   }
 
-  function savePoster() {
-    toast('正在生成图片…');
-    makePosterCanvas().then(function (canvas) {
-      canvas.toBlob(function (blob) {
-        if (!blob) { toast('生成失败，请重试'); return; }
-        downloadBlob(blob, posterName());
-        toast('图片已保存');
-      }, 'image/png');
-    }).catch(function () {
-      toast('生成失败，请重试');
-    });
-  }
 
-  function sharePoster() {
-    toast('正在生成图片…');
-    makePosterCanvas().then(function (canvas) {
-      canvas.toBlob(function (blob) {
-        if (!blob) { toast('生成失败，请重试'); return; }
-        var file = new File([blob], posterName(), { type: 'image/png' });
-        if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
-          navigator.share({ files: [file], title: '我的文娱报告' }).catch(function () { });
-        } else {
-          downloadBlob(blob, posterName());
-          toast('当前设备不支持直接分享，已保存图片');
-        }
-      }, 'image/png');
-    }).catch(function () {
-      toast('生成失败，请重试');
-    });
-  }
 
-  /* ---------------- 追更日历（.ics） ---------------- */
-
-  var WEEK_NAMES = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-
-  function icsEscape(s) {
-    return String(s == null ? '' : s)
-      .replace(/\\/g, '\\\\')
-      .replace(/;/g, '\\;')
-      .replace(/,/g, '\\,')
-      .replace(/\r?\n/g, '\\n');
-  }
-
-  function foldICS(line) {
-    var chars = Array.from(String(line));
-    var encoder = new TextEncoder();
-    var parts = [];
-    var cur = '';
-    var bytes = 0;
-    for (var i = 0; i < chars.length; i++) {
-      var ch = chars[i];
-      var b = encoder.encode(ch).length;
-      if (bytes + b > 70 && cur) {
-        parts.push(cur);
-        cur = ' ';
-        bytes = 1;
-      }
-      cur += ch;
-      bytes += b;
-    }
-    parts.push(cur);
-    return parts.join('\r\n');
-  }
-
-  function icsLocal(d) {
-    return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + 'T' +
-      pad(d.getHours()) + pad(d.getMinutes()) + '00';
-  }
-
-  function icsUTC(d) {
-    return d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()) + 'T' +
-      pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds()) + 'Z';
-  }
-
-  function nextWeekday(day, hour) {
-    var now = new Date();
-    var d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour || 20, 0, 0, 0);
-    var diff = (Number(day) - d.getDay() + 7) % 7;
-    d.setDate(d.getDate() + diff);
-    if (d.getTime() <= now.getTime()) d.setDate(d.getDate() + 7);
-    return d;
-  }
-
-  function buildICS(records) {
-    var tz = 'Asia/Shanghai';
-    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || tz; } catch (e) { /* ignore */ }
-
-    var lines = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//ShiLu//ZhuiGeng//CN',
-      'CALSCALE:GREGORIAN',
-      'METHOD:PUBLISH',
-      'X-WR-CALNAME:' + icsEscape('次元簿 · 追更提醒'),
-      'X-WR-TIMEZONE:' + tz
-    ];
-
-    records.forEach(function (r) {
-      var start = nextWeekday(r.updateDay, 20);
-      lines.push('BEGIN:VEVENT');
-      lines.push('UID:' + r.id + '@shilu.local');
-      lines.push('DTSTAMP:' + icsUTC(new Date()));
-      lines.push('DTSTART:' + icsLocal(start));
-      lines.push('DURATION:PT30M');
-      lines.push('RRULE:FREQ=WEEKLY;COUNT=52');
-      lines.push('SUMMARY:' + icsEscape(TYPES[r.type].label + '《' + r.title + '》更新'));
-      lines.push('DESCRIPTION:' + icsEscape('次元簿 · 每' + WEEK_NAMES[r.updateDay] + '追更提醒'));
-      lines.push('BEGIN:VALARM');
-      lines.push('TRIGGER:-PT30M');
-      lines.push('ACTION:DISPLAY');
-      lines.push('DESCRIPTION:' + icsEscape('《' + r.title + '》今天更新'));
-      lines.push('END:VALARM');
-      lines.push('END:VEVENT');
-    });
-
-    lines.push('END:VCALENDAR');
-    return lines.map(foldICS).join('\r\n') + '\r\n';
-  }
-
-  function openIcsModal() {
-    var list = state.records.filter(function (r) { return r.status === 'doing'; });
-    if (!list.length) {
-      toast('还没有正在进行的作品');
-      return;
-    }
-
-    var sel = {};
-    list.forEach(function (r) {
-      sel[r.id] = { on: r.updateDay >= 0, day: r.updateDay >= 0 ? r.updateDay : 5 };
-    });
-
-    var body = '<div class="ics-list">' + list.map(function (r) {
-      return '<div class="ics-row">' +
-        '<label class="ics-check"><input type="checkbox" data-ics-pick="' + r.id + '"' + (sel[r.id].on ? ' checked' : '') + '>' +
-        '<span class="ics-title">' + esc(r.title) + '</span></label>' +
-        '<select class="select" data-ics-day="' + r.id + '">' +
-        WEEK_NAMES.map(function (n, i) {
-          return '<option value="' + i + '"' + (sel[r.id].day === i ? ' selected' : '') + '>每' + n + '</option>';
-        }).join('') + '</select>' +
-        '</div>';
-    }).join('') + '</div>' +
-      '<p class="hint">选中后会在每周选定日的 20:00 提醒，共 52 周；导入系统日历即可离线收到通知。</p>';
-
-    openModal({
-      title: '生成追更日历',
-      desc: '把正在追的作品导出为 .ics 文件，导入手机或电脑日历。',
-      body: body,
-      actions: [
-        { label: '取消', value: null, variant: 'ghost' },
-        { label: '生成 .ics', value: 'ok', variant: 'primary' }
-      ]
-    }).then(function (v) {
-      if (v !== 'ok') return;
-      var picked = [];
-      list.forEach(function (r) {
-        if (!sel[r.id].on) return;
-        r.updateDay = sel[r.id].day;
-        r.updatedAt = Date.now();
-        picked.push(r);
-      });
-      if (!picked.length) { toast('请至少选择一条记录'); return; }
-      save();
-      var blob = new Blob([buildICS(picked)], { type: 'text/calendar;charset=utf-8' });
-      downloadBlob(blob, 'shilu-updates-' + todayISO() + '.ics');
-      toast('已生成 ' + picked.length + ' 个追更提醒');
-      render({ keepScroll: true });
-    });
-
-    var root = document.getElementById('modal-root');
-    root.querySelectorAll('[data-ics-pick]').forEach(function (el) {
-      el.addEventListener('change', function () { sel[el.dataset.icsPick].on = el.checked; });
-    });
-    root.querySelectorAll('[data-ics-day]').forEach(function (el) {
-      el.addEventListener('change', function () { sel[el.dataset.icsDay].day = Number(el.value); });
-    });
-  }
 
   /* ---------------- 摘抄库 ---------------- */
 
@@ -5991,7 +7083,8 @@
     });
 
     var html = '<header class="page-head">' +
-      '<div><p class="eyebrow">共 ' + all.length + ' 条摘抄</p><h1 class="page-title">摘抄库</h1></div>' +
+      '<div class="head-left"><button class="icon-btn" data-action="back-home" aria-label="返回总览">' + icon('back', 20) + '</button>' +
+      '<div><p class="eyebrow">共 ' + all.length + ' 条摘抄</p><h1 class="page-title">摘抄库</h1></div></div>' +
       '<div class="head-actions"><button class="icon-btn" data-action="settings" aria-label="设置">' + icon('gear', 20) + '</button></div>' +
       '</header>';
 
@@ -6045,6 +7138,39 @@
 
   /* ---------------- 创作者 ---------------- */
 
+  function authCardHTML(g) {
+    var rated = g.list.filter(function (r) { return r.rating > 0; });
+    var avg = rated.length ? rated.reduce(function (sum, r) { return sum + r.rating; }, 0) / rated.length : 0;
+    var hours = g.list.reduce(function (sum, r) { return sum + (r.hours || 0); }, 0);
+    var doneN = g.list.filter(function (r) { return r.status === 'done'; }).length;
+    var isOpen = state.authors.open === g.name;
+
+    return '<div class="auth-card' + (isOpen ? ' is-open' : '') + '">' +
+      '<button class="auth-head" data-action="author-toggle" data-name="' + esc(g.name) + '">' +
+      '<span class="auth-avatar" style="--cc:' + coverColor(g.name) + '">' + esc(firstChar(g.name)) + '</span>' +
+      '<span class="auth-main">' +
+      '<span class="auth-name">' + esc(g.name) + '</span>' +
+      '<span class="auth-meta">' + g.list.length + ' 条 · 完成 ' + doneN +
+      (avg ? ' · 均分 ' + ratingText(avg) : '') +
+      (hours ? ' · ' + fmtHours(hours) + ' 小时' : '') +
+      (g.roles && g.roles.length > 1 ? ' · 跨 ' + g.roles.length + ' 类' : '') + '</span>' +
+      '</span>' +
+      '<span class="auth-arrow">' + icon('chevron', 15) + '</span>' +
+      '</button>' +
+      (isOpen
+        ? '<div class="auth-body">' +
+        '<button class="link-btn auth-more" data-action="open-person" data-name="' + esc(g.name) + '">' +
+        '查看人物页 →</button>' + g.list.slice().sort(function (a, b) { return b.updatedAt - a.updatedAt; }).map(function (r) {
+          return '<div class="auth-item" data-action="open" data-id="' + r.id + '" role="button" tabindex="0">' +
+            '<span class="auth-item-title">' + esc(r.title) + '</span>' +
+            '<span class="auth-item-meta">' + TYPES[r.type].label + ' · ' + statusLabelFor(r) +
+            (r.rating ? ' · ' + ratingText(r.rating) : '') + '</span>' +
+            '</div>';
+        }).join('') + '</div>'
+        : '') +
+      '</div>';
+  }
+
   function authorsView() {
     var map = {};
     state.records.forEach(function (r) {
@@ -6055,8 +7181,30 @@
     var groups = Object.keys(map).map(function (k) { return map[k]; })
       .sort(function (a, b) { return b.list.length - a.list.length || a.name.localeCompare(b.name); });
 
+    /* 身份来自各类型的 creator 字段，一个人跨类型时归到作品最多的那一类 */
+    groups.forEach(function (g) {
+      var cnt = {};
+      g.list.forEach(function (r) {
+        var role = (TYPES[r.type] && TYPES[r.type].creator) || '创作者';
+        cnt[role] = (cnt[role] || 0) + 1;
+      });
+      var roles = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; });
+      g.roles = roles;
+      g.role = roles[0] || '创作者';
+    });
+
+    var roleOrder = [];
+    TYPE_KEYS.forEach(function (k) {
+      var role = TYPES[k].creator || '创作者';
+      if (roleOrder.indexOf(role) < 0) roleOrder.push(role);
+    });
+    var byRole = {};
+    groups.forEach(function (g) { (byRole[g.role] = byRole[g.role] || []).push(g); });
+
     var html = '<header class="page-head">' +
-      '<div><p class="eyebrow">' + groups.length + ' 位创作者</p><h1 class="page-title">创作者</h1></div>' +
+      '<div class="head-left"><button class="icon-btn" data-action="back-home" aria-label="返回总览">' + icon('back', 20) + '</button>' +
+      '<div><p class="eyebrow">' + groups.length + ' 位 · ' + Object.keys(byRole).length + ' 类身份</p>' +
+      '<h1 class="page-title">创作者</h1></div></div>' +
       '<div class="head-actions"><button class="icon-btn" data-action="settings" aria-label="设置">' + icon('gear', 20) + '</button></div>' +
       '</header>';
 
@@ -6066,52 +7214,20 @@
         '<p class="empty-text">在记录里填上作者、导演或制作方，这里会自动聚合。</p></div>';
     }
 
-    html += '<div class="auth-list">' + groups.map(function (g) {
-      var rated = g.list.filter(function (r) { return r.rating > 0; });
-      var avg = rated.length ? rated.reduce(function (sum, r) { return sum + r.rating; }, 0) / rated.length : 0;
-      var hours = g.list.reduce(function (sum, r) { return sum + (r.hours || 0); }, 0);
-      var doneN = g.list.filter(function (r) { return r.status === 'done'; }).length;
-      var isOpen = state.authors.open === g.name;
+    html += '<p class="fan-hint">按身份归档；同一个人的作品跨类型时，归到作品最多的那一类。</p>';
 
-      return '<div class="auth-card' + (isOpen ? ' is-open' : '') + '">' +
-        '<button class="auth-head" data-action="author-toggle" data-name="' + esc(g.name) + '">' +
-        '<span class="auth-avatar" style="--cc:' + coverColor(g.name) + '">' + esc(firstChar(g.name)) + '</span>' +
-        '<span class="auth-main">' +
-        '<span class="auth-name">' + esc(g.name) + '</span>' +
-        '<span class="auth-meta">' + g.list.length + ' 条 · 完成 ' + doneN +
-        (avg ? ' · 均分 ' + ratingText(avg) : '') +
-        (hours ? ' · ' + fmtHours(hours) + ' 小时' : '') + '</span>' +
-        '</span>' +
-        '<span class="auth-arrow">' + icon('chevron', 15) + '</span>' +
-        '</button>' +
-        (isOpen
-          ? '<div class="auth-body">' +
-          '<button class="link-btn auth-more" data-action="open-person" data-name="' + esc(g.name) + '">' +
-          '查看人物页 →</button>' + g.list.slice().sort(function (a, b) { return b.updatedAt - a.updatedAt; }).map(function (r) {
-            return '<div class="auth-item" data-action="open" data-id="' + r.id + '" role="button" tabindex="0">' +
-              '<span class="auth-item-title">' + esc(r.title) + '</span>' +
-              '<span class="auth-item-meta">' + TYPES[r.type].label + ' · ' + statusLabelFor(r) +
-              (r.rating ? ' · ' + ratingText(r.rating) : '') + '</span>' +
-              '</div>';
-          }).join('') + '</div>'
-          : '') +
-        '</div>';
-    }).join('') + '</div>';
+    roleOrder.forEach(function (role) {
+      var list = byRole[role];
+      if (!list || !list.length) return;
+      html += '<section class="section"><div class="section-head"><h2 class="section-title">' + esc(role) + '</h2>' +
+        '<span class="section-note">' + list.length + ' 位</span></div>' +
+        '<div class="auth-list">' + list.map(authCardHTML).join('') + '</div></section>';
+    });
 
     return html;
   }
 
-  /* ---------------- 归档 / 年度档案 ---------------- */
-
-  function archiveYears() {
-    var map = {};
-    state.records.forEach(function (r) {
-      var y = String(new Date(r.createdAt).getFullYear());
-      map[y] = (map[y] || 0) + 1;
-    });
-    return Object.keys(map).sort().reverse().map(function (y) { return { year: y, count: map[y] }; });
-  }
-
+  
   /* 点封面弹出的信息卡：封面占满左侧，信息在右 */
   /* 信息卡上显示哪些块，可在设置里关掉 */
   var CARD_FIELDS = [
@@ -6203,6 +7319,7 @@
         (r.updatedAt ? ' · 更新于 ' + ymd(new Date(r.updatedAt)) : '') + '</p>' : '') +
 
       '<div class="rcard-actions">' +
+      (isTicketType(r.type) ? '<button class="rcard-btn" data-action="ticket" data-id="' + r.id + '">票根</button>' : '') +
       '<button class="rcard-btn" data-action="close-modal">关闭</button>' +
       '<button class="rcard-btn is-primary" data-action="rcard-edit" data-id="' + r.id + '">编辑</button>' +
       '</div>' +
@@ -6224,121 +7341,7 @@
     });
   }
 
-  /* 一叠封面：重叠摆放，点哪张开哪条 */
-  function coverFanHTML(list) {
-    var MAX = 9;
-    var hasRest = list.length > MAX;
-    var shown = list.slice(0, hasRest ? MAX - 1 : MAX);
-    var rest = list.length - shown.length;
-    var n = shown.length;
-    var slots = n + (hasRest ? 1 : 0);
-    var W = 300;
-    var step = slots > 1 ? Math.min(34, (W - 86) / (slots - 1)) : 0;
-    var total = (slots - 1) * step + 86;
-
-    var items = shown.map(function (r, i) {
-      return '<button class="fan-item" data-action="record-card" data-id="' + r.id + '" ' +
-        'style="left:' + (i * step).toFixed(1) + 'px;z-index:' + (i + 1) + ';--cc:' + coverColor(r.title) + '" ' +
-        'aria-label="' + esc(r.title) + '">' +
-        coverInner(r) +
-        '</button>';
-    }).join('');
-
-    if (hasRest) {
-      items += '<span class="fan-item fan-more" style="left:' + (n * step).toFixed(1) + 'px;z-index:' + (n + 1) + '">' +
-        '+' + rest + '</span>';
-    }
-
-    return '<div class="fan" style="width:' + total.toFixed(0) + 'px">' + items + '</div>';
-  }
-
-  function archiveView() {
-    var years = archiveYears();
-    var year = String(state.archive.year || 'all');
-    if (year !== 'all' && years.map(function (x) { return x.year; }).indexOf(year) < 0) year = 'all';
-
-    var html = '<header class="page-head">' +
-      '<div><p class="eyebrow">按年归档</p><h1 class="page-title">' + (year === 'all' ? '归档' : year + ' 年档案') + '</h1></div>' +
-      '<div class="head-actions"><button class="icon-btn" data-action="settings" aria-label="设置">' + icon('gear', 20) + '</button></div>' +
-      '</header>';
-
-    if (!years.length) {
-      return html + '<div class="empty"><div class="empty-mark">·</div>' +
-        '<p class="empty-title">还没有可归档的内容</p>' +
-        '<p class="empty-text">记录几条之后，这里会按年份整理。</p></div>';
-    }
-
-    html += '<div class="seg">' +
-      '<button data-action="archive-year" data-value="all" class="' + (year === 'all' ? 'is-active' : '') + '">全部</button>' +
-      years.map(function (x) {
-        return '<button data-action="archive-year" data-value="' + x.year + '" class="' + (year === x.year ? 'is-active' : '') + '">' + x.year + '</button>';
-      }).join('') + '</div>';
-
-    if (year === 'all') {
-      html += '<div class="year-list">' + years.map(function (x) {
-        var recs = state.records.filter(function (r) { return String(new Date(r.createdAt).getFullYear()) === x.year; });
-        var doneN = recs.filter(function (r) { return r.status === 'done'; }).length;
-        var hours = recs.reduce(function (sum, r) { return sum + (r.hours || 0); }, 0);
-        var typeSet = [];
-        recs.forEach(function (r) { if (typeSet.indexOf(r.type) < 0) typeSet.push(r.type); });
-        typeSet.sort(function (a, b) { return TYPE_KEYS.indexOf(a) - TYPE_KEYS.indexOf(b); });
-
-        return '<div class="year-card" data-action="archive-year" data-value="' + x.year + '" role="button" tabindex="0">' +
-          '<div class="year-num">' + x.year + '</div>' +
-          '<div class="year-body">' +
-          '<div class="year-line"><b>' + recs.length + '</b> 条 · 完成 <b>' + doneN + '</b>' +
-          (hours ? ' · ' + fmtHours(hours) + ' 小时' : '') + '</div>' +
-          '<div class="year-types">' + typeSet.map(function (k) {
-            return '<span class="year-type">' + TYPES[k].label + '</span>';
-          }).join('') + '</div>' +
-          '</div>' +
-          '<span class="auth-arrow">' + icon('chevron', 15) + '</span>' +
-          '</div>';
-      }).join('') + '</div>';
-      return html;
-    }
-
-    var recs = state.records.filter(function (r) { return String(new Date(r.createdAt).getFullYear()) === year; });
-    var doneN = recs.filter(function (r) { return r.status === 'done'; }).length;
-    var hours = recs.reduce(function (sum, r) { return sum + (r.hours || 0); }, 0);
-    var rated = recs.filter(function (r) { return r.rating > 0; });
-    var avg = rated.length ? rated.reduce(function (sum, r) { return sum + r.rating; }, 0) / rated.length : 0;
-    var quoteN = recs.reduce(function (sum, r) { return sum + (r.quotes || []).length; }, 0);
-    var noteN = recs.reduce(function (sum, r) { return sum + (r.notesLog || []).length; }, 0);
-    var checkinN = state.checkins.filter(function (c) { return c.date.indexOf(year) === 0; }).length;
-    var rate = recs.length ? Math.round(doneN / recs.length * 100) : 0;
-
-    html += '<div class="arch-grid">' +
-      '<div><strong>' + recs.length + '</strong><span>收录</span></div>' +
-      '<div><strong>' + doneN + '</strong><span>完成</span></div>' +
-      '<div><strong>' + rate + '%</strong><span>完成率</span></div>' +
-      '<div><strong>' + fmtHours(hours) + '</strong><span>小时</span></div>' +
-      '<div><strong>' + ratingText(avg) + '</strong><span>均分</span></div>' +
-      '<div><strong>' + quoteN + '</strong><span>摘抄</span></div>' +
-      '<div><strong>' + noteN + '</strong><span>笔记</span></div>' +
-      '<div><strong>' + checkinN + '</strong><span>打卡</span></div>' +
-      '</div>';
-
-    html += '<p class="fan-hint">按类型分成一叠，点哪张封面就看哪一条。</p>';
-
-    typesOn().forEach(function (k) {
-      var group = recs.filter(function (r) { return r.type === k; })
-        .sort(function (a, b) { return b.updatedAt - a.updatedAt; });
-      if (!group.length) return;
-      var top = group.filter(function (r) { return r.rating > 0; })
-        .sort(function (a, b) { return b.rating - a.rating; })[0];
-      html += '<section class="section"><div class="section-head">' +
-        '<h2 class="section-title">' + TYPES[k].label + '</h2>' +
-        '<span class="section-note">' + group.length + ' 条' +
-        (top ? ' · 最高 ' + esc(top.title) + ' ' + ratingText(top.rating) : '') + '</span></div>' +
-        coverFanHTML(group) + '</section>';
-    });
-
-    return html;
-  }
-
-  /* ---------------- 设置 ---------------- */
-
+  
   function settingsView() {
     var theme = state.prefs.theme;
     var tags = tagCounts();
@@ -6368,22 +7371,6 @@
       '<button data-action="rating-scale" data-value="10" class="' + (state.prefs.ratingScale !== '5' ? 'is-active' : '') + '">10 分制</button>' +
       '<button data-action="rating-scale" data-value="5" class="' + (state.prefs.ratingScale === '5' ? 'is-active' : '') + '">5 星制（半星）</button>' +
       '</div></div>';
-
-    /* 浏览 */
-    html += '<div class="set-group"><h2>浏览</h2>' +
-      '<div class="set-row"><div class="set-row-main">' +
-      '<div class="set-label">摘抄库</div>' +
-      '<div class="set-desc">所有记录里的摘抄汇总在一处</div>' +
-      '</div><button class="btn btn-ghost btn-sm" data-action="go" data-to="quotes">打开</button></div>' +
-      '<div class="set-row"><div class="set-row-main">' +
-      '<div class="set-label">创作者</div>' +
-      '<div class="set-desc">按作者 / 导演聚合，看谁的作品最多</div>' +
-      '</div><button class="btn btn-ghost btn-sm" data-action="go" data-to="authors">打开</button></div>' +
-      '<div class="set-row"><div class="set-row-main">' +
-      '<div class="set-label">归档</div>' +
-      '<div class="set-desc">按年份回顾，含完成率、摘抄数、打卡天数</div>' +
-      '</div><button class="btn btn-ghost btn-sm" data-action="go" data-to="archive">打开</button></div>' +
-      '</div>';
 
     /* 显示哪些类型 */
     var off = state.prefs.offTypes || {};
@@ -6456,29 +7443,7 @@
             '<b>' + (b2.count || 0) + ' 条</b><i>' + (b2.kind || 'JSON') + '</i></div>';
         }).join('') + '</div>'
         : '') +
-      '<div class="set-row"><div class="set-row-main">' +
-      '<div class="set-label">跨设备同步</div>' +
-      '<div class="set-desc">导出后在另一台设备导入即可，数据不经过任何服务器</div>' +
-      '</div></div>' +
       '</div>';
-
-    /* 日历提醒 */
-    html += '<div class="set-group"><h2>日历提醒</h2>' +
-      '<div class="set-row"><div class="set-row-main">' +
-      '<div class="set-label">追更日历（.ics）</div>' +
-      '<div class="set-desc">按作品的更新日导出日历事件，导入系统日历后每周提醒</div>' +
-      '</div><button class="btn btn-ghost btn-sm" data-action="ics">生成</button></div>' +
-      '</div>';
-
-    /* 安装到桌面 */
-    if (!isStandalone()) {
-      html += '<div class="set-group"><h2>安装</h2>' +
-        '<div class="set-row"><div class="set-row-main">' +
-        '<div class="set-label">添加到主屏幕</div>' +
-        '<div class="set-desc">像原生 App 一样全屏打开，断网也能查看和记录</div>' +
-        '</div><button class="btn btn-ghost btn-sm" data-action="install">安装</button></div>' +
-        '</div>';
-    }
 
     /* 标签管理 */
     html += '<div class="set-group"><h2>题材标签</h2>';
@@ -6497,45 +7462,39 @@
     }
     html += '</div>';
 
-    /* 分类管理 */
-    html += '<div class="set-group"><h2>分类</h2>' +
-      '<p class="muted" style="margin:0 0 10px">和题材标签分开：分类更粗（小说 / 散文 / 理财…），标签更细。</p>';
-    if (!state.categories.length) {
-      html += '<p class="muted" style="margin:4px 0 8px">还没有分类。</p>';
-    } else {
-      html += state.categories.map(function (c) {
-        var n = state.records.filter(function (r) { return r.category === c; }).length;
-        return '<div class="tag-row"><span class="tag-name">' + esc(c) + '</span>' +
-          '<span class="tag-count">' + n + ' 条</span>' +
-          '<span class="tag-ops">' +
-          '<button class="mini-btn" data-action="cat-rename" data-cat="' + esc(c) + '">重命名</button>' +
-          '<button class="mini-btn danger" data-action="cat-delete" data-cat="' + esc(c) + '">删除</button>' +
-          '</span></div>';
-      }).join('');
-    }
-    html += '<button class="btn btn-ghost btn-sm" data-action="cat-add" style="margin-top:10px">＋ 新建分类</button>' +
-      '</div>';
-
     /* 其他 */
     html += '<div class="set-group"><h2>其他</h2>' +
-      '<div class="set-row"><div class="set-row-main"><div class="set-label">按年份补全发布日期</div>' +
-      '<div class="set-desc">给只有年份的作品补一个 1 月 1 日，便于按发布状态筛选</div></div>' +
-      '<button class="btn btn-ghost btn-sm" data-action="backfill-date">补全</button></div>' +
       '<div class="set-row"><div class="set-row-main"><div class="set-label">示例数据</div>' +
-      '<div class="set-desc">填充几条演示记录，随时可以删掉</div></div>' +
-      '<button class="btn btn-ghost btn-sm" data-action="seed-demo">填充</button></div>' +
+      '<div class="set-desc">每个类型加三条示例，带封面，随时可以删掉</div></div>' +
+      '<button class="btn btn-ghost btn-sm" data-action="seed-examples">填充</button></div>' +
       '<div class="set-row"><div class="set-row-main"><div class="set-label">清空全部数据</div>' +
       '<div class="set-desc">不可恢复，建议先导出一份备份</div></div>' +
       '<button class="btn btn-ghost btn-sm" data-action="clear-all">清空</button></div>' +
       '</div>';
 
-    /* 关于 */
+    /* 关于：一次性的工具与纯说明收进折叠，默认不占版面 */
+    var installRow = isStandalone() ? '' :
+      '<div class="set-row"><div class="set-row-main">' +
+      '<div class="set-label">添加到主屏幕</div>' +
+      '<div class="set-desc">像原生 App 一样全屏打开，断网也能查看和记录</div>' +
+      '</div><button class="btn btn-ghost btn-sm" data-action="install">安装</button></div>';
+
     html += '<div class="set-group"><h2>关于</h2>' +
       '<div class="set-row"><div class="set-row-main">' +
       '<div class="set-label">当前版本</div>' +
       '<div class="set-desc">页面 <b>v' + APP_VERSION + '</b> · 缓存 <b>' + SW_VERSION + '</b>' +
       ' · 服务器 <b id="srv-ver">检测中…</b></div>' +
-      '</div><button class="btn btn-ghost btn-sm" data-action="check-update">检查更新</button></div>' +
+      '</div></div>' +
+      '<details class="set-more"><summary>更多工具与说明 <i>7 项</i></summary>' +
+      '<div class="set-more-body">' +
+      '<div class="set-row"><div class="set-row-main">' +
+      '<div class="set-label">检查更新</div>' +
+      '<div class="set-desc">手动拉取最新版本</div>' +
+      '</div><button class="btn btn-ghost btn-sm" data-action="check-update">检查</button></div>' +
+      installRow +
+      '<div class="set-row"><div class="set-row-main"><div class="set-label">按年份补全发布日期</div>' +
+      '<div class="set-desc">给只有年份的作品补一个 1 月 1 日</div></div>' +
+      '<button class="btn btn-ghost btn-sm" data-action="backfill-date">补全</button></div>' +
       '<div class="set-row"><div class="set-row-main">' +
       '<div class="set-label">存储占用</div>' +
       '<div class="set-desc"><b id="stor-info">读取中…</b>（已用 / 本机可用配额）</div>' +
@@ -6545,10 +7504,16 @@
       '<div class="set-desc"><b id="stor-cap">读取中…</b>（已用 / 本机可用）</div>' +
       '</div></div>' +
       '<div class="set-row"><div class="set-row-main">' +
+      '<div class="set-label">跨设备同步</div>' +
+      '<div class="set-desc">导出后在另一台设备导入即可，数据不经过任何服务器</div>' +
+      '</div></div>' +
+      '<div class="set-row"><div class="set-row-main">' +
       '<div class="set-label">看不到更新时</div>' +
       '<div class="set-desc">点「检查更新」；仍然不行就删掉主屏幕图标，用 Safari 重新打开一次再添加</div>' +
       '</div></div>' +
+      '</div></details>' +
       '</div>';
+
 
     html += '<p class="muted" style="text-align:center;margin:24px 0 8px">次元簿 v' + APP_VERSION + ' · 数据只保存在这台设备的浏览器里</p>';
     html += '</div>';
@@ -6558,26 +7523,96 @@
   /* ---------------- 导入 / 导出 ---------------- */
 
   function exportJSON() {
-    var payload = {
-      schemaVersion: SCHEMA_VERSION,
-      app: '次元簿',
-      exportedAt: new Date().toISOString(),
-      count: state.records.length,
-      records: state.records,
-      lists: state.lists,
-      checkins: state.checkins,
-      categories: state.categories
-    };
-    payload.trash = state.trash;
-    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    var name = 'cimeibu-backup-' + todayISO() + '.json';
-    downloadBlob(blob, name);
-    state.prefs.lastExportAt = Date.now();
-    state.prefs.backups = [{ at: Date.now(), count: state.records.length, kind: 'JSON' }]
-      .concat(state.prefs.backups || []).slice(0, 10);
-    savePrefs();
-    toast('已导出 ' + state.records.length + ' 条记录');
-    if (state.route.name === 'settings') render({ keepScroll: true });
+    var payload = JSON.parse(JSON.stringify({
+      schemaVersion: SCHEMA_VERSION, backupVersion: 2,
+      app: '次元簿', exportedAt: new Date().toISOString(), count: state.records.length,
+      records: state.records, lists: state.lists, checkins: state.checkins,
+      categories: state.categories, trash: state.trash, accounts: accounts(),
+      platforms: state.prefs.platforms || [], prefs: state.prefs
+    }));
+    var refs = imageRefs([payload.records, payload.trash, payload.prefs.spineArt]);
+    function finish() {
+      var missing = Object.keys(refs).filter(function (id) { return !IMG[id]; });
+      if (missing.length) {
+        toast('备份未完成：有 ' + missing.length + ' 张本地图片缺失，请先检查图片');
+        return;
+      }
+      payload.images = Object.create(null);
+      Object.keys(refs).forEach(function (id) { payload.images[id] = IMG[id]; });
+      var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      downloadBlob(blob, 'cimeibu-backup-' + todayISO() + '.json');
+      state.prefs.lastExportAt = Date.now();
+      state.prefs.backups = [{ at: Date.now(), count: state.records.length, kind: 'JSON' }]
+        .concat(state.prefs.backups || []).slice(0, 10);
+      savePrefs();
+      toast('已导出 ' + state.records.length + ' 条记录及 ' + Object.keys(refs).length + ' 张图片');
+      if (state.route.name === 'settings') render({ keepScroll: true });
+    }
+    if (Object.keys(refs).some(function (id) { return !IMG[id]; })) return loadImages().then(finish);
+    finish();
+  }
+
+  function restoreBackupPrefs(p, mode) {
+    if (!p || typeof p !== 'object' || Array.isArray(p)) return;
+    var dst = state.prefs;
+    ['theme', 'accent', 'ratingScale', 'goalCount', 'goalHours', 'seenStandaloneTip',
+      'vocab', 'vocabHidden', 'offTypes', 'cardFields', 'book', 'bookOrder', 'spineArt', 'ybStamp'].forEach(function (k) {
+      if (!Object.prototype.hasOwnProperty.call(p, k)) return;
+      var v = p[k];
+      if (['theme', 'accent', 'ratingScale'].indexOf(k) >= 0 && typeof v !== 'string') return;
+      if (['goalCount', 'goalHours', 'seenStandaloneTip'].indexOf(k) >= 0 && typeof v !== 'number') return;
+      if (k === 'bookOrder') {
+        if (!Array.isArray(v)) return;
+        v = v.filter(function (t, i) { return TYPE_KEYS.indexOf(t) >= 0 && v.indexOf(t) === i; });
+      } else if (['vocab', 'vocabHidden', 'offTypes', 'cardFields', 'book', 'spineArt', 'ybStamp'].indexOf(k) >= 0) {
+        if (!v || typeof v !== 'object' || Array.isArray(v)) return;
+        if (k === 'spineArt') {
+          var art = {};
+          TYPE_KEYS.forEach(function (t) { if (typeof v[t] === 'string') art[t] = v[t]; });
+          v = art;
+        }
+      }
+      if (mode !== 'overwrite') {
+        if (k === 'spineArt' || k === 'book' || k === 'ybStamp') {
+          v = Object.assign({}, v, dst[k] || {});
+        } else if (dst[k] && (typeof dst[k] !== 'object' || Object.keys(dst[k]).length)) return;
+      }
+      dst[k] = v;
+    });
+    if (['light', 'dark', 'system'].indexOf(dst.theme) < 0) dst.theme = 'system';
+    applyTheme();
+  }
+
+  /* 先存图片再提交记录；相同 ID、不同内容时另起 ID，防止覆盖现有图片。 */
+  function prepareBackupImages(incoming, extras) {
+    if (!extras || !extras.images) return Promise.resolve();
+    var images = extras.images;
+    var refs = imageRefs([incoming, extras.trash, extras.prefs && extras.prefs.spineArt]);
+    var replacements = Object.create(null);
+    var ids = Object.keys(refs);
+    ids.forEach(function (id) {
+      var data = Object.prototype.hasOwnProperty.call(images, id) ? images[id] : '';
+      if (typeof data !== 'string' || !/^data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=\s]+$/i.test(data)) {
+        throw new Error('备份图片缺失或格式错误：' + id);
+      }
+    });
+    return Promise.all(ids.map(function (id) {
+      var data = images[id];
+      var target = IMG[id] && IMG[id] !== data ? ('b' + uid()) : id;
+      return imgPut(target, data).then(function (ok) {
+        if (ok) { IMG[target] = data; delete IMG_MISSING[target]; }
+        replacements['img:' + id] = ok ? 'img:' + target : data;
+      });
+    })).then(function () {
+      function replace(value) {
+        if (!value || typeof value !== 'object') return;
+        Object.keys(value).forEach(function (k) {
+          if (typeof value[k] === 'string' && replacements[value[k]]) value[k] = replacements[value[k]];
+          else replace(value[k]);
+        });
+      }
+      replace(incoming); replace(extras.trash); replace(extras.prefs);
+    });
   }
 
   function csvCell(v) {
@@ -6592,7 +7627,7 @@
   }
 
   function buildCSV() {
-    var rows = [['id', '类型', '标题', '原名', '别名', '创作者', '年份', '分类', '题材', '评分', '豆瓣评分', '推荐指数', '状态', '进度', '刊期',
+    var rows = [['id', '类型', '标题', '原名', '别名', '创作者', '年份', '题材', '评分', '豆瓣评分', '推荐指数', '状态', '进度', '刊期',
       '专属信息', '自定义字段',
       '投入小时', '消费次数', '短评', '金句', '笔记数', '封面链接', '发布日期', '开始日期', '完成日期', '收录时间', '更新时间']];
     state.records.forEach(function (r) {
@@ -6604,7 +7639,6 @@
         (r.aliases || []).join(' / '),
         r.creator,
         r.year,
-        r.category || '',
         (r.tags || []).join(' / '),
         r.rating ? ratingText(r.rating) : '',
         r.douban ? r.douban.toFixed(1) : '',
@@ -6660,7 +7694,6 @@
         if (r.creator) facts.push('**' + TYPES[r.type].creator + '**：' + mdEscape(r.creator));
         if (r.originalTitle) facts.push('**原名**：' + mdEscape(r.originalTitle));
         if (r.aliases && r.aliases.length) facts.push('**别名**：' + mdEscape(r.aliases.join('、')));
-        if (r.category) facts.push('**分类**：' + mdEscape(r.category));
         if (r.tags && r.tags.length) facts.push('**标签**：' + mdEscape(r.tags.join('、')));
         Object.keys(r.meta || {}).forEach(function (mk) {
           if (r.meta[mk]) facts.push('**' + metaLabel(mk) + '**：' + mdEscape(String(r.meta[mk])));
@@ -6794,7 +7827,12 @@
         lists: (data && Array.isArray(data.lists)) ? data.lists.map(normalizeList).filter(Boolean) : null,
         checkins: (data && Array.isArray(data.checkins)) ? data.checkins.map(normalizeCheckin).filter(Boolean) : null,
         categories: (data && Array.isArray(data.categories)) ? normalizeCategories(data.categories) : null,
-        trash: (data && Array.isArray(data.trash)) ? normalizeTrash(data.trash) : null
+        trash: (data && Array.isArray(data.trash)) ? normalizeTrash(data.trash) : null,
+        accounts: (data && Array.isArray(data.accounts)) ? normalizeAccounts(data.accounts) : null,
+        platforms: (data && Array.isArray(data.platforms)) ? normalizePlatforms(data.platforms) : null,
+        prefs: data && data.prefs && typeof data.prefs === 'object' ? data.prefs : null,
+        images: data && data.images && typeof data.images === 'object' && !Array.isArray(data.images) ? data.images : null,
+        backupVersion: data && Number(data.backupVersion) || 0
       };
 
       var ver = data && Number(data.schemaVersion);
@@ -6830,7 +7868,10 @@
       incoming.push(n);
     });
 
-    if (!incoming.length) {
+    var hasExtras = pendingExtras && (
+      (pendingExtras.accounts || []).length || (pendingExtras.trash || []).length ||
+      (pendingExtras.checkins || []).length || (pendingExtras.lists || []).length || pendingExtras.prefs);
+    if (!incoming.length && !hasExtras) {
       openModal({
         title: '没有可导入的记录',
         desc: '文件格式正确，但其中没有有效的记录（每条记录至少需要标题）。',
@@ -6861,6 +7902,25 @@
   }
 
   function applyImport(incoming, mode) {
+    var extras = pendingExtras;
+    pendingExtras = null;
+    if (extras && extras.backupVersion >= 2 && !extras.images) {
+      toast('备份图片字段缺失，未修改当前数据');
+      return Promise.resolve(false);
+    }
+    return Promise.resolve().then(function () {
+      return prepareBackupImages(incoming, extras);
+    }).then(function () {
+      commitImport(incoming, mode, extras);
+      return true;
+    }).catch(function (error) {
+      toast('导入失败，当前记录未改动：' + error.message);
+      return false;
+    });
+  }
+
+  function commitImport(incoming, mode, pendingExtras) {
+    var oldMedia = [state.records, state.trash, state.prefs.spineArt];
     var added = 0, updated = 0, skipped = 0;
     if (mode === 'overwrite') {
       added = incoming.length;
@@ -6870,6 +7930,8 @@
         if (pendingExtras.checkins) state.checkins = pendingExtras.checkins;
         if (pendingExtras.categories) state.categories = pendingExtras.categories;
         if (pendingExtras.trash) state.trash = pendingExtras.trash;
+        if (pendingExtras.accounts) state.prefs.accounts = pendingExtras.accounts;
+        if (pendingExtras.platforms) state.prefs.platforms = pendingExtras.platforms;
       }
     } else {
       var map = {};
@@ -6904,10 +7966,43 @@
         if (pendingExtras.categories) {
           pendingExtras.categories.forEach(function (c) { if (state.categories.indexOf(c) < 0) state.categories.push(c); });
         }
+        if (pendingExtras.trash) {
+          var activeIds = {}, trashIds = {};
+          state.records.forEach(function (r) { activeIds[r.id] = true; });
+          state.trash.forEach(function (x) { trashIds[x.r.id] = true; });
+          pendingExtras.trash.forEach(function (x) {
+            if (!activeIds[x.r.id] && !trashIds[x.r.id]) {
+              state.trash.push(x); trashIds[x.r.id] = true;
+            }
+          });
+        }
+        if (pendingExtras.accounts) {
+          var acctId = {};
+          accounts().forEach(function (a, i) { acctId[a.id] = i; });
+          pendingExtras.accounts.forEach(function (a) {
+            if (!Object.prototype.hasOwnProperty.call(acctId, a.id)) {
+              acctId[a.id] = state.prefs.accounts.length;
+              state.prefs.accounts.push(a);
+            } else if (a.updatedAt > state.prefs.accounts[acctId[a.id]].updatedAt) {
+              state.prefs.accounts[acctId[a.id]] = a;
+            }
+          });
+        }
+        if (pendingExtras.platforms) {
+          var plats = (state.prefs.platforms || []).slice();
+          pendingExtras.platforms.forEach(function (p) { if (plats.indexOf(p) < 0) plats.push(p); });
+          state.prefs.platforms = plats;
+        }
       }
     }
-    pendingExtras = null;
+    var activeRecordIds = Object.create(null);
+    state.records.forEach(function (r) { activeRecordIds[r.id] = true; });
+    state.trash = state.trash.filter(function (x) { return !activeRecordIds[x.r.id]; });
+    if (pendingExtras) restoreBackupPrefs(pendingExtras.prefs, mode);
+    clearStash();
+    state.draft = null;
     save();
+    purgeImages([oldMedia, incoming, pendingExtras && pendingExtras.trash, pendingExtras && pendingExtras.prefs]);
     toast('新增 ' + added + ' 条，更新 ' + updated + ' 条，跳过 ' + skipped + ' 条');
     render({ keepScroll: true });
   }
@@ -7397,7 +8492,7 @@
           releaseDate: it.releaseDate || '',
           tags: it.tags, rating: it.rating, status: it.status,
           review: it.review || '', quote: it.quote || '',
-          category: it.category || '', douban: it.douban || 0, recommend: it.recommend || '',
+          douban: it.douban || 0, recommend: it.recommend || '',
           magazine: it.magazine || {},
           meta: it.meta || {},
           custom: it.custom || [],
@@ -7442,58 +8537,8 @@
     });
   }
 
-  function addCategory() {
-    openModal({
-      title: '新建分类',
-      desc: '比如：小说 / 散文 / 理财 / 教材。',
-      body: '<input class="input" id="modal-input" placeholder="分类名">',
-      actions: [{ label: '取消', value: null, variant: 'ghost' }, { label: '创建', collect: true, variant: 'primary' }]
-    }).then(function (val) {
-      var name = String(val || '').trim().slice(0, 16);
-      if (!name) return;
-      if (state.categories.indexOf(name) >= 0) { toast('已经有这个分类了'); return; }
-      state.categories.push(name);
-      save();
-      toast('已新建分类');
-      render({ keepScroll: true });
-    });
-  }
 
-  function renameCategory(cat) {
-    openModal({
-      title: '重命名分类',
-      desc: '把「' + cat + '」改为：',
-      body: '<input class="input" id="modal-input" value="' + esc(cat) + '">',
-      actions: [{ label: '取消', value: null, variant: 'ghost' }, { label: '保存', collect: true, variant: 'primary' }]
-    }).then(function (val) {
-      var next = String(val || '').trim().slice(0, 16);
-      if (!next || next === cat) return;
-      state.categories = state.categories.map(function (c) { return c === cat ? next : c; });
-      state.categories = state.categories.filter(function (c, i, arr) { return arr.indexOf(c) === i; });
-      state.records.forEach(function (r) {
-        if (r.category === cat) { r.category = next; r.updatedAt = Date.now(); }
-      });
-      save();
-      toast('已重命名');
-      render({ keepScroll: true });
-    });
-  }
 
-  function deleteCategory(cat) {
-    var n = state.records.filter(function (r) { return r.category === cat; }).length;
-    openModal({
-      title: '删除分类「' + cat + '」',
-      desc: n ? '有 ' + n + ' 条记录正在用这个分类，删除后它们会变成「不分类」。' : '这个分类还没有被用到。',
-      actions: [{ label: '取消', value: null, variant: 'ghost' }, { label: '删除', value: 'yes', variant: 'danger' }]
-    }).then(function (v) {
-      if (v !== 'yes') return;
-      state.categories = state.categories.filter(function (c) { return c !== cat; });
-      state.records.forEach(function (r) { if (r.category === cat) r.category = ''; });
-      save();
-      toast('已删除分类');
-      render({ keepScroll: true });
-    });
-  }
 
   function mergeTag(tag) {
     var others = tagCounts().map(function (t) { return t[0]; }).filter(function (t) { return t !== tag; });
@@ -7636,254 +8681,6 @@
 
   /* ---------------- 示例数据 ---------------- */
 
-  function seedDemo() {
-    var now = Date.now();
-    var D = DAY;
-    var seq = 0;
-    function rec(o) {
-      var created = now - (o.days || 0) * D;
-      seq++;
-      var r = normalizeRecord({
-        id: 'demo_' + seq + '_' + Math.random().toString(36).slice(2, 6),
-        type: o.type,
-        title: o.title,
-        creator: o.creator || '',
-        year: o.year || '',
-        tags: o.tags || [],
-        rating: o.rating || 0,
-        status: o.status,
-        review: o.review || '',
-        hours: o.hours || 0,
-        cover: '',
-        updateDay: o.updateDay == null ? -1 : o.updateDay,
-        meta: o.meta || {},
-        magazine: o.magazine || {},
-        quotes: o.quotes || [],
-        douban: o.douban || 0,
-        recommend: o.recommend || '',
-        category: o.category || '',
-        sections: o.sections || {},
-        notesLog: o.notesLog || [],
-        startedAt: o.startedAt || '',
-        finishedAt: o.finishedAt || '',
-        episodes: o.episodes || [],
-        progress: o.progress || { current: 0, total: 0, season: 1 },
-        rewatches: o.rewatches || [],
-        logs: [{ action: 'add', at: created }].concat(o.logs || []),
-        createdAt: created,
-        updatedAt: created
-      });
-      return r;
-    }
-
-    var demo = [
-      rec({
-        type: 'novel', title: '三体', creator: '刘慈欣', year: '2008', status: 'done', rating: 9.5,
-        tags: ['科幻', '悬疑'], hours: 26, days: 96,
-        review: '黑暗森林法则让我在深夜合上书，发了很久的呆。',
-        progress: { current: 30, total: 30 },
-        startedAt: ymd(new Date(now - 96 * D)),
-        finishedAt: ymd(new Date(now - 66 * D)),
-        douban: 8.8,
-        recommend: 'yes',
-        category: '小说',
-        meta: { publisher: '重庆出版社', source: '购买' },
-        notesLog: [{
-          date: ymd(new Date(now - 70 * D)),
-          text: '读到叶文洁按下发射键那一段，忽然理解了「不要回答」这四个字有多重。\n\n整本书最厉害的地方不是设定，是它让人相信：一个文明的善意，也可能是另一个文明的灾难。'
-        }],
-        quotes: [
-          { text: '弱小和无知不是生存的障碍，傲慢才是。', page: '第 302 页' },
-          { text: '给岁月以文明，而不是给文明以岁月。', page: '' }
-        ],
-        rewatches: [{ id: 'w1', date: ymd(new Date(now - 30 * D)), rating: 9.5, review: '第二次读，注意到的全是大刘埋的伏笔。' }]
-      }),
-      rec({
-        type: 'comic', title: '蓦然回首', creator: '藤本树', year: '2021', status: 'done', rating: 8.5,
-        tags: ['治愈', '青春'], hours: 2, days: 34,
-        review: '薄薄一本，最后一页翻过去之后安静了很久。',
-        progress: { current: 1, total: 1 }
-      }),
-      rec({
-        type: 'tv', title: '漫长的季节', creator: '辛爽', year: '2023', status: 'done', rating: 9,
-        tags: ['悬疑', '剧情', '家庭'], hours: 12, days: 52,
-        review: '往前看，别回头。',
-        progress: { seasons: [{ n: 1, current: 12, total: 12, done: true }] }
-      }),
-      rec({
-        type: 'movie', title: '沙丘 2', creator: '丹尼斯·维伦纽瓦', year: '2024', status: 'done', rating: 8,
-        tags: ['科幻', '冒险'], hours: 3, days: 14,
-        review: '沙虫那一场戏，值得把音量开到最大。'
-      }),
-      rec({
-        type: 'novel', title: '地球尽头的温室', creator: '金草叶', year: '2022', status: 'doing', rating: 0,
-        tags: ['科幻', '治愈'], hours: 6, days: 4, updateDay: 5,
-        review: '读得很慢，但每一章都舍不得快进。',
-        progress: { current: 120, total: 320 },
-        logs: [{ action: 'start', at: now - 4 * D }]
-      }),
-      rec({
-        type: 'comic', title: '咒术回战', creator: '芥见下下', year: '2018', status: 'doing', rating: 7.5,
-        tags: ['奇幻', '冒险'], hours: 9, days: 8, updateDay: 3,
-        review: '',
-        progress: { current: 180, total: 250 },
-        logs: [{ action: 'start', at: now - 8 * D }]
-      }),
-      rec({
-        type: 'tv', title: '重启人生', creator: '笨蛋节奏', year: '2023', status: 'doing', rating: 8.5,
-        tags: ['剧情', '治愈', '喜剧'], hours: 5, days: 2, updateDay: 0,
-        review: '每一轮重来都在补一点点小遗憾。',
-        progress: { seasons: [{ n: 1, current: 5, total: 10, done: false }] },
-        logs: [{ action: 'start', at: now - 2 * D }]
-      }),
-      rec({
-        type: 'tv', title: '怪奇物语', creator: '达菲兄弟', year: '2016', status: 'doing', rating: 8.5,
-        tags: ['科幻', '恐怖', '冒险'], hours: 31, days: 26, updateDay: 4,
-        review: '第四季开始补，八十年代的味道太对了。',
-        progress: {
-          seasons: [
-            { n: 1, current: 8, total: 8, done: true },
-            { n: 2, current: 9, total: 9, done: true },
-            { n: 3, current: 8, total: 8, done: true },
-            { n: 4, current: 3, total: 9, done: false }
-          ]
-        },
-        douban: 9.0,
-        recommend: 'yes',
-        category: '剧集',
-        sections: {
-          plot: '第四季把四条线拆得很散，但收束的时候每一条都咬上了。',
-          music: 'Running Up That Hill 那段是全季最好的一次「用歌救人」。',
-          cast: 'Max 的表演撑起了整季后段。'
-        },
-        startedAt: ymd(new Date(now - 26 * D)),
-        episodes: [
-          { no: 1, date: ymd(new Date(now - 6 * D)), rating: 9, review: '开场就把人按回 1986 年。' },
-          { no: 2, date: ymd(new Date(now - 3 * D)), rating: 8.5, review: '这条线终于接上了。' }
-        ],
-        logs: [{ action: 'start', at: now - 26 * D }]
-      }),
-      rec({
-        type: 'movie', title: '奥本海默', creator: '克里斯托弗·诺兰', year: '2023', status: 'wish', rating: 0,
-        tags: ['历史', '剧情'], hours: 0, days: 22
-      }),
-      rec({
-        type: 'novel', title: '房思琪的初恋乐园', creator: '林奕含', year: '2017', status: 'paused', rating: 8,
-        tags: ['纪实', '文艺'], hours: 4, days: 64,
-        review: '读到一半需要停下来喘口气。',
-        progress: { unit: 'page', page: { current: 80, total: 250 } },
-        douban: 9.2,
-        recommend: 'yes',
-        category: '纪实',
-        meta: { publisher: '游击文化', source: '借阅' },
-        quotes: [{ text: '任何关于性的暴力，都是整个社会一起完成的。', page: '第 45 页' }]
-      }),
-      rec({
-        type: 'movie', title: '蜘蛛侠：纵横宇宙', creator: '华金·多斯·桑托斯', year: '2023', status: 'done', rating: 8.5,
-        tags: ['动画', '冒险'], hours: 2.5, days: 210,
-        review: '每一帧都可以截图当壁纸。'
-      }),
-      rec({
-        type: 'anime', title: '葬送的芙莉莲', creator: '斋藤圭一郎 / MADHOUSE', year: '2023', status: 'doing', rating: 9.5,
-        tags: ['奇幻', '治愈', '冒险'], hours: 11, days: 5, updateDay: 4,
-        review: '时间尺度拉得很长，反而把告别拍得很轻。',
-        progress: { segments: [{ n: 1, current: 12, total: 28, done: false }] },
-        douban: 9.4,
-        recommend: 'yes',
-        category: '动画',
-        meta: { studio: 'MADHOUSE', platform: 'B 站' },
-        logs: [{ action: 'start', at: now - 5 * D }]
-      }),
-      rec({
-        type: 'comic', title: '迷宫饭', creator: '九井谅子', year: '2014', status: 'done', rating: 9,
-        tags: ['奇幻', '冒险', '治愈'], hours: 14, days: 120,
-        review: '把迷宫生态做成了一桌菜，设定控狂喜。',
-        progress: { unit: 'volume', volume: { current: 14, total: 14 } },
-        meta: { publisher: 'KADOKAWA', serialStatus: '已完结' }
-      }),
-      rec({
-        type: 'novel', title: '第一律法', creator: '乔·阿克罗比', year: '2006', status: 'doing', rating: 9,
-        tags: ['奇幻', '冒险'], hours: 38, days: 40,
-        review: '第一部读完，灰白驼背的格洛塔太鲜活。',
-        progress: {
-          segments: [
-            { n: 1, current: 42, total: 42, done: true },
-            { n: 2, current: 18, total: 40, done: false }
-          ]
-        },
-        meta: { publisher: '重庆出版社', translator: '屈畅' }
-      }),
-      rec({
-        type: 'variety', title: '圆桌派', creator: '窦文涛', year: '2016', status: 'paused', rating: 8,
-        tags: ['纪实', '都市'], hours: 20, days: 70,
-        review: '吃饭的时候随便放一集，听着人说话就很安心。',
-        progress: { segments: [{ n: 1, current: 8, total: 24, done: false }] },
-        meta: { platform: '优酷' }
-      }),
-      rec({
-        type: 'magazine', title: '科幻世界', creator: '科幻世界杂志社', year: '2026', status: 'done', rating: 8,
-        tags: ['科幻'], hours: 3, days: 9,
-        review: '这一期的短篇比主打更有意思。',
-        magazine: {
-          edition: '国内版', year: '2026', month: '10', part: 'A',
-          issueNo: '10', totalNo: '500', frequency: '月刊', publisher: '科幻世界杂志社'
-        }
-      }),
-      rec({
-        type: 'drama', title: '魔道祖师 广播剧', creator: '光合积木', year: '2018', status: 'doing', rating: 9,
-        tags: ['古风', '奇幻'], hours: 18, days: 12, updateDay: 5,
-        review: '声音的层次感太强了，闭眼就是画面。',
-        progress: { segments: [{ n: 1, current: 8, total: 12, done: false }] },
-        meta: { platform: '猫耳 FM', cv: '路知行 / 刘明月' },
-        logs: [{ action: 'start', at: now - 12 * D }]
-      }),
-      rec({
-        type: 'stage', title: '悲惨世界 音乐剧', creator: '上海文化广场', year: '2024', status: 'done', rating: 9.5,
-        tags: ['历史', '剧情'], hours: 3, days: 30,
-        review: '最后一首 Do You Hear the People Sing，全场都在发抖。',
-        meta: { venue: '上海文化广场', runtime: '170' }
-      }),
-      rec({
-        type: 'game', title: '塞尔达传说：王国之泪', creator: '任天堂', year: '2023', status: 'doing', rating: 9.5,
-        tags: ['冒险', '奇幻'], hours: 62, days: 88,
-        review: '究极手一开，整个海拉鲁都变成了玩具箱。',
-        progress: { percent: 65 },
-        meta: { platform: 'Switch', gameType: '主机' },
-        logs: [{ action: 'start', at: now - 88 * D }]
-      }),
-      rec({
-        type: 'music', title: '星际牛仔 OST', creator: '菅野洋子', year: '1998', status: 'done', rating: 10,
-        tags: ['爵士', '科幻'], hours: 2, days: 150,
-        review: 'Tank! 一响，立刻回到那艘船上。',
-        meta: { publisher: 'Victor', albumType: 'OST' }
-      })
-    ];
-
-    state.records = demo.filter(Boolean).concat(state.records);
-
-    ['小说', '纪实', '剧集', '动画', '音乐'].forEach(function (c) {
-      if (state.categories.indexOf(c) < 0) state.categories.push(c);
-    });
-
-    var haveDate = {};
-    state.checkins.forEach(function (c) { haveDate[c.date] = true; });
-    var lead = demo[0] ? demo[0].id : '';
-    for (var ci = 0; ci < 6; ci++) {
-      var dstr = ymd(new Date(now - ci * D));
-      if (haveDate[dstr]) continue;
-      state.checkins.push({
-        id: 'demo_ck_' + ci,
-        date: dstr,
-        recordId: lead,
-        minutes: 25 + ci * 5,
-        note: ci === 0 ? '读了三十页，顺手记了两句' : ''
-      });
-    }
-
-    save();
-    toast('已填充 ' + demo.length + ' 条示例记录');
-    render({ keepScroll: true });
-  }
 
   /* ---------------- 事件 ---------------- */
 
@@ -7937,14 +8734,14 @@
         clearStash();
         state.draft = null;
         state.readonly = false;
-        location.hash = state.returnTo || '#/library';
+        location.hash = state.returnTo || '#/book';
       });
       return;
     }
     clearStash();
     state.draft = null;
     state.readonly = false;
-    location.hash = state.returnTo || '#/library';
+    location.hash = state.returnTo || '#/book';
   }
 
   var READONLY_BLOCKED = {
@@ -7953,7 +8750,7 @@
     'add-episode': 1, 'del-episode': 1, 'add-season': 1, 'del-season': 1,
     'add-rewatch': 1, 'del-rewatch': 1, 'add-custom': 1, 'del-custom': 1,
     'parse-paste': 1, 'toggle-paste': 1, 'save': 1,
-    'isbn': 1, 'clear-cover': 1, 'del-image': 1,
+    'clear-cover': 1, 'del-image': 1,
     'edit-list': 1, 'new-list': 1, 'list-pick': 1
   };
 
@@ -8024,28 +8821,6 @@
         render();
         break;
 
-      case 'clear-lib-search':
-        state.libQ = '';
-        render({ keepScroll: true });
-        break;
-
-      case 'filter-status':
-        state.filters.status = el.dataset.value;
-        render({ keepScroll: true });
-        break;
-
-      case 'filter-type':
-        state.filters.type = el.dataset.value;
-        state.filters.meta = {};
-        state.filters.status = 'all';
-        render({ keepScroll: true });
-        break;
-
-      case 'toggle-view':
-        state.ui.view = { grid: 'wall', wall: 'board', board: 'list', list: 'grid' }[state.ui.view] || 'grid';
-        render({ keepScroll: true });
-        break;
-
       case 'opt-del': {
         var ok2 = el.dataset.key, ov = el.dataset.value;
         var oc = metaCounts(ok2);
@@ -8104,12 +8879,208 @@
 
       case 'rcard-edit':
         closeModal();
-        state.returnTo = location.hash || '#/archive';
+        state.returnTo = location.hash || '#/book';
         location.hash = '#/edit/' + el.dataset.id;
         break;
 
       case 'record-card':
         openRecordCard(el.dataset.id);
+        break;
+
+      case 'book-open':
+        state.book.page = 0;
+        state.returnTo = '#/book';
+        location.hash = '#/book/' + el.dataset.value;
+        break;
+
+      case 'bk-settings':
+        openBookSettings();
+        break;
+
+      case 'acct-new':
+        openAccountEditor('');
+        break;
+
+      case 'acct-edit':
+        openAccountEditor(el.dataset.id);
+        break;
+
+      case 'acct-export':
+        exportAccountsCSV();
+        break;
+
+      case 'acct-game':
+        openGameEditor(el.dataset.id, Number(el.dataset.idx));
+        break;
+
+      case 'acct-copy': {
+        var ca = accounts().filter(function (a) { return a.id === el.dataset.id; })[0];
+        if (!ca) break;
+        var lines = [];
+        if (ca.name) lines.push('账号：' + ca.name);
+        if (ca.nickname) lines.push('昵称：' + ca.nickname);
+        if (ca.email) lines.push('邮箱：' + ca.email);
+        if (ca.friendCode) lines.push('好友码：' + ca.friendCode);
+        if (ca.platform) lines.push('平台：' + ca.platform + (ca.region ? ' · ' + ca.region : ''));
+        copyText(lines.join('\n'));
+        break;
+      }
+
+      case 'spine-art':
+        openSpineArtPicker();
+        break;
+
+      case 'spine-art-clear': {
+        var sat = el.dataset.value;
+        var sam = state.prefs.spineArt || {};
+        var oldArt = sam[sat];
+        if (oldArt) {
+          delete sam[sat];
+          state.prefs.spineArt = sam;
+          purgeImages([oldArt]);
+          var keepY2 = modalScrollTop();
+          savePrefs();
+          save();
+          render({ keepScroll: true });
+          openSpineArtPicker();
+          restoreModalScroll(keepY2);
+          toast('已恢复类型色');
+        }
+        break;
+      }
+
+      case 'acct-fold': {
+        var fk = el.dataset.key;
+        state.ui.acctFold = state.ui.acctFold || {};
+        if (state.ui.acctFold[fk]) delete state.ui.acctFold[fk];
+        else state.ui.acctFold[fk] = 1;
+        render({ keepScroll: true });
+        break;
+      }
+
+      case 'acct-quick':
+        state.ui.acctQuick = state.ui.acctQuick === el.dataset.id ? '' : el.dataset.id;
+        render({ keepScroll: true });
+        break;
+
+      case 'acct-add-game': {
+        var gid = el.dataset.id;
+        var ginput = document.getElementById('acct-quick-input');
+        var parsedGames = parseGameList(ginput ? ginput.value : '');
+        if (!parsedGames.length) { toast('先输入游戏名'); break; }
+        var garr = accounts().slice();
+        var ghit = garr.filter(function (a) { return a.id === gid; })[0];
+        if (!ghit) break;
+        var gbefore = ghit.games.length;
+        ghit.games = normalizeGames(ghit.games.concat(parsedGames));
+        ghit.updatedAt = Date.now();
+        state.prefs.accounts = garr;
+        savePrefs();
+        render({ keepScroll: true });
+        toast('已加 ' + (ghit.games.length - gbefore) + ' 款');
+        break;
+      }
+
+      case 'acct-del': {
+        var aid = el.dataset.id;
+        var hit = accounts().filter(function (a) { return a.id === aid; })[0];
+        if (!hit) break;
+        openModal({
+          title: '删除账号？',
+          desc: '「' + hit.name + '」会从账号库移除，记录本身不受影响。',
+          actions: [{ label: '取消', value: null, variant: 'ghost' }, { label: '删除', value: 'ok', variant: 'danger' }]
+        }).then(function (v) {
+          if (v !== 'ok') return;
+          state.prefs.accounts = accounts().filter(function (a) { return a.id !== aid; });
+          savePrefs();
+          render({ keepScroll: true });
+          toast('已删除');
+        });
+        break;
+      }
+
+      case 'bk-set': {
+        var bkKey = el.dataset.key, bkVal = el.dataset.value, bkPatch = {};
+        var bkType = state.book.type;
+        if (bkKey === 'per') bkPatch.per = Number(bkVal) || 1;
+        else if (bkKey === 'order') bkPatch.order = bkVal === 'new' ? 'new' : 'seq';
+        else if (bkKey === 'album') bkPatch.album = bkVal;
+        else if (bkKey === 'sound') bkPatch.sound = bkVal === 'on';
+        else if (bkKey === 'ticket') {
+          var bkTicket = bookCfg().ticket;
+          bkTicket[bkType] = bkVal;
+          bkPatch.ticket = bkTicket;
+        }
+        saveBookCfg(bkPatch);
+        state.book.page = 0;
+        render({ keepScroll: true });
+        openBookSettings();
+        break;
+      }
+
+      case 'book-next':
+        bookFlip(1);
+        break;
+
+      case 'book-jump': {
+        var jl = bookList(state.book.type);
+        var jtm = isTicketType(state.book.type) && bookCfg().ticket[state.book.type] === 'stub';
+        var jp = jtm ? 1 : bookCfg().per;
+        var jt = Math.max(1, Math.ceil(jl.length / (bookNarrow() ? jp : jp * 2)));
+        state.book.page = state.book.page >= jt - 1 ? 0 : jt - 1;
+        render({ keepScroll: true });
+        break;
+      }
+
+      case 'book-prev':
+        bookFlip(-1);
+        break;
+
+      case 'ticket':
+        openTicket(el.dataset.id);
+        break;
+
+      case 'yb-open': {
+        var yt = el.dataset.value;
+        state.archive.type = yt;
+        state.archive.year = 0;
+        state.ui.ybMonth = 0;
+        state.ui.ybIndex = 1;
+        state.returnTo = '#/book/' + yt;
+        location.hash = '#/archive/' + yt;
+        break;
+      }
+
+      case 'yb-year':
+        state.archive.year = el.dataset.value;
+        state.ui.ybMonth = 0;
+        state.ui.ybIndex = 1;
+        render();
+        break;
+
+      case 'yb-idx':
+        state.ui.ybIndex = Math.max(1, Number(el.dataset.value) || 1);
+        render({ keepScroll: true });
+        break;
+
+      case 'yb-month': {
+        var m = Number(el.dataset.value);
+        state.ui.ybMonth = state.ui.ybMonth === m ? 0 : m;
+        render({ keepScroll: true });
+        break;
+      }
+
+      case 'yb-stamp': {
+        var key = (state.archive.type || '') + ':' + el.dataset.value;
+        var yb = state.prefs.ybStamp || (state.prefs.ybStamp = {});
+        yb[key] = (Number(yb[key]) || 0) + 1;
+        savePrefs();
+        render({ keepScroll: true });
+        break;
+      }
+
+      case 'seed-examples':
+        seedExamples();
         break;
 
       case 'accent':
@@ -8138,11 +9109,6 @@
         render({ keepScroll: true });
         break;
 
-      case 'load-more':
-        state.ui.limit = (state.ui.limit || 60) + 60;
-        render({ keepScroll: true });
-        break;
-
       case 'random': {
         if (!state.records.length) { toast('还没有记录'); break; }
         var pick = state.records[Math.floor(Math.random() * state.records.length)];
@@ -8150,35 +9116,29 @@
         break;
       }
 
-      case 'tag-open':
-        state.filters.type = 'all';
-        state.filters.status = 'all';
-        state.filters.tag = el.dataset.tag;
-        state.returnTo = '#/tags';
-        location.hash = '#/library';
+      case 'tag-open': {
+        var tg = el.dataset.tag;
+        var hits = state.records.filter(function (r) {
+          return (r.tags || []).indexOf(tg) >= 0;
+        }).sort(function (x, y) { return y.updatedAt - x.updatedAt; });
+        if (!hits.length) { toast('这个题材还没有作品'); break; }
+        openModal({
+          title: tg,
+          desc: '共 ' + hits.length + ' 条',
+          body: '<div class="day-list">' + hits.map(function (r) {
+            return '<button class="day-row" data-action="record-card" data-id="' + r.id + '">' +
+              '<span class="day-cover" style="--cc:' + coverColor(r.title) + '">' + coverInner(r) + '</span>' +
+              '<span class="day-main"><span class="day-title">' + esc(r.title) + '</span>' +
+              '<span class="day-sub">' + TYPES[r.type].label + ' · ' + statusLabelFor(r) + '</span></span></button>';
+          }).join('') + '</div>',
+          actions: [{ label: '关闭', value: null, variant: 'ghost' }]
+        });
         break;
+      }
 
       case 'open-person':
         state.returnTo = '#/authors';
         location.hash = '#/person/' + encodeURIComponent(el.dataset.name);
-        break;
-
-      case 'rcal-prev':
-        state.rcal = rcalState();
-        state.rcal.m--;
-        if (state.rcal.m < 0) { state.rcal.m = 11; state.rcal.y--; }
-        render({ keepScroll: true });
-        break;
-
-      case 'rcal-next':
-        state.rcal = rcalState();
-        state.rcal.m++;
-        if (state.rcal.m > 11) { state.rcal.m = 0; state.rcal.y++; }
-        render({ keepScroll: true });
-        break;
-
-      case 'rcal-day':
-        openDayList(el.dataset.date);
         break;
 
       case 'view-img':
@@ -8202,8 +9162,8 @@
         }).then(function (v) {
           if (v !== 'ok') return;
           var gone = state.trash.filter(function (x) { return x.r.id === el.dataset.id; });
-          purgeImages(gone.map(function (x) { return x.r; }));
           state.trash = state.trash.filter(function (x) { return x.r.id !== el.dataset.id; });
+          purgeImages(gone.map(function (x) { return x.r; }));
           save();
           render({ keepScroll: true });
           toast('已彻底删除');
@@ -8217,16 +9177,13 @@
           actions: [{ label: '取消', value: null, variant: 'ghost' }, { label: '清空', value: 'ok', variant: 'danger' }]
         }).then(function (v) {
           if (v !== 'ok') return;
-          purgeImages(state.trash.map(function (x) { return x.r; }));
+          var purged = state.trash.map(function (x) { return x.r; });
           state.trash = [];
+          purgeImages(purged);
           save();
           render({ keepScroll: true });
           toast('回收站已清空');
         });
-        break;
-
-      case 'isbn':
-        isbnLookup();
         break;
 
       case 'clear-cover':
@@ -8244,12 +9201,6 @@
           queueStash();
           render({ keepScroll: true });
         }
-        break;
-
-      case 'open-year':
-        state.archive.year = el.dataset.value;
-        if (location.hash === '#/archive') render({ keepScroll: true });
-        else location.hash = '#/archive';
         break;
 
       case 'tl-fold-all': {
@@ -8278,91 +9229,8 @@
         render({ keepScroll: true });
         break;
 
-      case 'archive-year':
-        state.archive.year = el.dataset.value === 'all' ? 'all' : el.dataset.value;
-        render({ keepScroll: true });
-        break;
-
       case 'back-home':
         location.hash = '#/home';
-        break;
-
-      case 'clear-filters':
-        state.filters.status = 'all';
-        state.filters.type = 'all';
-        state.filters.tag = 'all';
-        state.filters.year = 'all';
-        state.filters.release = 'all';
-        state.filters.rating = 'all';
-        state.filters.meta = {};
-        render({ keepScroll: true });
-        break;
-
-      case 'select-mode':
-        state.ui.selectMode = true;
-        state.ui.selected = {};
-        render({ keepScroll: true });
-        break;
-
-      case 'exit-select':
-        exitSelect();
-        render({ keepScroll: true });
-        break;
-
-      case 'toggle-select': {
-        var sid = el.dataset.id;
-        state.ui.selected[sid] = !state.ui.selected[sid];
-        render({ keepScroll: true });
-        break;
-      }
-
-      case 'select-all': {
-        var visible = libraryRecords().map(function (r) { return r.id; });
-        var allOn = visible.length > 0 && visible.every(function (id) { return state.ui.selected[id]; });
-        visible.forEach(function (id) { state.ui.selected[id] = !allOn; });
-        render({ keepScroll: true });
-        break;
-      }
-
-      case 'bulk-status':
-        bulkStatus();
-        break;
-
-      case 'bulk-tag':
-        bulkTag();
-        break;
-
-      case 'bulk-delete':
-        bulkDelete();
-        break;
-
-      case 'pick-list':
-        state.ui.listId = el.dataset.id;
-        state.ui.sortMode = false;
-        state.ui.selectMode = false;
-        state.ui.selected = {};
-        render({ keepScroll: true });
-        break;
-
-      case 'new-list':
-        openListEditor(null);
-        break;
-
-      case 'edit-list':
-        openListEditor(el.dataset.id);
-        break;
-
-      case 'save-view':
-        saveCurrentView();
-        break;
-
-      case 'list-pick':
-        openListPicker();
-        break;
-
-      case 'toggle-sort':
-        state.ui.sortMode = !state.ui.sortMode;
-        render({ keepScroll: true });
         break;
 
       case 'set-type':
@@ -8624,7 +9492,7 @@
               state.readonly = false;
               try { sessionStorage.removeItem('shilu.ro.v1'); } catch (e2) { /* ignore */ }
               toast('已删除');
-              location.hash = state.returnTo || '#/library';
+              location.hash = state.returnTo || '#/book';
             });
           }
         }
@@ -8660,13 +9528,13 @@
         render({ keepScroll: true });
         break;
 
-      case 'cal-export':
-        exportMonthICS();
-        break;
-
-      case 'gen-report': {
-        var rs = state.report;
-        rs.data = buildReport(rs.year, rs.month, rs.type);
+      case 'yb-report': {
+        var yr = String(state.archive.year || '');
+        var rt = state.archive.type;
+        state.report = {
+          year: yr, month: 'all', type: rt,
+          data: buildReport(yr, 'all', rt)
+        };
         render({ keepScroll: true });
         setTimeout(function () {
           var card = document.getElementById('report-card');
@@ -8675,12 +9543,8 @@
         break;
       }
 
-      case 'save-poster':
-        savePoster();
-        break;
-
-      case 'share-poster':
-        sharePoster();
+      case 'yb-report-save':
+        saveReportCard();
         break;
 
       case 'theme':
@@ -8760,10 +9624,6 @@
         break;
       }
 
-      case 'bulk-rating':
-        bulkRating();
-        break;
-
       case 'add-custom':
         if (state.draft) {
           if (!Array.isArray(state.draft.custom)) state.draft.custom = [];
@@ -8784,31 +9644,15 @@
         break;
 
       case 'go':
-        if (['badges', 'options', 'week', 'calendar', 'tags', 'trash', 'archive',
-          'quotes', 'authors'].indexOf(el.dataset.to) >= 0) {
-          state.returnTo = '#/' + state.route.name;
+        if (['badges', 'options', 'week', 'tags', 'trash', 'archive',
+          'quotes', 'authors', 'book', 'accounts'].indexOf(el.dataset.to) >= 0) {
+          state.returnTo = location.hash || ('#/' + state.route.name);
         }
         location.hash = '#/' + el.dataset.to;
         break;
 
-      case 'cat-add':
-        addCategory();
-        break;
-
-      case 'cat-rename':
-        renameCategory(el.dataset.cat);
-        break;
-
-      case 'cat-delete':
-        deleteCategory(el.dataset.cat);
-        break;
-
       case 'bulk-import':
         openBulkImport();
-        break;
-
-      case 'ics':
-        openIcsModal();
         break;
 
       case 'import':
@@ -8827,10 +9671,6 @@
         deleteTag(el.dataset.tag);
         break;
 
-      case 'seed-demo':
-        seedDemo();
-        break;
-
       case 'clear-all':
         openModal({
           title: '清空全部数据？',
@@ -8846,7 +9686,17 @@
           state.ui.selectMode = false;
           state.ui.selected = {};
           state.prefs.lastExportAt = 0;
+          state.prefs.accounts = [];
+          state.prefs.spineArt = {};
+          state.prefs.bookOrder = [];
+          state.prefs.book = {};
+          state.prefs.ybStamp = {};
+          state.prefs.platforms = [];
+          state.prefs.backups = [];
           state.trash = [];
+          state.draft = null;
+          Object.keys(IMG).forEach(function (id) { delete IMG[id]; });
+          Object.keys(IMG_MISSING).forEach(function (id) { delete IMG_MISSING[id]; });
           savePrefs();
           save();
           dbClear();
@@ -9079,19 +9929,6 @@
     return out;
   }
 
-  function filterLibraryCards(raw) {
-    var q = String(raw || '').trim().toLowerCase();
-    var cards = document.querySelectorAll('.pcard, .wcard, .bcard, .lrow');
-    var shown = 0;
-    for (var i = 0; i < cards.length; i++) {
-      var hay = cards[i].getAttribute('data-hay') || '';
-      var ok = !q || hay.indexOf(q) >= 0;
-      cards[i].classList.toggle('is-hidden', !ok);
-      if (ok) shown++;
-    }
-    var empty = document.getElementById('lib-empty');
-    if (empty) empty.classList.toggle('hidden', !q || shown > 0);
-  }
 
   function filterQuoteCards(raw) {
     var q = String(raw || '').trim().toLowerCase();
@@ -9123,11 +9960,6 @@
       if (el.id === 'global-search') {
         state.search = el.value;
         updateSearchPanel();
-        return;
-      }
-      if (el.id === 'lib-search') {
-        state.libQ = el.value;
-        filterLibraryCards(el.value);
         return;
       }
       if (el.id === 'quote-search') {
@@ -9229,6 +10061,10 @@
 
       if (el.type === 'file' && el.dataset && (el.dataset.cover || el.dataset.image)) {
         handleImagePick(el);
+        return;
+      }
+      if (el.type === 'file' && el.dataset && el.dataset.spine) {
+        handleSpineArtPick(el);
         return;
       }
 
@@ -9620,6 +10456,91 @@
   init();
 
   /* 便于调试：控制台可用 */
+  /* ---------------- 图标长按提示 ---------------- */
+  /* 桌面靠 title hover，触屏靠长按气泡；长按后抑制那一次误触点击 */
+
+  function paintIconTips() {
+    var sels = '.icon-btn, .tab, .fab, .more-tile, .more-btn, .bk-nav, .bk-mark, ' +
+      '.yb-tab-arrow, .yb-pager button, .days-strip, .mini-btn, .search-clear';
+    var nodes = view.querySelectorAll(sels);
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (el.dataset.tip) continue;
+      var t = el.getAttribute('aria-label') || el.getAttribute('title') || '';
+      if (!t) {
+        var b = el.querySelector('b');
+        if (b) t = b.textContent;
+        else {
+          var sp = el.querySelector('span:not(.ico)');
+          t = sp ? sp.textContent : el.textContent;
+        }
+      }
+      t = String(t || '').replace(/\s+/g, ' ').trim().slice(0, 24);
+      if (!t) continue;
+      el.dataset.tip = t;
+      if (!el.getAttribute('title')) el.setAttribute('title', t);
+    }
+  }
+
+  var iconTipTimer = null;
+  var iconTipEl = null;
+  var iconTipTarget = null;
+  var iconTipAt = 0;
+
+  function hideIconTip() {
+    if (iconTipTimer) { clearTimeout(iconTipTimer); iconTipTimer = null; }
+    if (iconTipEl) { iconTipEl.remove(); iconTipEl = null; }
+  }
+
+  function showIconTip(el) {
+    var text = el.dataset.tip;
+    if (!text) return;
+    hideIconTip();
+    var box = document.createElement('div');
+    box.className = 'icon-tip';
+    box.textContent = text;
+    document.body.appendChild(box);
+    var r = el.getBoundingClientRect();
+    var w = box.offsetWidth, h = box.offsetHeight;
+    var left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+    var top = r.bottom + 9;
+    if (top + h > window.innerHeight - 10) top = Math.max(8, r.top - h - 9);
+    box.style.left = left + 'px';
+    box.style.top = top + 'px';
+    iconTipEl = box;
+    iconTipTarget = el;
+    iconTipAt = Date.now();
+    iconTipTimer = setTimeout(hideIconTip, 2200);
+  }
+
+  document.addEventListener('touchstart', function (e) {
+    var t = e.target;
+    var el = t && t.closest ? t.closest('[data-tip]') : null;
+    hideIconTip();
+    if (!el) return;
+    iconTipTarget = el;
+    iconTipTimer = setTimeout(function () { showIconTip(el); }, 420);
+  }, { passive: true });
+
+  ['touchend', 'touchmove', 'touchcancel', 'scroll'].forEach(function (ev) {
+    document.addEventListener(ev, function () {
+      if (iconTipTimer && !iconTipEl) { clearTimeout(iconTipTimer); iconTipTimer = null; }
+    }, { passive: true });
+  });
+
+  /* 长按只是想看说明：紧跟着的那次 click 不该真的执行动作 */
+  document.addEventListener('click', function (e) {
+    if (!iconTipTarget || !iconTipEl) return;
+    var t = e.target;
+    var el = t && t.closest ? t.closest('[data-tip]') : null;
+    if (el === iconTipTarget && Date.now() - iconTipAt < 1400) {
+      e.preventDefault();
+      e.stopPropagation();
+      hideIconTip();
+      iconTipTarget = null;
+    }
+  }, true);
+
   window.__shilu = { state: state, render: render, save: save,
     flushWrite: flushWrite, loadImages: loadImages, coverSrc: coverSrc, IMG: IMG,
     initDB: initDB, typesOn: typesOn };
