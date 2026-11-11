@@ -11,7 +11,7 @@
       避免把「下载到一半」的残缺文件存进去。
    ========================================================== */
 
-const VERSION = 'v52';
+const VERSION = 'v59';
 const CACHE = 'shilu-shell-' + VERSION;
 
 /* 核心文件：缺一个就用不了，必须全部成功 */
@@ -20,6 +20,8 @@ const CORE = [
   './index.html',
   './style.css',
   './app.js',
+  './storage.js',
+  './zip.js',
   './manifest.json'
 ];
 
@@ -28,7 +30,18 @@ const EXTRA = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',
-  './icons/apple-touch-icon.png'
+  './icons/apple-touch-icon.png',
+  './splash/splash-750x1334.png',
+  './splash/splash-828x1792.png',
+  './splash/splash-1125x2436.png',
+  './splash/splash-1170x2532.png',
+  './splash/splash-1179x2556.png',
+  './splash/splash-1242x2688.png',
+  './splash/splash-1242x2208.png',
+  './splash/splash-1284x2778.png',
+  './splash/splash-1290x2796.png',
+  './splash/splash-1206x2622.png',
+  './splash/splash-1320x2868.png'
 ];
 
 /* ---------- 带重试的下载 ---------- */

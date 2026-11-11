@@ -28,7 +28,7 @@
     {
       "name": "我的收藏",
       "short_name": "收藏",
-      "url": "./index.html#/library",
+      "url": "./index.html#/book",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     },
     {

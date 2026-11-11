@@ -10,10 +10,11 @@
   var SCHEMA_VERSION = 1;
 
   /* 每次发布改这里和 sw.js 的 VERSION（两者一起改） */
-  var APP_VERSION = '1.51';
-  var SW_VERSION = 'v52';
-  var DB_KEY = 'shilu.db.v1';
-  var PREF_KEY = 'shilu.prefs.v1';
+  var APP_VERSION = '1.58';
+  var SW_VERSION = 'v59';
+  var UI_KEY = 'shilu.ui.v1';              /* 只存主题/配色这类界面偏好 */
+  var LEGACY_DB_KEY = 'shilu.db.v1';       /* v1.53 之前的记录缓存，仅用于迁移 */
+  var LEGACY_PREF_KEY = 'shilu.prefs.v1';  /* v1.53 之前的偏好，仅用于迁移 */
   var DAY = 86400000;
 
   /* mode: book 按章/话或卷/部；series 按季+集/话/期；percent 按完成度；single 无进度；issue 按刊期 */
@@ -626,55 +627,75 @@
   /* 图片单独存在 IndexedDB 的 images 表里，记录里只存 img:<id>，
      这样记录本身很小，导出/缓存都不会被图片撑爆。 */
 
-  var IMG = {};             /* id -> dataURL */
+  var IMG = {};             /* id -> Blob（兼容旧的 dataURL 字符串） */
+  var IMG_URL = {};         /* id -> objectURL，按需生成 */
   var IMG_MISSING = {};     /* 已知取不到的 id，避免反复查库 */
 
-  function coverSrc(cover) {
-    if (!cover) return '';
-    if (cover.indexOf('img:') === 0) return IMG[cover.slice(4)] || '';
-    return cover;
-  }
-
-  function dbImages() {
-    return dbOpen().then(function (db) {
-      if (!db || !db.objectStoreNames.contains(DB_IMG)) return null;
-      return db;
+  function blobToDataURL(blob) {
+    return new Promise(function (resolve, reject) {
+      try {
+        var fr = new FileReader();
+        fr.onload = function () { resolve(String(fr.result || '')); };
+        fr.onerror = function () { reject(fr.error || new Error('read')); };
+        fr.readAsDataURL(blob);
+      } catch (e) { reject(e); }
     });
   }
 
+  function dataURLToBlob(dataURL) {
+    try {
+      var parts = String(dataURL).split(',');
+      var mime = (parts[0].match(/:(.*?);/) || [])[1] || 'image/jpeg';
+      var bin = atob(parts[1] || '');
+      var arr = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      return new Blob([arr], { type: mime });
+    } catch (e) { return null; }
+  }
+
+  /* 导出时统一转回 dataURL；ZIP 备份直接用 Blob，不转 */
+  function imageDataURL(id) {
+    var v = IMG[id];
+    if (!v) return Promise.resolve('');
+    if (typeof v === 'string') return Promise.resolve(v);
+    return blobToDataURL(v);
+  }
+
+  function coverSrc(cover) {
+    if (!cover) return '';
+    if (cover.indexOf('img:') !== 0) return cover;
+    var id = cover.slice(4);
+    var v = IMG[id];
+    if (!v) return '';
+    if (typeof v === 'string') return v;   /* 旧数据还没升级成 Blob */
+    if (IMG_URL[id]) return IMG_URL[id];
+    try {
+      IMG_URL[id] = URL.createObjectURL(v);
+      return IMG_URL[id];
+    } catch (e) { return ''; }
+  }
+
   function loadImages() {
-    return dbImages().then(function (db) {
-      if (!db) return 0;
-      return new Promise(function (resolve) {
-        try {
-          var req = db.transaction(DB_IMG, 'readonly').objectStore(DB_IMG).getAll();
-          req.onsuccess = function () {
-            var n = 0;
-            (req.result || []).forEach(function (row) {
-              if (row && row.id && row.data) { IMG[row.id] = row.data; n++; }
-            });
-            resolve(n);
-          };
-          req.onerror = function () { resolve(0); };
-        } catch (e) { resolve(0); }
+    return AppStorage.getAllImages().then(function (rows) {
+      var n = 0;
+      (rows || []).forEach(function (row) {
+        if (!row || !row.id || !row.data) return;
+        IMG[row.id] = row.data;
+        n++;
+        /* 旧版存的是 dataURL，顺手升级成 Blob，减少 33% 体积 */
+        if (typeof row.data === 'string' && row.data.indexOf('data:') === 0) {
+          var blob = dataURLToBlob(row.data);
+          if (blob) {
+            IMG[row.id] = blob;
+            AppStorage.putImage(row.id, blob);
+          }
+        }
       });
+      return n;
     }).catch(function () { return 0; });
   }
 
-  function imgPut(id, data) {
-    return dbImages().then(function (db) {
-      if (!db) return false;
-      return new Promise(function (resolve) {
-        try {
-          var tx = db.transaction(DB_IMG, 'readwrite');
-          tx.objectStore(DB_IMG).put({ id: id, data: data, at: Date.now() });
-          tx.oncomplete = function () { resolve(true); };
-          tx.onerror = function () { resolve(false); };
-          tx.onabort = function () { resolve(false); };
-        } catch (e) { resolve(false); }
-      });
-    }).catch(function () { return false; });
-  }
+  function imgPut(id, data) { return AppStorage.putImage(id, data); }
 
   /* 图片可能被多条记录/书脊共用：只回收不再被引用的候选图片。 */
   function imageRefs(value, out) {
@@ -692,8 +713,7 @@
   function liveImageRefs() {
     var refs = imageRefs([state.records, state.trash, state.draft, state.prefs.spineArt]);
     try {
-      var stash = JSON.parse(localStorage.getItem('shilu.draft.v1') || 'null');
-      if (stash && stash.json) imageRefs(JSON.parse(stash.json), refs);
+      if (draftStash && draftStash.json) imageRefs(JSON.parse(draftStash.json), refs);
     } catch (e) { /* ignore damaged stash */ }
     return refs;
   }
@@ -706,13 +726,9 @@
 
   function imgDelete(id) {
     if (!id) return;
+    if (IMG_URL[id]) { try { URL.revokeObjectURL(IMG_URL[id]); } catch (e) { /* ignore */ } delete IMG_URL[id]; }
     delete IMG[id];
-    dbImages().then(function (db) {
-      if (!db) return;
-      try {
-        db.transaction(DB_IMG, 'readwrite').objectStore(DB_IMG).delete(id);
-      } catch (e) { /* ignore */ }
-    });
+    AppStorage.deleteImage(id);
   }
 
   /* 压缩：最长边不超过 max，转 JPEG，通常 20–50KB */
@@ -736,9 +752,15 @@
           ctx.fillStyle = '#fff';
           ctx.fillRect(0, 0, cw, ch);
           ctx.drawImage(im, 0, 0, cw, ch);
-          var out = cv.toDataURL('image/jpeg', quality);
           URL.revokeObjectURL(url);
-          resolve(out);
+          if (cv.toBlob) {
+            cv.toBlob(function (blob) {
+              if (blob) resolve(blob);
+              else reject(new Error('encode'));
+            }, 'image/jpeg', quality);
+          } else {
+            resolve(dataURLToBlob(cv.toDataURL('image/jpeg', quality)));
+          }
         } catch (e) {
           URL.revokeObjectURL(url);
           reject(e);
@@ -755,8 +777,8 @@
       var id = 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
       IMG[id] = data;
       return imgPut(id, data).then(function (ok) {
-        /* 数据库不可用时退化成内联，至少当下能看 */
-        return ok ? ('img:' + id) : data;
+        /* 数据库不可用时退化成内联 dataURL，至少当下能看 */
+        return ok ? ('img:' + id) : blobToDataURL(data);
       });
     });
   }
@@ -816,7 +838,7 @@
     lists: [],
     prefs: { theme: 'system', accent: 'rose', lastExportAt: 0, ratingScale: '10', goalCount: 0, goalHours: 0,
       seenStandaloneTip: 0, vocab: {}, vocabHidden: {}, offTypes: {}, cardFields: {}, backups: [],
-      book: {}, bookOrder: [], spineArt: {}, ybStamp: {}, accounts: [], platforms: [] },
+      _at: 0, book: {}, bookOrder: [], spineArt: {}, ybStamp: {}, accounts: [], platforms: [] },
     route: { name: 'home', id: null },
     returnTo: '#/home',
     filters: { status: 'all', type: 'all', tag: 'all', year: 'all', release: 'all', rating: 'all', sort: 'updated', meta: {} },
@@ -1369,44 +1391,9 @@
 
   var currentSavedAt = '';
 
-  function applyRaw(raw) {
-    if (!raw) return '';
-    var data;
-    try { data = JSON.parse(raw); } catch (e) { return ''; }
-    var list = data && Array.isArray(data.records) ? data.records : [];
-    state.records = list.map(normalizeRecord).filter(Boolean);
-    state.lists = (data && Array.isArray(data.lists) ? data.lists : []).map(normalizeList).filter(Boolean);
-    var seenDates = {};
-    state.checkins = (data && Array.isArray(data.checkins) ? data.checkins : [])
-      .map(normalizeCheckin).filter(Boolean).filter(function (c) {
-        if (seenDates[c.date]) return false;
-        seenDates[c.date] = true;
-        return true;
-      });
-    state.categories = normalizeCategories(data && data.categories);
-    state.trash = normalizeTrash(data && data.trash);
-    return (data && data.savedAt) || '';
-  }
-
-  function load() {
-    var raw = null;
-    try {
-      raw = localStorage.getItem(DB_KEY);
-    } catch (e) {
-      raw = null;
-    }
-    if (raw) {
-      var okCache = true;
-      try { JSON.parse(raw); } catch (e) { okCache = false; }
-      if (!okCache) {
-        /* 缓存损坏：清掉，让 initDB 从数据库恢复，避免空数据覆盖真数据 */
-        try { localStorage.removeItem(DB_KEY); } catch (e2) { /* ignore */ }
-        raw = null;
-      }
-    }
-    if (raw) currentSavedAt = applyRaw(raw);
-    try {
-      var p = JSON.parse(localStorage.getItem(PREF_KEY) || '{}');
+  /* 偏好可能来自 localStorage 或数据库镜像，统一校验后再落地 */
+  function applyPrefsObject(p) {
+    if (!p || typeof p !== 'object' || Array.isArray(p)) return;
       if (p.theme) state.prefs.theme = p.theme;
       if (p.lastExportAt) state.prefs.lastExportAt = Number(p.lastExportAt) || 0;
       if (p.ratingScale === '5') state.prefs.ratingScale = '5';
@@ -1433,84 +1420,21 @@
       if (p.ybStamp && typeof p.ybStamp === 'object') state.prefs.ybStamp = p.ybStamp;
       if (Array.isArray(p.accounts)) state.prefs.accounts = normalizeAccounts(p.accounts);
       if (Array.isArray(p.platforms)) state.prefs.platforms = normalizePlatforms(p.platforms);
-    } catch (e) { /* ignore */ }
+    if (p._at) state.prefs._at = Number(p._at) || 0;
   }
 
-  /* ---------------- IndexedDB 主存储 ---------------- */
-  /* 主存储：IndexedDB，一条记录一个 key，保存时只写改动过的条目。
-     localStorage 只在记录不多时当启动缓存（保证首屏同步渲染、不闪空），
-     数据量大了自动停用缓存，改为从数据库异步载入。 */
+  /* ---------------- 业务存储封装 ---------------- */
+  /* 数据库的打开/读写/迁移在 storage.js；这里只保留增量写入、启动加载和偏好。 */
 
-  var DB_NAME = 'shilu-db';
-  var DB_VER = 3;
-  var DB_REC = 'records';
-  var DB_META = 'meta';
-  var DB_IMG = 'images';
-  var CACHE_MAX_RECORDS = 2200;   /* 超过这个条数就不再写 localStorage 缓存 */
-  var CACHE_MIN_INTERVAL = 10000; /* 缓存最快 10 秒写一次，避免每次保存都全量序列化 */
-
-  var dbPromise = null;
   var written = {};        /* id -> 上次写入数据库时的 JSON，用于算增量 */
   var writeTimer = null;
 
-  function dbOpen() {
-    if (dbPromise) return dbPromise;
-    dbPromise = new Promise(function (resolve) {
-      if (!window.indexedDB) { resolve(null); return; }
-      var req;
-      try { req = window.indexedDB.open(DB_NAME, DB_VER); } catch (e) { resolve(null); return; }
-      req.onupgradeneeded = function () {
-        var db = req.result;
-        if (!db.objectStoreNames.contains(DB_REC)) db.createObjectStore(DB_REC, { keyPath: 'id' });
-        if (!db.objectStoreNames.contains(DB_META)) db.createObjectStore(DB_META, { keyPath: 'k' });
-        if (!db.objectStoreNames.contains(DB_IMG)) db.createObjectStore(DB_IMG, { keyPath: 'id' });
-      };
-      req.onsuccess = function () { resolve(req.result); };
-      req.onerror = function () { resolve(null); };
-      req.onblocked = function () { resolve(null); };
-    });
-    return dbPromise;
-  }
-
-  function dbGetAllRecords() {
-    return dbOpen().then(function (db) {
-      if (!db) return null;
-      return new Promise(function (resolve) {
-        try {
-          var req = db.transaction(DB_REC, 'readonly').objectStore(DB_REC).getAll();
-          req.onsuccess = function () { resolve(req.result || []); };
-          req.onerror = function () { resolve(null); };
-        } catch (e) { resolve(null); }
-      });
-    }).catch(function () { return null; });
-  }
-
-  function dbGetMeta(k) {
-    return dbOpen().then(function (db) {
-      if (!db) return null;
-      return new Promise(function (resolve) {
-        try {
-          var req = db.transaction(DB_META, 'readonly').objectStore(DB_META).get(k);
-          req.onsuccess = function () { resolve(req.result || null); };
-          req.onerror = function () { resolve(null); };
-        } catch (e) { resolve(null); }
-      });
-    }).catch(function () { return null; });
-  }
-
-  /* 读旧版本（v1 单块存储）留下的数据，用于迁移 */
-  function dbGetLegacy() {
-    return dbOpen().then(function (db) {
-      if (!db || !db.objectStoreNames.contains('state')) return null;
-      return new Promise(function (resolve) {
-        try {
-          var req = db.transaction('state', 'readonly').objectStore('state').get('db');
-          req.onsuccess = function () { resolve(req.result || null); };
-          req.onerror = function () { resolve(null); };
-        } catch (e) { resolve(null); }
-      });
-    }).catch(function () { return null; });
-  }
+  function dbGetAllRecords() { return AppStorage.getAllRecords(); }
+  function dbGetMeta(k) { return AppStorage.getMeta(k); }
+  function dbGetSetting(k) { return AppStorage.getSetting(k); }
+  function dbPutMeta(k, row) { return AppStorage.putMeta(k, row); }
+  function dbPutSetting(k, row) { return AppStorage.putSetting(k, row); }
+  function dbClear() { return AppStorage.clearAll(); }
 
   function seedWritten(list) {
     written = {};
@@ -1519,79 +1443,129 @@
     }
   }
 
-  /* 全量写入（迁移 / 缓存比数据库新时使用） */
-  function dbImport(records, lists, checkins, categories) {
-    return dbOpen().then(function (db) {
-      if (!db) return false;
-      return new Promise(function (resolve) {
+  /* 旧 shilu-db 优先；没有再用旧 localStorage 缓存。迁移成功才删旧 localStorage 键。 */
+  function migrateFromLegacy() {
+    return AppStorage.readLegacy().then(function (old) {
+      var out = old;
+      var empty = !out || (!out.records.length && !out.lists.length && !out.checkins.length && !out.prefs);
+      if (empty) {
+        out = { records: [], lists: [], checkins: [], categories: [], trash: [], prefs: null, images: [] };
         try {
-          var tx = db.transaction([DB_REC, DB_META], 'readwrite');
-          var store = tx.objectStore(DB_REC);
-          store.clear();
-          for (var i = 0; i < records.length; i++) store.put(records[i]);
-          tx.objectStore(DB_META).put({
-            k: 'collections', savedAt: currentSavedAt,
-            lists: lists, checkins: checkins, categories: categories, trash: state.trash
-          });
-          tx.oncomplete = function () { seedWritten(records); resolve(true); };
-          tx.onerror = function () { resolve(false); };
-          tx.onabort = function () { resolve(false); };
-        } catch (e) { resolve(false); }
+          var raw = localStorage.getItem(LEGACY_DB_KEY);
+          if (raw) {
+            var d = JSON.parse(raw);
+            out.records = d.records || []; out.lists = d.lists || []; out.checkins = d.checkins || [];
+            out.categories = d.categories || []; out.trash = d.trash || [];
+          }
+        } catch (e) { /* ignore */ }
+        try {
+          var lp = JSON.parse(localStorage.getItem(LEGACY_PREF_KEY) || 'null');
+          if (lp) out.prefs = lp;
+        } catch (e) { /* ignore */ }
+      }
+      if (!out.records.length && !out.lists.length && !out.checkins.length && !out.prefs) return false;
+      out.images = (out.images || []).map(function (im) {
+        if (im && typeof im.data === 'string' && im.data.indexOf('data:') === 0) {
+          var blob = dataURLToBlob(im.data);
+          if (blob) im.data = blob;
+        }
+        return im;
+      });
+      return AppStorage.writeMigration(out).then(function (ok) {
+        if (ok) {
+          try {
+            localStorage.removeItem(LEGACY_DB_KEY);
+            localStorage.removeItem(LEGACY_PREF_KEY);
+          } catch (e) { /* ignore */ }
+        }
+        return ok;
+      });
+    });
+  }
+
+  /* 启动读取：数据库是唯一真源，读完才允许渲染页面 */
+  function bootStore() {
+    return AppStorage.open().then(function (db) {
+      if (!db) return false;
+      return Promise.all([
+        AppStorage.getAllRecords(),
+        AppStorage.getMeta('migrated'),
+        AppStorage.getMeta('collections')
+      ]).then(function (init) {
+        var recs = init[0], migrated = init[1], cols = init[2];
+        var need = !migrated && !cols && (!recs || !recs.length);
+        return (need ? migrateFromLegacy() : Promise.resolve(false)).then(function () {
+          return Promise.all([
+            AppStorage.getAllRecords(),
+            AppStorage.getMeta('collections'),
+            AppStorage.getSetting('prefs'),
+            AppStorage.getSetting('draft')
+          ]);
+        });
+      }).then(function (res) {
+        state.records = (res[0] || []).map(normalizeRecord).filter(Boolean);
+        applyCollections(res[1]);
+        if (res[2] && res[2].data) applyPrefsObject(res[2].data);
+        draftStash = (res[3] && res[3].data && res[3].data.json) ? res[3].data : null;
+        /* 旧版草稿在 localStorage，迁移到 settings 后清掉 */
+        try {
+          var legacyDraft = localStorage.getItem('shilu.draft.v1');
+          if (legacyDraft) {
+            if (!draftStash) {
+              draftStash = JSON.parse(legacyDraft);
+              AppStorage.putSetting('draft', { data: draftStash, savedAt: Date.now() });
+            }
+            localStorage.removeItem('shilu.draft.v1');
+          }
+        } catch (e) { /* ignore damaged legacy draft */ }
+        seedWritten(state.records);
+        AppStorage.putMeta('migrated', { at: Date.now(), version: 1 });
+        if (res[1] && typeof res[1].recordCount === 'number' && res[1].recordCount !== state.records.length) {
+          toast('数据条数与上次记录不一致（' + state.records.length + ' / ' + res[1].recordCount + '），建议检查并导出备份');
+        }
+        currentSavedAt = new Date().toISOString();
+        AppStorage.putMeta('schema', {
+          dbVersion: AppStorage.DB_VER, schemaVersion: SCHEMA_VERSION, updatedAt: currentSavedAt
+        });
+        return true;
       });
     }).catch(function () { return false; });
+  }
+
+  function dbImport(records, lists, checkins, categories) {
+    return AppStorage.replaceRecords(records, {
+      lists: lists, checkins: checkins, categories: categories, trash: state.trash
+    }, currentSavedAt).then(function (ok) {
+      if (ok) seedWritten(records);
+      return ok;
+    });
   }
 
   /* 增量写入：只 put 新增/改动的，delete 已删除的 */
   function flushWrite() {
     writeTimer = null;
-    return dbOpen().then(function (db) {
-      if (!db) return false;
-      var list = state.records;
-      var next = {};
-      var puts = [];
-      for (var i = 0; i < list.length; i++) {
-        var r = list[i];
-        var j;
-        try { j = JSON.stringify(r); } catch (e) { continue; }
-        next[r.id] = j;
-        if (written[r.id] !== j) puts.push(r);
-      }
-      var dels = [];
-      for (var id in written) {
-        if (!(id in next)) dels.push(id);
-      }
-      return new Promise(function (resolve) {
-        try {
-          var tx = db.transaction([DB_REC, DB_META], 'readwrite');
-          var store = tx.objectStore(DB_REC);
-          for (var k = 0; k < puts.length; k++) store.put(puts[k]);
-          for (var m = 0; m < dels.length; m++) store.delete(dels[m]);
-          tx.objectStore(DB_META).put({
-            k: 'collections', savedAt: currentSavedAt,
-            lists: state.lists, checkins: state.checkins, categories: state.categories,
-            trash: state.trash
-          });
-          tx.oncomplete = function () { written = next; resolve(true); };
-          tx.onerror = function () { resolve(false); };
-          tx.onabort = function () { resolve(false); };
-        } catch (e) { resolve(false); }
-      });
-    }).catch(function () { return false; });
-  }
-
-  function dbClear() {
-    return dbOpen().then(function (db) {
-      if (!db) return;
-      try {
-        var stores = [DB_REC, DB_META];
-        if (db.objectStoreNames.contains(DB_IMG)) stores.push(DB_IMG);
-        var tx = db.transaction(stores, 'readwrite');
-        tx.objectStore(DB_REC).clear();
-        tx.objectStore(DB_META).clear();
-        if (db.objectStoreNames.contains(DB_IMG)) tx.objectStore(DB_IMG).clear();
-      } catch (e) { /* ignore */ }
-      written = {};
-    }).catch(function () { /* ignore */ });
+    var list = state.records;
+    var next = {};
+    var puts = [];
+    for (var i = 0; i < list.length; i++) {
+      var r = list[i];
+      var j;
+      try { j = JSON.stringify(r); } catch (e) { continue; }
+      next[r.id] = j;
+      if (written[r.id] !== j) puts.push(r);
+    }
+    var dels = [];
+    for (var id in written) {
+      if (!(id in next)) dels.push(id);
+    }
+    return AppStorage.putRecords(puts, dels, {
+      lists: state.lists, checkins: state.checkins,
+      categories: state.categories, trash: state.trash,
+      recordCount: state.records.length
+    }, currentSavedAt).then(function (ok) {
+      if (ok) { written = next; broadcastSync('records'); }
+      return noteWriteResult(ok);
+    }).catch(function () { return noteWriteResult(false); });
   }
 
   function queueWrite() {
@@ -1613,134 +1587,109 @@
     state.trash = normalizeTrash(meta.trash);
   }
 
-  /* 启动时：迁移旧数据 / 用数据库校正缓存 */
-  function initDB() {
-    dbOpen().then(function (db) {
-      if (!db) return null;
-      return Promise.all([dbGetAllRecords(), dbGetMeta('collections')]).then(function (res) {
-        var recs = res[0] || [];
-        var meta = res[1] || null;
-        var localRaw = null;
-        try { localRaw = localStorage.getItem(DB_KEY); } catch (e) { /* ignore */ }
+  var writeFailed = false, quotaWarned = false, storagePersisted = null;
+  var remoteChanged = false;
+  var TAB_ID = 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  var syncChannel = null;
+  try {
+    if (typeof BroadcastChannel !== 'undefined') syncChannel = new BroadcastChannel('cimengbu-sync');
+  } catch (e) { syncChannel = null; }
 
-        /* 空库：先把旧数据迁进来 */
-        if (!recs.length && !meta) {
-          if (localRaw) {
-            return dbImport(state.records, state.lists, state.checkins, state.categories);
-          }
-          return dbGetLegacy().then(function (row) {
-            if (!row || !row.json) return null;
-            var data = null;
-            try { data = JSON.parse(row.json); } catch (e) { return null; }
-            var list = (data && Array.isArray(data.records) ? data.records : []).map(normalizeRecord).filter(Boolean);
-            var lists = (data && Array.isArray(data.lists) ? data.lists : []).map(normalizeList).filter(Boolean);
-            var seen = {};
-            var cks = (data && Array.isArray(data.checkins) ? data.checkins : [])
-              .map(normalizeCheckin).filter(Boolean).filter(function (c) {
-                if (seen[c.date]) return false;
-                seen[c.date] = true;
-                return true;
-              });
-            state.records = list;
-            state.lists = lists;
-            state.checkins = cks;
-            state.categories = normalizeCategories(data && data.categories);
-            currentSavedAt = (data && data.savedAt) || new Date().toISOString();
-            render();
-            return dbImport(list, lists, cks, state.categories);
-          });
-        }
-
-        var dbSaved = (meta && meta.savedAt) || '';
-
-        /* 没有缓存 → 完全以数据库为准 */
-        if (!localRaw) {
-          state.records = recs.map(normalizeRecord).filter(Boolean);
-          applyCollections(meta);
-          currentSavedAt = dbSaved;
-          seedWritten(state.records);
-          render();
-          return null;
-        }
-
-        /* 数据库更新 → 覆盖内存 */
-        if (dbSaved && currentSavedAt && dbSaved > currentSavedAt) {
-          state.records = recs.map(normalizeRecord).filter(Boolean);
-          applyCollections(meta);
-          currentSavedAt = dbSaved;
-          seedWritten(state.records);
-          render();
-          return null;
-        }
-
-        /* 缓存更新 → 推给数据库 */
-        if (currentSavedAt && dbSaved && currentSavedAt > dbSaved) {
-          return dbImport(state.records, state.lists, state.checkins, state.categories);
-        }
-
-        /* 一致 → 只记录基线，方便后面算增量 */
-        seedWritten(recs.map(normalizeRecord).filter(Boolean));
-        return null;
-      });
-    }).catch(function () { /* ignore */ });
+  function broadcastSync(kind) {
+    if (!syncChannel) return;
+    try { syncChannel.postMessage({ from: TAB_ID, kind: kind, at: Date.now() }); } catch (e) { /* ignore */ }
   }
 
-  var cacheTimer = null;
-  var lastCacheAt = 0;
-
-  function buildCacheJson() {
-    try {
-      return JSON.stringify({
-        schemaVersion: SCHEMA_VERSION,
-        savedAt: currentSavedAt,
-        records: state.records,
-        lists: state.lists,
-        checkins: state.checkins,
-        categories: state.categories,
-        trash: state.trash
-      });
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /* 立刻写缓存（节流到期 / 切后台时调用） */
-  function writeCacheNow() {
-    if (cacheTimer) { clearTimeout(cacheTimer); cacheTimer = null; }
-    if (state.records.length > CACHE_MAX_RECORDS) {
-      try { localStorage.removeItem(DB_KEY); } catch (e) { /* ignore */ }
-      lastCacheAt = Date.now();
+  /* 另一个标签页改了数据：没在编辑就重新读库；正在编辑只提示，不覆盖草稿 */
+  function onRemoteChange(msg) {
+    if (!msg || msg.from === TAB_ID || !booted) return;
+    if ((state.route.name === 'edit' || state.route.name === 'new') && state.draft) {
+      remoteChanged = true;
+      render({ keepScroll: true });
       return;
     }
-    var json = buildCacheJson();
-    try {
-      if (json) localStorage.setItem(DB_KEY, json);
-    } catch (e) {
-      try { localStorage.removeItem(DB_KEY); } catch (e2) { /* ignore */ }
-    }
-    lastCacheAt = Date.now();
+    bootStore().then(function (ok) {
+      if (!ok) return;
+      applyTheme();
+      render({ keepScroll: true });
+      loadImages().then(function (n2) { if (n2) render({ keepScroll: true }); });
+    });
   }
 
-  /* 节流：10 秒内最多写一次，避免频繁全量序列化 */
-  function scheduleCacheWrite() {
-    var wait = CACHE_MIN_INTERVAL - (Date.now() - lastCacheAt);
-    if (wait <= 0) { writeCacheNow(); return; }
-    if (cacheTimer) return;
-    cacheTimer = setTimeout(writeCacheNow, wait);
+  if (syncChannel) syncChannel.onmessage = function (e) { onRemoteChange(e.data); };
+
+  window.addEventListener('appdb-versionchange', function () {
+    toast('数据库已升级，正在刷新…');
+    setTimeout(function () { location.reload(); }, 600);
+  });
+
+  /* 记录写入数据库失败时必须让人看见，不能弹「已保存」后静默回退 */
+  function noteWriteResult(ok) {
+    if (ok) {
+      if (writeFailed) { writeFailed = false; render({ keepScroll: true }); }
+      return ok;
+    }
+    if (!writeFailed) {
+      writeFailed = true;
+      toast('保存失败：本机数据库没写入，请重试或导出备份');
+      render({ keepScroll: true });
+    }
+    return ok;
   }
 
   function save() {
     currentSavedAt = new Date().toISOString();
-
-    /* 偏好项很小，每次都写 */
-    try { localStorage.setItem(PREF_KEY, JSON.stringify(state.prefs)); } catch (e) { /* ignore */ }
-
-    scheduleCacheWrite();
+    /* 不少流程改完偏好只调 save()，这里统一补一次，避免设置漏存 */
+    savePrefs();
     queueWrite();
   }
 
+  var prefTimer = null, prefDbWarned = false;
+
+  /* localStorage 只保存界面偏好，业务设置全部写 settings 表 */
+  function saveUiPrefs() {
+    try {
+      localStorage.setItem(UI_KEY, JSON.stringify({
+        theme: state.prefs.theme, accent: state.prefs.accent
+      }));
+    } catch (e) { /* 界面偏好写不进去不影响业务数据 */ }
+  }
+
+  function loadUiPrefs() {
+    try {
+      var p = JSON.parse(localStorage.getItem(UI_KEY) || 'null');
+      if (!p) {
+        var old = JSON.parse(localStorage.getItem(LEGACY_PREF_KEY) || 'null');
+        if (old) {
+          if (old.theme) state.prefs.theme = old.theme;
+          if (old.accent) state.prefs.accent = old.accent;
+        }
+        return;
+      }
+      if (p.theme) state.prefs.theme = p.theme;
+      if (p.accent) state.prefs.accent = p.accent;
+    } catch (e) { /* ignore */ }
+  }
+
   function savePrefs() {
-    try { localStorage.setItem(PREF_KEY, JSON.stringify(state.prefs)); } catch (e) { /* ignore */ }
+    state.prefs._at = Date.now();
+    saveUiPrefs();
+    if (prefTimer) return;
+    prefTimer = setTimeout(function () { prefTimer = null; flushPrefsDB(); }, 400);
+  }
+
+  function flushPrefsDB() {
+    if (prefTimer) { clearTimeout(prefTimer); prefTimer = null; }
+    var snap = null;
+    try { snap = JSON.parse(JSON.stringify(state.prefs)); } catch (e) { return Promise.resolve(false); }
+    return AppStorage.putSetting('prefs', { data: snap, savedAt: snap._at || Date.now() }).then(function (ok) {
+      if (!ok && !prefDbWarned && !writeFailed) {
+        prefDbWarned = true;
+        toast('设置没能写入本机数据库，请先导出备份');
+      }
+      if (ok) { prefDbWarned = false; broadcastSync('prefs'); }
+      return ok;
+    });
   }
 
   /* ---------------- 主题 ---------------- */
@@ -1778,6 +1727,7 @@
   var view = document.getElementById('view');
 
   function render(opts) {
+    if (!booted) { if (!bootFailed) renderBoot(); return; }
     opts = opts || {};
     var y = window.scrollY;
     var r = state.route;
@@ -1808,7 +1758,15 @@
     else if (r.name === 'person') html = personView(r.id || '');
     else if (r.name === 'settings') html = settingsView();
 
-    view.innerHTML = '<div class="page">' + html + '</div>';
+    var saveWarn = writeFailed
+      ? '<div class="save-warn">上次保存没能写入本机数据库。先别继续录入，点重试；仍失败就导出 JSON 备份。' +
+        '<button class="btn btn-ghost btn-sm" data-action="retry-write">重试保存</button></div>'
+      : '';
+    var syncWarn = remoteChanged
+      ? '<div class="sync-warn">另一个标签页刚改了数据。当前草稿不会被覆盖；保存后点刷新可看到最新内容。' +
+        '<button class="btn btn-ghost btn-sm" data-action="sync-reload">刷新</button></div>'
+      : '';
+    view.innerHTML = '<div class="page">' + saveWarn + syncWarn + html + '</div>';
     updateTabbar();
     if (opts.keepScroll) window.scrollTo(0, y);
     else window.scrollTo(0, 0);
@@ -3378,10 +3336,12 @@
       for (var i = 0; i < arr.length; i++) if (arr[i].id === rec.id) { idx = i; break; }
       if (idx >= 0) arr[idx] = rec; else arr.unshift(rec);
       state.prefs.accounts = arr;
-      savePrefs();
-      close();
-      render({ keepScroll: true });
-      toast(cur ? '已保存' : '已添加');
+      flushPrefsDB().then(function (ok) {
+        if (!ok) { toast('账号没写入数据库，请重试'); return; }
+        close();
+        render({ keepScroll: true });
+        toast(cur ? '已保存' : '已添加');
+      });
     });
   }
 
@@ -5204,12 +5164,8 @@
   }
 
   function tryRestoreStash(id) {
-    var raw = null;
-    try { raw = localStorage.getItem('shilu.draft.v1'); } catch (e) { return; }
-    if (!raw) return;
-    var st = null;
-    try { st = JSON.parse(raw); } catch (e) { clearStash(); return; }
-    if (!st || !st.json) { clearStash(); return; }
+    var st = draftStash;
+    if (!st || !st.json) return;
     if (String(st.id || '') !== String(id || '')) return;
     if (Date.now() - (st.at || 0) > 7 * 24 * 3600 * 1000) { clearStash(); return; }
     try {
@@ -5887,8 +5843,10 @@
     }).join('');
   }
 
+  var saveBusy = false;
+
   function saveDraft() {
-    if (state.readonly) return;
+    if (state.readonly || saveBusy) return;
     var d = state.draft;
     if (!d) return;
     var title = String(d.title || '').trim();
@@ -5968,8 +5926,6 @@
       updatedAt: now
     });
     if (!rec) return;
-    clearStash();
-    state.draftSnapshot = '';
 
     var prev = isNew ? null : state.records.filter(function (r) { return r.id === rec.id; })[0];
     var logs = Array.isArray(d.logs) ? d.logs.slice() : [];
@@ -5998,11 +5954,26 @@
       if (i >= 0) state.records[i] = rec;
       else state.records.unshift(rec);
     }
-    save();
-    state.draft = null;
-    if (prev) purgeImages([prev]);
-    toast(isNew ? '已收录「' + rec.title + '」' : '已保存');
-    location.hash = state.returnTo || '#/book';
+    saveBusy = true;
+    toast('保存中…');
+    flushWrite().then(function (ok) {
+      saveBusy = false;
+      if (!ok) {
+        /* 写库失败：回滚内存，留在编辑页，草稿和输入都还在 */
+        var ri = state.records.findIndex(function (r) { return r.id === rec.id; });
+        if (isNew) { if (ri >= 0) state.records.splice(ri, 1); }
+        else if (prev && ri >= 0) state.records[ri] = prev;
+        toast('保存失败，内容还在，请再点一次保存');
+        render({ keepScroll: true });
+        return;
+      }
+      clearStash();
+      state.draftSnapshot = '';
+      state.draft = null;
+      if (prev) purgeImages([prev]);
+      toast(isNew ? '已收录「' + rec.title + '」' : '已保存');
+      location.hash = state.returnTo || '#/book';
+    });
   }
 
   /* ---------------- 时间线 ---------------- */
@@ -7406,15 +7377,16 @@
       '<div class="set-row"><div class="set-row-main">' +
       '<div class="set-label">导出全部数据</div>' +
       '<div class="set-desc">' + (last ? '上次备份：' + ymd(new Date(last)) : '还没有备份过') + ' · 共 ' + state.records.length + ' 条' +
-      '<br>图片存在本机，备份文件不含图片</div>' +
+      '<br>JSON 和 ZIP 都含图片与全部设置；ZIP 体积小约 25%</div>' +
       '</div><div class="set-actions">' +
-      '<button class="btn btn-primary btn-sm" data-action="export">JSON</button>' +
+      '<button class="btn btn-primary btn-sm" data-action="export-zip">ZIP</button>' +
+      '<button class="btn btn-ghost btn-sm" data-action="export">JSON</button>' +
       '<button class="btn btn-ghost btn-sm" data-action="export-csv">CSV</button>' +
       '<button class="btn btn-ghost btn-sm" data-action="export-md">Markdown</button>' +
       '</div></div>' +
       '<div class="set-row"><div class="set-row-main">' +
-      '<div class="set-label">从 JSON 文件导入</div>' +
-      '<div class="set-desc">支持覆盖或合并，合并时按 id 去重</div>' +
+      '<div class="set-label">从备份文件导入</div>' +
+      '<div class="set-desc">支持 JSON / ZIP，覆盖或合并，合并时按 id 去重</div>' +
       '</div><button class="btn btn-ghost btn-sm" data-action="import">选择文件</button></div>' +
       '<div class="set-row"><div class="set-row-main">' +
       '<div class="set-label">从 CSV 文件导入</div>' +
@@ -7504,6 +7476,14 @@
       '<div class="set-desc"><b id="stor-cap">读取中…</b>（已用 / 本机可用）</div>' +
       '</div></div>' +
       '<div class="set-row"><div class="set-row-main">' +
+      '<div class="set-label">持久化保护</div>' +
+      '<div class="set-desc"><b id="stor-persist">读取中…</b>（防止浏览器自动回收本站数据）</div>' +
+      '</div></div>' +
+      '<div class="set-row"><div class="set-row-main">' +
+      '<div class="set-label">iPhone 长期使用</div>' +
+      '<div class="set-desc">把网页「添加到主屏幕」再打开；Safari 里长期不访问的站点数据可能被系统清理。定期导出 JSON 备份。</div>' +
+      '</div></div>' +
+      '<div class="set-row"><div class="set-row-main">' +
       '<div class="set-label">跨设备同步</div>' +
       '<div class="set-desc">导出后在另一台设备导入即可，数据不经过任何服务器</div>' +
       '</div></div>' +
@@ -7537,16 +7517,23 @@
         toast('备份未完成：有 ' + missing.length + ' 张本地图片缺失，请先检查图片');
         return;
       }
-      payload.images = Object.create(null);
-      Object.keys(refs).forEach(function (id) { payload.images[id] = IMG[id]; });
-      var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-      downloadBlob(blob, 'cimeibu-backup-' + todayISO() + '.json');
-      state.prefs.lastExportAt = Date.now();
-      state.prefs.backups = [{ at: Date.now(), count: state.records.length, kind: 'JSON' }]
-        .concat(state.prefs.backups || []).slice(0, 10);
-      savePrefs();
-      toast('已导出 ' + state.records.length + ' 条记录及 ' + Object.keys(refs).length + ' 张图片');
-      if (state.route.name === 'settings') render({ keepScroll: true });
+      var ids = Object.keys(refs);
+      Promise.all(ids.map(function (id) {
+        return imageDataURL(id).then(function (data) { return [id, data]; });
+      })).then(function (pairs) {
+        payload.images = Object.create(null);
+        pairs.forEach(function (pair) { if (pair[1]) payload.images[pair[0]] = pair[1]; });
+        var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        downloadBlob(blob, 'cimeibu-backup-' + todayISO() + '.json');
+        state.prefs.lastExportAt = Date.now();
+        state.prefs.backups = [{ at: Date.now(), count: state.records.length, kind: 'JSON' }]
+          .concat(state.prefs.backups || []).slice(0, 10);
+        savePrefs();
+        toast('已导出 ' + state.records.length + ' 条记录及 ' + pairs.length + ' 张图片');
+        if (state.route.name === 'settings') render({ keepScroll: true });
+      }).catch(function () {
+        toast('图片转换失败，备份未生成');
+      });
     }
     if (Object.keys(refs).some(function (id) { return !IMG[id]; })) return loadImages().then(finish);
     finish();
@@ -7590,18 +7577,22 @@
     var refs = imageRefs([incoming, extras.trash, extras.prefs && extras.prefs.spineArt]);
     var replacements = Object.create(null);
     var ids = Object.keys(refs);
+    var blobs = Object.create(null);
     ids.forEach(function (id) {
       var data = Object.prototype.hasOwnProperty.call(images, id) ? images[id] : '';
-      if (typeof data !== 'string' || !/^data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=\s]+$/i.test(data)) {
-        throw new Error('备份图片缺失或格式错误：' + id);
+      var blob = (typeof Blob !== 'undefined' && data instanceof Blob) ? data : null;
+      if (!blob && typeof data === 'string' && /^data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=\s]+$/i.test(data)) {
+        blob = dataURLToBlob(data);
       }
+      if (!blob) throw new Error('备份图片缺失或格式错误：' + id);
+      blobs[id] = blob;
     });
     return Promise.all(ids.map(function (id) {
-      var data = images[id];
-      var target = IMG[id] && IMG[id] !== data ? ('b' + uid()) : id;
-      return imgPut(target, data).then(function (ok) {
-        if (ok) { IMG[target] = data; delete IMG_MISSING[target]; }
-        replacements['img:' + id] = ok ? 'img:' + target : data;
+      var blob = blobs[id];
+      var target = IMG[id] && IMG[id] !== blob ? ('b' + uid()) : id;
+      return imgPut(target, blob).then(function (ok) {
+        if (ok) { IMG[target] = blob; delete IMG_MISSING[target]; }
+        replacements['img:' + id] = ok ? 'img:' + target : '';
       });
     })).then(function () {
       function replace(value) {
@@ -7612,6 +7603,50 @@
         });
       }
       replace(incoming); replace(extras.trash); replace(extras.prefs);
+    });
+  }
+
+  /* ZIP 备份：manifest.json + images/*，图片按二进制原样打包，不再 base64 膨胀 */
+  function exportZIP() {
+    var payload = JSON.parse(JSON.stringify({
+      schemaVersion: SCHEMA_VERSION, backupVersion: 2,
+      app: '次元簿', exportedAt: new Date().toISOString(), count: state.records.length,
+      records: state.records, lists: state.lists, checkins: state.checkins,
+      categories: state.categories, trash: state.trash, accounts: accounts(),
+      platforms: state.prefs.platforms || [], prefs: state.prefs
+    }));
+    var refs = imageRefs([payload.records, payload.trash, payload.prefs.spineArt]);
+    var ids = Object.keys(refs);
+    var missing = ids.filter(function (id) { return !IMG[id]; });
+    if (missing.length) {
+      toast('备份未完成：有 ' + missing.length + ' 张本地图片缺失，请先检查图片');
+      return;
+    }
+    Promise.all(ids.map(function (id) {
+      var v = IMG[id];
+      if (typeof v === 'string') v = dataURLToBlob(v);
+      if (!v) return null;
+      var ext = (v.type || '').indexOf('png') >= 0 ? 'png' : 'jpg';
+      return v.arrayBuffer().then(function (ab) {
+        return { id: id, name: 'images/' + id + '.' + ext, data: new Uint8Array(ab), type: v.type || 'image/jpeg' };
+      });
+    })).then(function (list) {
+      list = list.filter(Boolean);
+      payload.imageFiles = list.map(function (x) { return { id: x.id, name: x.name, type: x.type }; });
+      var manifest = new TextEncoder().encode(JSON.stringify(payload, null, 2));
+      var files = [{ name: 'manifest.json', data: manifest }].concat(list.map(function (x) {
+        return { name: x.name, data: x.data };
+      }));
+      var blob = ZipKit.create(files);
+      downloadBlob(blob, 'cimeibu-backup-' + todayISO() + '.zip');
+      state.prefs.lastExportAt = Date.now();
+      state.prefs.backups = [{ at: Date.now(), count: state.records.length, kind: 'ZIP' }]
+        .concat(state.prefs.backups || []).slice(0, 10);
+      savePrefs();
+      toast('已导出 ZIP：' + state.records.length + ' 条记录、' + list.length + ' 张图片');
+      if (state.route.name === 'settings') render({ keepScroll: true });
+    }).catch(function () {
+      toast('ZIP 生成失败，改用 JSON 导出');
     });
   }
 
@@ -7785,7 +7820,7 @@
   function pickImportFile() {
     var input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'application/json,.json';
+    input.accept = 'application/json,application/zip,.json,.zip';
     input.style.display = 'none';
     document.body.appendChild(input);
     input.addEventListener('change', function () {
@@ -7798,56 +7833,80 @@
 
   var pendingExtras = null;
 
+  function importFail(title, desc) {
+    openModal({ title: title, desc: desc, actions: [{ label: '知道了', value: null, variant: 'primary' }] });
+  }
+
+  function handleImportData(data, zipImages) {
+    if (data && !Array.isArray(data) && data.app && String(data.app) !== '次元簿') {
+      importFail('不是次元簿的备份',
+        '这个文件的软件标识是「' + String(data.app).slice(0, 24) + '」，为避免数据混淆，已拒绝导入。');
+      return;
+    }
+    var list = Array.isArray(data) ? data : (data && data.records);
+    if (!Array.isArray(list)) {
+      importFail('导入失败', '文件里找不到 records 字段，可能不是次元簿的备份文件。');
+      return;
+    }
+    pendingExtras = {
+      lists: (data && Array.isArray(data.lists)) ? data.lists.map(normalizeList).filter(Boolean) : null,
+      checkins: (data && Array.isArray(data.checkins)) ? data.checkins.map(normalizeCheckin).filter(Boolean) : null,
+      categories: (data && Array.isArray(data.categories)) ? normalizeCategories(data.categories) : null,
+      trash: (data && Array.isArray(data.trash)) ? normalizeTrash(data.trash) : null,
+      accounts: (data && Array.isArray(data.accounts)) ? normalizeAccounts(data.accounts) : null,
+      platforms: (data && Array.isArray(data.platforms)) ? normalizePlatforms(data.platforms) : null,
+      prefs: data && data.prefs && typeof data.prefs === 'object' ? data.prefs : null,
+      images: zipImages || (data && data.images && typeof data.images === 'object' && !Array.isArray(data.images) ? data.images : null),
+      backupVersion: data && Number(data.backupVersion) || 0
+    };
+    var ver = data && Number(data.schemaVersion);
+    if (ver && ver > SCHEMA_VERSION) {
+      openModal({
+        title: '版本较新',
+        desc: '文件的数据版本（v' + ver + '）高于当前应用（v' + SCHEMA_VERSION + '），导入后可能丢失部分字段。',
+        actions: [{ label: '取消', value: null, variant: 'ghost' }, { label: '仍然导入', value: 'ok', variant: 'primary' }]
+      }).then(function (v) { if (v === 'ok') askImportMode(list); });
+      return;
+    }
+    askImportMode(list);
+  }
+
   function handleImportFile(file) {
+    var isZip = /\.zip$/i.test(file.name || '') || file.type === 'application/zip';
+    if (isZip) {
+      var zr = new FileReader();
+      zr.onload = function () {
+        var buffer = zr.result;
+        var magic = 0;
+        try { magic = buffer.byteLength >= 4 ? new DataView(buffer).getUint32(0, true) : 0; } catch (e) { magic = 0; }
+        if (magic !== 0x04034b50) { importFail('导入失败', '这个文件不是有效的 ZIP。'); return; }
+        ZipKit.read(buffer).then(function (entries) {
+          var manifestBytes = entries['manifest.json'];
+          if (!manifestBytes) throw new Error('ZIP 里缺少 manifest.json');
+          var data = JSON.parse(new TextDecoder().decode(manifestBytes));
+          var images = {};
+          (data.imageFiles || []).forEach(function (f) {
+            var bytes = entries[f.name];
+            if (bytes) images[f.id] = new Blob([bytes], { type: f.type || 'image/jpeg' });
+          });
+          handleImportData(data, images);
+        }).catch(function (err) {
+          importFail('ZIP 读取失败', String(err && err.message || err));
+        });
+      };
+      zr.onerror = function () { importFail('导入失败', '文件读取失败，请重试。'); };
+      zr.readAsArrayBuffer(file);
+      return;
+    }
+
     var reader = new FileReader();
     reader.onload = function () {
       var data;
-      try {
-        data = JSON.parse(String(reader.result));
-      } catch (e) {
-        openModal({
-          title: '导入失败',
-          desc: '这个文件不是有效的 JSON，请确认选择的是次元簿导出的备份文件。',
-          actions: [{ label: '知道了', value: null, variant: 'primary' }]
-        });
-        return;
-      }
-
-      var list = Array.isArray(data) ? data : (data && data.records);
-      if (!Array.isArray(list)) {
-        openModal({
-          title: '导入失败',
-          desc: '文件里找不到 records 字段，可能不是次元簿的备份文件。',
-          actions: [{ label: '知道了', value: null, variant: 'primary' }]
-        });
-        return;
-      }
-
-      pendingExtras = {
-        lists: (data && Array.isArray(data.lists)) ? data.lists.map(normalizeList).filter(Boolean) : null,
-        checkins: (data && Array.isArray(data.checkins)) ? data.checkins.map(normalizeCheckin).filter(Boolean) : null,
-        categories: (data && Array.isArray(data.categories)) ? normalizeCategories(data.categories) : null,
-        trash: (data && Array.isArray(data.trash)) ? normalizeTrash(data.trash) : null,
-        accounts: (data && Array.isArray(data.accounts)) ? normalizeAccounts(data.accounts) : null,
-        platforms: (data && Array.isArray(data.platforms)) ? normalizePlatforms(data.platforms) : null,
-        prefs: data && data.prefs && typeof data.prefs === 'object' ? data.prefs : null,
-        images: data && data.images && typeof data.images === 'object' && !Array.isArray(data.images) ? data.images : null,
-        backupVersion: data && Number(data.backupVersion) || 0
-      };
-
-      var ver = data && Number(data.schemaVersion);
-      if (ver && ver > SCHEMA_VERSION) {
-        openModal({
-          title: '版本较新',
-          desc: '文件的数据版本（v' + ver + '）高于当前应用（v' + SCHEMA_VERSION + '），导入后可能丢失部分字段。',
-          actions: [{ label: '取消', value: null, variant: 'ghost' }, { label: '仍然导入', value: 'ok', variant: 'primary' }]
-        }).then(function (v) {
-          if (v === 'ok') askImportMode(list);
-        });
-        return;
-      }
-      askImportMode(list);
+      try { data = JSON.parse(String(reader.result)); }
+      catch (e) { importFail('导入失败', '这个文件不是有效的 JSON，请确认选择的是次元簿导出的备份文件。'); return; }
+      handleImportData(data, null);
     };
+    reader.onerror = function () { importFail('导入失败', '文件读取失败，请重试。'); };
     reader.readAsText(file);
   }
 
@@ -7880,9 +7939,14 @@
       return;
     }
 
+    var sum = [];
+    if (pendingExtras && pendingExtras.images) sum.push(Object.keys(pendingExtras.images).length + ' 张图片');
+    if (pendingExtras && pendingExtras.accounts) sum.push(pendingExtras.accounts.length + ' 个账号');
+    if (pendingExtras && pendingExtras.trash) sum.push(pendingExtras.trash.length + ' 条回收站记录');
+    var summary = incoming.length + ' 条记录' + (sum.length ? '、' + sum.join('、') : '');
     openModal({
-      title: '导入 ' + incoming.length + ' 条记录',
-      desc: '选择导入方式。合并会保留现有记录，按 id 去重，updatedAt 较新的覆盖较旧的。',
+      title: incoming.length ? '导入 ' + incoming.length + ' 条记录' : '导入备份中的其他数据',
+      desc: '备份概况：' + summary + '。\n\n导入会改动当前数据，建议先导出当前备份。合并保留现有记录，按 id 去重，较新的覆盖较旧的。',
       body: '<div class="modal-choice">' +
         '<button class="choice" data-choice="merge"><strong>合并</strong><span>保留现有记录，重复的按更新时间取新</span></button>' +
         '<button class="choice" data-choice="overwrite"><strong>覆盖</strong><span>清空当前全部记录，只保留文件中的内容</span></button>' +
@@ -7912,7 +7976,16 @@
       return prepareBackupImages(incoming, extras);
     }).then(function () {
       commitImport(incoming, mode, extras);
-      return true;
+      return flushWrite();
+    }).then(function (ok) {
+      if (!ok) { toast('恢复写入数据库失败，当前数据未确认，请重试'); return false; }
+      return dbGetAllRecords().then(function (rows) {
+        var n = rows ? rows.length : -1;
+        if (n !== state.records.length) {
+          toast('恢复后校验不一致：数据库 ' + n + ' 条，界面 ' + state.records.length + ' 条');
+        }
+        return true;
+      });
     }).catch(function (error) {
       toast('导入失败，当前记录未改动：' + error.message);
       return false;
@@ -7925,14 +7998,12 @@
     if (mode === 'overwrite') {
       added = incoming.length;
       state.records = incoming.slice();
-      if (pendingExtras) {
-        if (pendingExtras.lists) state.lists = pendingExtras.lists;
-        if (pendingExtras.checkins) state.checkins = pendingExtras.checkins;
-        if (pendingExtras.categories) state.categories = pendingExtras.categories;
-        if (pendingExtras.trash) state.trash = pendingExtras.trash;
-        if (pendingExtras.accounts) state.prefs.accounts = pendingExtras.accounts;
-        if (pendingExtras.platforms) state.prefs.platforms = pendingExtras.platforms;
-      }
+      state.lists = (pendingExtras && pendingExtras.lists) ? pendingExtras.lists : [];
+      state.checkins = (pendingExtras && pendingExtras.checkins) ? pendingExtras.checkins : [];
+      state.categories = (pendingExtras && pendingExtras.categories) ? pendingExtras.categories : [];
+      state.trash = (pendingExtras && pendingExtras.trash) ? pendingExtras.trash : [];
+      state.prefs.accounts = (pendingExtras && pendingExtras.accounts) ? pendingExtras.accounts : [];
+      state.prefs.platforms = (pendingExtras && pendingExtras.platforms) ? pendingExtras.platforms : [];
     } else {
       var map = {};
       state.records.forEach(function (r) { map[r.id] = r; });
@@ -7999,6 +8070,7 @@
     state.records.forEach(function (r) { activeRecordIds[r.id] = true; });
     state.trash = state.trash.filter(function (x) { return !activeRecordIds[x.r.id]; });
     if (pendingExtras) restoreBackupPrefs(pendingExtras.prefs, mode);
+    savePrefs();
     clearStash();
     state.draft = null;
     save();
@@ -8703,21 +8775,25 @@
     }
   }
 
+  var draftStash = null;   /* 未保存草稿，只进 IndexedDB settings */
+
   function stashDraft() {
     if (!state.draft) return;
     try {
-      localStorage.setItem('shilu.draft.v1', JSON.stringify({
+      draftStash = {
         id: state.draft.id || '',
         type: state.draft.type,
         title: state.draft.title || '',
         at: Date.now(),
         json: JSON.stringify(state.draft)
-      }));
+      };
+      AppStorage.putSetting('draft', { data: draftStash, savedAt: draftStash.at });
     } catch (e) { /* ignore */ }
   }
 
   function clearStash() {
-    try { localStorage.removeItem('shilu.draft.v1'); } catch (e) { /* ignore */ }
+    draftStash = null;
+    AppStorage.del('settings', 'draft');
   }
 
   function goBack() {
@@ -8926,6 +9002,24 @@
         break;
       }
 
+      case 'retry-boot':
+        location.reload();
+        break;
+
+      case 'sync-reload':
+        location.reload();
+        break;
+
+      case 'retry-write':
+        if (state.draft && (state.route.name === 'new' || state.route.name === 'edit')) {
+          saveDraft();
+          break;
+        }
+        flushWrite().then(function (ok) {
+          toast(ok ? '已写入本机数据库' : '仍然写不进去，请导出备份后重试');
+        });
+        break;
+
       case 'spine-art':
         openSpineArtPicker();
         break;
@@ -8975,9 +9069,10 @@
         ghit.games = normalizeGames(ghit.games.concat(parsedGames));
         ghit.updatedAt = Date.now();
         state.prefs.accounts = garr;
-        savePrefs();
         render({ keepScroll: true });
-        toast('已加 ' + (ghit.games.length - gbefore) + ' 款');
+        flushPrefsDB().then(function (ok) {
+          toast(ok ? '已加 ' + (ghit.games.length - gbefore) + ' 款' : '没写入数据库，请重试');
+        });
         break;
       }
 
@@ -8992,9 +9087,10 @@
         }).then(function (v) {
           if (v !== 'ok') return;
           state.prefs.accounts = accounts().filter(function (a) { return a.id !== aid; });
-          savePrefs();
           render({ keepScroll: true });
-          toast('已删除');
+          flushPrefsDB().then(function (ok) {
+            toast(ok ? '已删除' : '删除没写入数据库，请重试');
+          });
         });
         break;
       }
@@ -9150,7 +9246,9 @@
         if (!back) break;
         save();
         render({ keepScroll: true });
-        toast('已恢复「' + back.title + '」');
+        flushWrite().then(function (ok) {
+          toast(ok ? '已恢复「' + back.title + '」' : '恢复没写入数据库，请重试');
+        });
         break;
       }
 
@@ -9166,7 +9264,9 @@
           purgeImages(gone.map(function (x) { return x.r; }));
           save();
           render({ keepScroll: true });
-          toast('已彻底删除');
+          flushWrite().then(function (ok) {
+            toast(ok ? '已彻底删除' : '删除没写入数据库，请重试');
+          });
         });
         break;
 
@@ -9182,7 +9282,9 @@
           purgeImages(purged);
           save();
           render({ keepScroll: true });
-          toast('回收站已清空');
+          flushWrite().then(function (ok) {
+            toast(ok ? '回收站已清空' : '清空没写入数据库，请重试');
+          });
         });
         break;
 
@@ -9300,8 +9402,10 @@
         if (!bumpProgress(prec)) { toast('这条记录没有可增加的进度'); break; }
         prec.updatedAt = Date.now();
         save();
-        toast('进度 +1');
         render({ keepScroll: true });
+        flushWrite().then(function (ok) {
+          toast(ok ? '进度 +1' : '进度没写入数据库，请重试');
+        });
         break;
       }
 
@@ -9485,14 +9589,24 @@
               actions: [{ label: '取消', value: null, variant: 'ghost' }, { label: '移到回收站', value: 'ok', variant: 'danger' }]
             }).then(function (v) {
               if (v !== 'ok') return;
+              var prevTrash = state.trash.slice();
               state.records = state.records.filter(function (r) { return r.id !== rec.id; });
               trashAdd([rec]);
               save();
-              state.draft = null;
-              state.readonly = false;
-              try { sessionStorage.removeItem('shilu.ro.v1'); } catch (e2) { /* ignore */ }
-              toast('已删除');
-              location.hash = state.returnTo || '#/book';
+              flushWrite().then(function (ok) {
+                if (!ok) {
+                  state.records.push(rec);
+                  state.trash = prevTrash;
+                  toast('删除失败，记录已恢复');
+                  render({ keepScroll: true });
+                  return;
+                }
+                state.draft = null;
+                state.readonly = false;
+                try { sessionStorage.removeItem('shilu.ro.v1'); } catch (e2) { /* ignore */ }
+                toast('已删除');
+                location.hash = state.returnTo || '#/book';
+              });
             });
           }
         }
@@ -9578,6 +9692,10 @@
 
       case 'export':
         exportJSON();
+        break;
+
+      case 'export-zip':
+        exportZIP();
         break;
 
       case 'export-csv':
@@ -9697,12 +9815,14 @@
           state.draft = null;
           Object.keys(IMG).forEach(function (id) { delete IMG[id]; });
           Object.keys(IMG_MISSING).forEach(function (id) { delete IMG_MISSING[id]; });
-          savePrefs();
-          save();
-          dbClear();
           clearStash();
-          toast('已清空');
-          render({ keepScroll: true });
+          dbClear().then(function (ok) {
+            AppStorage.putMeta('migrated', { at: Date.now(), version: 1 });
+            savePrefs();
+            save();
+            toast(ok ? '已清空' : '清空失败，请重试');
+            render({ keepScroll: true });
+          });
         });
         break;
     }
@@ -10179,8 +10299,24 @@
 
   /* ---------------- 启动 ---------------- */
 
+  var booted = false, bootFailed = false;
+
+  function renderBoot() {
+    view.innerHTML = '<div class="page"><div class="boot-wait">' +
+      '<div class="boot-spin" aria-hidden="true"></div>' +
+      '<p>正在读取本机数据…</p></div></div>';
+  }
+
+  function renderBootError() {
+    bootFailed = true;
+    view.innerHTML = '<div class="page"><div class="boot-wait">' +
+      '<p>本机数据库打不开，记录暂时读不到。</p>' +
+      '<p class="muted">可能是无痕模式、网站数据被禁用，或另一个标签页正占用数据库。关掉其他页面后点重试。</p>' +
+      '<button class="btn btn-primary btn-sm" data-action="retry-boot">重试</button></div></div>';
+  }
+
   function init() {
-    load();
+    loadUiPrefs();
     applyTheme();
     var now = new Date();
     state.timeline.y = now.getFullYear();
@@ -10190,31 +10326,40 @@
 
     var r = parseRoute();
     state.route = r;
-    if (r.name === 'new') initDraft(null);
-    else if (r.name === 'edit') initDraft(r.id);
-    else state.draft = null;
-
     if (!state.route.name) state.route.name = 'home';
 
-    render();
-    loadImages().then(function (n) { if (n) render({ keepScroll: true }); });
     bindEvents();
     registerSW();
     watchInstall();
-    checkStandaloneTip();
+    renderBoot();
 
-    /* 切后台或关闭时，把缓存和数据库都强制落一次 */
-    window.addEventListener('pagehide', function () { writeCacheNow(); flushWrite(); });
+    /* 切后台或关闭时，把记录和设置都强制落一次 */
+    window.addEventListener('pagehide', function () { flushWrite(); flushPrefsDB(); });
     document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState === 'hidden') { writeCacheNow(); flushWrite(); }
+      if (document.visibilityState === 'hidden') { flushWrite(); flushPrefsDB(); }
     });
-    readStorageInfo();
-    initDB();
 
-    /* 告诉 index.html 里的启动自检：已经正常跑起来了 */
+    /* 告诉 index.html 里的启动自检：脚本已经跑起来了 */
     window.__BOOT_OK = true;
     var fix = document.getElementById('boot-fix');
     if (fix) fix.parentNode.removeChild(fix);
+
+    bootStore().then(function (ok) {
+      if (!ok) { renderBootError(); return; }
+      booted = true;
+      applyTheme();
+      var nowRoute = state.route;
+      if (nowRoute.name === 'new') initDraft(null);
+      else if (nowRoute.name === 'edit') initDraft(nowRoute.id);
+      else state.draft = null;
+      render();
+      loadImages().then(function (n) { if (n) render({ keepScroll: true }); });
+      checkStandaloneTip();
+      readStorageInfo();
+      requestPersistentStorage().then(function () {
+        if (state.route.name === 'settings') paintStorageInfo();
+      });
+    });
   }
 
   function probeServerVersion(force) {
@@ -10273,6 +10418,10 @@
       return navigator.storage.estimate().then(function (e) {
         storUsed = (e && e.usage) ? e.usage : 0;
         storQuota = (e && e.quota) ? e.quota : 0;
+        if (storQuota && storUsed / storQuota > 0.8 && !quotaWarned) {
+          quotaWarned = true;
+          toast('本机存储已用超过 80%，请导出备份并清理图片');
+        }
       }).catch(function () { storUsed = 0; storQuota = 0; });
     } catch (err) {
       storUsed = 0;
@@ -10295,6 +10444,23 @@
     return [info, cap];
   }
 
+  /* 申请持久化存储：能显著降低浏览器在磁盘紧张时回收本站数据的概率 */
+  function requestPersistentStorage() {
+    try {
+      if (!navigator.storage || !navigator.storage.persist || !navigator.storage.persisted) {
+        storagePersisted = false;
+        return Promise.resolve(false);
+      }
+      return navigator.storage.persisted().then(function (already) {
+        if (already) { storagePersisted = true; return true; }
+        return navigator.storage.persist().then(function (ok) {
+          storagePersisted = !!ok;
+          return storagePersisted;
+        });
+      }).catch(function () { storagePersisted = false; return false; });
+    } catch (e) { storagePersisted = false; return Promise.resolve(false); }
+  }
+
   function paintStorageInfo() {
     var el = document.getElementById('stor-info');
     var cap = document.getElementById('stor-cap');
@@ -10302,6 +10468,9 @@
     var t = storageTexts();
     if (el) el.textContent = t[0];
     if (cap) cap.textContent = t[1];
+    var ps = document.getElementById('stor-persist');
+    if (ps) ps.textContent = storagePersisted === null ? '读取中…'
+      : (storagePersisted ? '已开启，浏览器不会自动回收' : '未开启，建议添加到主屏幕并定期导出备份');
     if (storUsed < 0) readStorageInfo().then(paintStorageInfo);
   }
 
@@ -10543,6 +10712,6 @@
 
   window.__shilu = { state: state, render: render, save: save,
     flushWrite: flushWrite, loadImages: loadImages, coverSrc: coverSrc, IMG: IMG,
-    initDB: initDB, typesOn: typesOn };
+    bootStore: bootStore, typesOn: typesOn };
 
 })();

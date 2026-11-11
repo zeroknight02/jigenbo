@@ -117,6 +117,67 @@ a { color: inherit; }
 
 .page { animation: rise .32s cubic-bezier(.22, .8, .3, 1); }
 
+/* 启动时先读 IndexedDB，读完才渲染页面 */
+.boot-wait {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 52vh;
+  text-align: center;
+  color: var(--ink-3);
+  font-size: 13px;
+}
+.boot-wait p { margin: 0; }
+.boot-spin {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--line-strong);
+  border-top-color: var(--accent);
+  animation: bootspin .9s linear infinite;
+}
+@keyframes bootspin { to { transform: rotate(360deg); } }
+
+/* 数据库写入失败时一直挂在页面顶部，直到下一次写成功 */
+.save-warn {
+  margin: 0 0 16px;
+  padding: 11px 14px;
+  border: 1px solid #F09595;
+  border-radius: 14px;
+  background: #FCEBEB;
+  color: #791F1F;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+[data-theme="dark"] .save-warn {
+  background: #3B1A1A;
+  border-color: #A32D2D;
+  color: #F7C1C1;
+}
+
+/* 另一个标签页改了数据时的提示 */
+.sync-warn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 0 16px;
+  padding: 11px 14px;
+  border: 1px solid #EF9F27;
+  border-radius: 14px;
+  background: #FAEEDA;
+  color: #633806;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+[data-theme="dark"] .sync-warn {
+  background: #3A2A12;
+  border-color: #BA7517;
+  color: #FAC775;
+}
+
 .narrow { max-width: 720px; margin: 0 auto; }
 
 body.is-editing .view { max-width: 720px; }
