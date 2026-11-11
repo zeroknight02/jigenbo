@@ -268,6 +268,25 @@
     }).catch(function () { return false; });
   }
 
+  /* 用户主动清空全部数据时，旧 shilu-db 也要清掉，否则会一直占空间 */
+  function clearLegacy() {
+    return legacyOpen().then(function (db) {
+      if (!db) return false;
+      return new Promise(function (resolve) {
+        try {
+          var names = ['records', 'meta', 'images'].filter(function (n) {
+            return db.objectStoreNames.contains(n);
+          });
+          if (!names.length) { try { db.close(); } catch (e) { /* ignore */ } resolve(false); return; }
+          var tx = db.transaction(names, 'readwrite');
+          names.forEach(function (n) { tx.objectStore(n).clear(); });
+          tx.oncomplete = function () { try { db.close(); } catch (e) { /* ignore */ } resolve(true); };
+          tx.onerror = tx.onabort = function () { try { db.close(); } catch (e) { /* ignore */ } resolve(false); };
+        } catch (e) { resolve(false); }
+      });
+    }).catch(function () { return false; });
+  }
+
   window.AppStorage = {
     DB_NAME: DB_NAME, DB_VER: DB_VER, STORES: S,
     open: open, getAll: getAll, get: get, put: put, del: del, clearAll: clearAll,
@@ -275,6 +294,6 @@
     putMeta: putMeta, putSetting: putSetting,
     putRecords: putRecords, replaceRecords: replaceRecords,
     getAllImages: getAllImages, putImage: putImage, deleteImage: deleteImage,
-    readLegacy: readLegacy, writeMigration: writeMigration
+    readLegacy: readLegacy, writeMigration: writeMigration, clearLegacy: clearLegacy
   };
 })();

@@ -10,8 +10,8 @@
   var SCHEMA_VERSION = 1;
 
   /* 每次发布改这里和 sw.js 的 VERSION（两者一起改） */
-  var APP_VERSION = '1.58';
-  var SW_VERSION = 'v59';
+  var APP_VERSION = '1.60';
+  var SW_VERSION = 'v61';
   var UI_KEY = 'shilu.ui.v1';              /* 只存主题/配色这类界面偏好 */
   var LEGACY_DB_KEY = 'shilu.db.v1';       /* v1.53 之前的记录缓存，仅用于迁移 */
   var LEGACY_PREF_KEY = 'shilu.prefs.v1';  /* v1.53 之前的偏好，仅用于迁移 */
@@ -1777,7 +1777,11 @@
     paintIconTips();
     if (state.ui.sortMode) enableDragSort();
     if (state.route.name === 'quotes' && state.ui.quoteQ) filterQuoteCards(state.ui.quoteQ);
-    if (state.route.name === 'settings') { paintServerVersion(); paintStorageInfo(); }
+    if (state.route.name === 'settings') {
+      paintServerVersion();
+      paintStorageInfo();
+      readStorageInfo().then(paintStorageInfo);
+    }
     if (state.route.name === 'stats') {
       var hw = document.querySelector('.heat-wrap');
       if (hw) hw.scrollLeft = hw.scrollWidth;
@@ -7469,7 +7473,7 @@
       '<button class="btn btn-ghost btn-sm" data-action="backfill-date">补全</button></div>' +
       '<div class="set-row"><div class="set-row-main">' +
       '<div class="set-label">存储占用</div>' +
-      '<div class="set-desc"><b id="stor-info">读取中…</b>（已用 / 本机可用配额）</div>' +
+      '<div class="set-desc"><b id="stor-info">读取中…</b>（已用 / 配额，含离线缓存）</div>' +
       '</div></div>' +
       '<div class="set-row"><div class="set-row-main">' +
       '<div class="set-label">记录容量</div>' +
@@ -7578,6 +7582,7 @@
     var replacements = Object.create(null);
     var ids = Object.keys(refs);
     var blobs = Object.create(null);
+    var written = [];
     ids.forEach(function (id) {
       var data = Object.prototype.hasOwnProperty.call(images, id) ? images[id] : '';
       var blob = (typeof Blob !== 'undefined' && data instanceof Blob) ? data : null;
@@ -7591,8 +7596,11 @@
       var blob = blobs[id];
       var target = IMG[id] && IMG[id] !== blob ? ('b' + uid()) : id;
       return imgPut(target, blob).then(function (ok) {
-        if (ok) { IMG[target] = blob; delete IMG_MISSING[target]; }
-        replacements['img:' + id] = ok ? 'img:' + target : '';
+        if (!ok) throw new Error('图片写入失败，可能是本机空间不足');
+        written.push(target);
+        IMG[target] = blob;
+        delete IMG_MISSING[target];
+        replacements['img:' + id] = 'img:' + target;
       });
     })).then(function () {
       function replace(value) {
@@ -7603,6 +7611,10 @@
         });
       }
       replace(incoming); replace(extras.trash); replace(extras.prefs);
+    }).catch(function (err) {
+      /* 导入失败：清掉这次刚写进去的图片，不留半套数据 */
+      written.forEach(function (id) { imgDelete(id); });
+      throw err;
     });
   }
 
@@ -9817,11 +9829,18 @@
           Object.keys(IMG_MISSING).forEach(function (id) { delete IMG_MISSING[id]; });
           clearStash();
           dbClear().then(function (ok) {
+            return AppStorage.clearLegacy().then(function () { return ok; });
+          }).then(function (ok) {
+            try {
+              localStorage.removeItem(LEGACY_DB_KEY);
+              localStorage.removeItem(LEGACY_PREF_KEY);
+            } catch (e) { /* ignore */ }
             AppStorage.putMeta('migrated', { at: Date.now(), version: 1 });
             savePrefs();
             save();
             toast(ok ? '已清空' : '清空失败，请重试');
             render({ keepScroll: true });
+            readStorageInfo().then(paintStorageInfo);
           });
         });
         break;
@@ -10387,6 +10406,7 @@
 
   var storUsed = -1;   /* -1 表示还没读到 */
   var storQuota = 0;
+  var storDetails = null;   /* indexedDB / caches / localStorage 分项 */
 
   function fmtCount(n) {
     n = Math.floor(Number(n) || 0);
@@ -10418,6 +10438,7 @@
       return navigator.storage.estimate().then(function (e) {
         storUsed = (e && e.usage) ? e.usage : 0;
         storQuota = (e && e.quota) ? e.quota : 0;
+        storDetails = (e && e.usageDetails) ? e.usageDetails : null;
         if (storQuota && storUsed / storQuota > 0.8 && !quotaWarned) {
           quotaWarned = true;
           toast('本机存储已用超过 80%，请导出备份并清理图片');
@@ -10435,8 +10456,16 @@
     if (storUsed < 0) return ['读取中…', '读取中…'];
     if (!storQuota) return ['当前浏览器不支持读取', '—'];
     var pct = storUsed / storQuota * 100;
+    var detail = '';
+    if (storDetails) {
+      var parts = [];
+      if (storDetails.indexedDB) parts.push('数据库 ' + fmtBytes(storDetails.indexedDB));
+      if (storDetails.caches) parts.push('离线缓存 ' + fmtBytes(storDetails.caches));
+      if (storDetails.localStorage) parts.push('设置 ' + fmtBytes(storDetails.localStorage));
+      if (parts.length) detail = '（' + parts.join(' · ') + '）';
+    }
     var info = fmtBytes(storUsed) + ' / ' + fmtBytes(storQuota) +
-      '（' + (pct < 0.1 ? '＜0.1' : pct.toFixed(1)) + '%）';
+      '（' + (pct < 0.1 ? '＜0.1' : pct.toFixed(1)) + '%）' + detail;
     var avg = avgRecordBytes();
     var maxRec = Math.floor(storQuota / avg);
     var cap = fmtCount(state.records.length) + ' 条 / 约 ' + fmtCount(maxRec) +
