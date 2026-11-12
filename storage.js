@@ -268,22 +268,52 @@
     }).catch(function () { return false; });
   }
 
-  /* 用户主动清空全部数据时，旧 shilu-db 也要清掉，否则会一直占空间 */
-  function clearLegacy() {
+  /* 旧库概况：只数条数，不把内容读进内存 */
+  function legacyStats() {
     return legacyOpen().then(function (db) {
-      if (!db) return false;
+      if (!db) return null;
       return new Promise(function (resolve) {
+        var out = { records: 0, images: 0, collections: false };
         try {
-          var names = ['records', 'meta', 'images'].filter(function (n) {
+          var names = ['records', 'images', 'meta'].filter(function (n) {
             return db.objectStoreNames.contains(n);
           });
-          if (!names.length) { try { db.close(); } catch (e) { /* ignore */ } resolve(false); return; }
-          var tx = db.transaction(names, 'readwrite');
-          names.forEach(function (n) { tx.objectStore(n).clear(); });
-          tx.oncomplete = function () { try { db.close(); } catch (e) { /* ignore */ } resolve(true); };
-          tx.onerror = tx.onabort = function () { try { db.close(); } catch (e) { /* ignore */ } resolve(false); };
-        } catch (e) { resolve(false); }
+          if (!names.length) { try { db.close(); } catch (e) { /* ignore */ } resolve(out); return; }
+          var tx = db.transaction(names, 'readonly');
+          if (names.indexOf('records') >= 0) {
+            var c1 = tx.objectStore('records').count();
+            c1.onsuccess = function () { out.records = c1.result || 0; };
+          }
+          if (names.indexOf('images') >= 0) {
+            var c2 = tx.objectStore('images').count();
+            c2.onsuccess = function () { out.images = c2.result || 0; };
+          }
+          if (names.indexOf('meta') >= 0) {
+            var g = tx.objectStore('meta').get('collections');
+            g.onsuccess = function () { out.collections = !!g.result; };
+          }
+          tx.oncomplete = function () { try { db.close(); } catch (e) { /* ignore */ } resolve(out); };
+          tx.onerror = tx.onabort = function () { try { db.close(); } catch (e) { /* ignore */ } resolve(out); };
+        } catch (e) { try { db.close(); } catch (e2) { /* ignore */ } resolve(null); }
       });
+    }).catch(function () { return null; });
+  }
+
+  function deleteDb(name) {
+    return new Promise(function (resolve) {
+      var req;
+      try { req = window.indexedDB.deleteDatabase(name); } catch (e) { resolve(false); return; }
+      req.onsuccess = function () { resolve(true); };
+      req.onerror = function () { resolve(false); };
+      req.onblocked = function () { resolve(false); };
+    });
+  }
+
+  /* 整个删掉旧库，不只是清空表；不存在时返回 false */
+  function deleteLegacy() {
+    return legacyStats().then(function (st) {
+      if (!st) return false;
+      return deleteDb(LEGACY_DB);
     }).catch(function () { return false; });
   }
 
@@ -294,6 +324,7 @@
     putMeta: putMeta, putSetting: putSetting,
     putRecords: putRecords, replaceRecords: replaceRecords,
     getAllImages: getAllImages, putImage: putImage, deleteImage: deleteImage,
-    readLegacy: readLegacy, writeMigration: writeMigration, clearLegacy: clearLegacy
+    readLegacy: readLegacy, writeMigration: writeMigration,
+    legacyStats: legacyStats, deleteLegacy: deleteLegacy, deleteDb: deleteDb
   };
 })();

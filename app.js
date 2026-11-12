@@ -10,8 +10,8 @@
   var SCHEMA_VERSION = 1;
 
   /* 每次发布改这里和 sw.js 的 VERSION（两者一起改） */
-  var APP_VERSION = '1.60';
-  var SW_VERSION = 'v61';
+  var APP_VERSION = '1.61';
+  var SW_VERSION = 'v62';
   var UI_KEY = 'shilu.ui.v1';              /* 只存主题/配色这类界面偏好 */
   var LEGACY_DB_KEY = 'shilu.db.v1';       /* v1.53 之前的记录缓存，仅用于迁移 */
   var LEGACY_PREF_KEY = 'shilu.prefs.v1';  /* v1.53 之前的偏好，仅用于迁移 */
@@ -1428,6 +1428,7 @@
 
   var written = {};        /* id -> 上次写入数据库时的 JSON，用于算增量 */
   var writeTimer = null;
+  var bootHadCollections = false;
 
   function dbGetAllRecords() { return AppStorage.getAllRecords(); }
   function dbGetMeta(k) { return AppStorage.getMeta(k); }
@@ -1504,6 +1505,7 @@
         });
       }).then(function (res) {
         state.records = (res[0] || []).map(normalizeRecord).filter(Boolean);
+        bootHadCollections = !!res[1];
         applyCollections(res[1]);
         if (res[2] && res[2].data) applyPrefsObject(res[2].data);
         draftStash = (res[3] && res[3].data && res[3].data.json) ? res[3].data : null;
@@ -1530,6 +1532,51 @@
         return true;
       });
     }).catch(function () { return false; });
+  }
+
+  /* 旧库只在新库已经接过数据后整库删除，避免误删还没迁移的记录 */
+  function cleanupLegacyIfSafe() {
+    return AppStorage.legacyStats().then(function (st) {
+      if (!st) return false;
+      if (st.records > state.records.length) return false;
+      if (!st.records && st.collections && !bootHadCollections) return false;
+      return AppStorage.deleteLegacy();
+    }).then(function (gone) {
+      try {
+        localStorage.removeItem(LEGACY_DB_KEY);
+        localStorage.removeItem(LEGACY_PREF_KEY);
+        localStorage.removeItem('shilu.draft.v1');
+      } catch (e) { /* ignore */ }
+      if (gone) toast('已删除旧版数据库 shilu-db');
+      return gone;
+    }).catch(function () { return false; });
+  }
+
+  /* 设置页「清理旧数据」：删旧库 + 旧键 + 无人引用的图片，当前记录不动 */
+  function purgeLegacyData() {
+    var before = storUsed;
+    return AppStorage.getAllImages().then(function (rows) {
+      var used = liveImageRefs();
+      var dead = (rows || []).filter(function (r) { return r && r.id && !used[r.id]; });
+      return Promise.all(dead.map(function (r) {
+        if (IMG_URL[r.id]) { try { URL.revokeObjectURL(IMG_URL[r.id]); } catch (e) { /* ignore */ } delete IMG_URL[r.id]; }
+        delete IMG[r.id];
+        return AppStorage.deleteImage(r.id);
+      })).then(function () { return dead.length; });
+    }).then(function (imageCount) {
+      return AppStorage.deleteLegacy().then(function (gone) {
+        try {
+          localStorage.removeItem(LEGACY_DB_KEY);
+          localStorage.removeItem(LEGACY_PREF_KEY);
+          localStorage.removeItem('shilu.draft.v1');
+        } catch (e) { /* ignore */ }
+        return readStorageInfo().then(function () {
+          paintStorageInfo();
+          var freed = (before > 0 && storUsed >= 0 && storUsed < before) ? before - storUsed : 0;
+          return { images: imageCount, db: !!gone, freed: freed };
+        });
+      });
+    });
   }
 
   function dbImport(records, lists, checkins, categories) {
@@ -7443,6 +7490,9 @@
       '<div class="set-row"><div class="set-row-main"><div class="set-label">示例数据</div>' +
       '<div class="set-desc">每个类型加三条示例，带封面，随时可以删掉</div></div>' +
       '<button class="btn btn-ghost btn-sm" data-action="seed-examples">填充</button></div>' +
+      '<div class="set-row"><div class="set-row-main"><div class="set-label">清理旧数据</div>' +
+      '<div class="set-desc">删除旧版数据库 shilu-db、旧缓存键和没人引用的图片；当前记录不受影响</div></div>' +
+      '<button class="btn btn-ghost btn-sm" data-action="purge-legacy">清理</button></div>' +
       '<div class="set-row"><div class="set-row-main"><div class="set-label">清空全部数据</div>' +
       '<div class="set-desc">不可恢复，建议先导出一份备份</div></div>' +
       '<button class="btn btn-ghost btn-sm" data-action="clear-all">清空</button></div>' +
@@ -7461,7 +7511,7 @@
       '<div class="set-desc">页面 <b>v' + APP_VERSION + '</b> · 缓存 <b>' + SW_VERSION + '</b>' +
       ' · 服务器 <b id="srv-ver">检测中…</b></div>' +
       '</div></div>' +
-      '<details class="set-more"><summary>更多工具与说明 <i>7 项</i></summary>' +
+      '<details class="set-more"><summary>更多工具与说明 <i>工具</i></summary>' +
       '<div class="set-more-body">' +
       '<div class="set-row"><div class="set-row-main">' +
       '<div class="set-label">检查更新</div>' +
@@ -7471,6 +7521,11 @@
       '<div class="set-row"><div class="set-row-main"><div class="set-label">按年份补全发布日期</div>' +
       '<div class="set-desc">给只有年份的作品补一个 1 月 1 日</div></div>' +
       '<button class="btn btn-ghost btn-sm" data-action="backfill-date">补全</button></div>' +
+      '<div class="set-row"><div class="set-row-main">' +
+      '<div class="set-label">本机数据库</div>' +
+      '<div class="set-desc"><b>record_app_01_db</b>（v1）· ' + state.records.length + ' 条记录 / ' +
+      Object.keys(IMG).length + ' 张图片<br>旧版 <b>shilu-db</b> 已迁移，不再使用</div>' +
+      '</div></div>' +
       '<div class="set-row"><div class="set-row-main">' +
       '<div class="set-label">存储占用</div>' +
       '<div class="set-desc"><b id="stor-info">读取中…</b>（已用 / 配额，含离线缓存）</div>' +
@@ -9801,6 +9856,26 @@
         deleteTag(el.dataset.tag);
         break;
 
+      case 'purge-legacy':
+        openModal({
+          title: '清理旧数据？',
+          desc: '会删除旧版数据库 shilu-db、旧缓存键，以及没有任何记录引用的图片。当前记录、封面和设置不受影响。',
+          actions: [{ label: '取消', value: null, variant: 'ghost' }, { label: '清理', value: 'ok', variant: 'primary' }]
+        }).then(function (v) {
+          if (v !== 'ok') return;
+          toast('清理中…');
+          purgeLegacyData().then(function (r) {
+            var parts = [];
+            if (r.db) parts.push('旧数据库已删除');
+            if (r.images) parts.push('清理 ' + r.images + ' 张无引用图片');
+            if (!parts.length) parts.push('没有需要清理的旧数据');
+            if (r.freed > 0) parts.push('释放 ' + fmtBytes(r.freed));
+            toast(parts.join('，'));
+            render({ keepScroll: true });
+          }).catch(function () { toast('清理失败，请重试'); });
+        });
+        break;
+
       case 'clear-all':
         openModal({
           title: '清空全部数据？',
@@ -9829,11 +9904,12 @@
           Object.keys(IMG_MISSING).forEach(function (id) { delete IMG_MISSING[id]; });
           clearStash();
           dbClear().then(function (ok) {
-            return AppStorage.clearLegacy().then(function () { return ok; });
+            return AppStorage.deleteLegacy().then(function () { return ok; });
           }).then(function (ok) {
             try {
               localStorage.removeItem(LEGACY_DB_KEY);
               localStorage.removeItem(LEGACY_PREF_KEY);
+              localStorage.removeItem('shilu.draft.v1');
             } catch (e) { /* ignore */ }
             AppStorage.putMeta('migrated', { at: Date.now(), version: 1 });
             savePrefs();
@@ -10373,6 +10449,7 @@
       else state.draft = null;
       render();
       loadImages().then(function (n) { if (n) render({ keepScroll: true }); });
+      cleanupLegacyIfSafe();
       checkStandaloneTip();
       readStorageInfo();
       requestPersistentStorage().then(function () {
